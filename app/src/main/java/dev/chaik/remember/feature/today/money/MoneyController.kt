@@ -3,6 +3,9 @@ package dev.chaik.remember.feature.today.money
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import dev.chaik.remember.core.data.MoneyRepository
 import dev.chaik.remember.core.model.MoneyCategory
 import dev.chaik.remember.core.model.MoneyTransaction
@@ -41,13 +44,27 @@ class MoneyController(
     val incomeCategories: StateFlow<List<MoneyCategory>> =
         repository.observeCategories(MoneyType.INCOME).stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Все категории, включая убранные, — подписи прошлых операций. */
+    val allCategories: StateFlow<List<MoneyCategory>> =
+        repository.observeAllCategories().stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     // Форма
 
     var amount by mutableStateOf("")
     var type by mutableStateOf(MoneyType.EXPENSE)
         private set
     var categoryId by mutableStateOf<Long?>(null)
-    var comment by mutableStateOf("")
+    var comment by mutableStateOf(TextFieldValue(""))
+
+    /** Прошлые комментарии выбранной категории — подсказки под полем. */
+    val knownComments: StateFlow<List<String>> = snapshotFlow { type to categoryId }
+        .flatMapLatest { (type, id) -> repository.observeComments(type, id) }
+        .stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Подставить подсказку, курсор — в конец. */
+    fun pickComment(text: String) {
+        comment = TextFieldValue(text, TextRange(text.length))
+    }
 
     /** Какую операцию сейчас правим; null — добавляем новую. */
     var editing by mutableStateOf<MoneyTransaction?>(null)
@@ -91,7 +108,7 @@ class MoneyController(
             type = type,
             amountMinor = amountMinor,
             categoryId = categoryId,
-            comment = comment.trim(),
+            comment = comment.text.trim(),
             createdAt = base?.createdAt,
         )
         scope.launch { repository.save(transaction) }
@@ -103,7 +120,7 @@ class MoneyController(
         type = transaction.type
         amount = MoneyFormat.toInput(transaction.amountMinor)
         categoryId = transaction.categoryId
-        comment = transaction.comment
+        pickComment(transaction.comment)
         amountError = false
     }
 
@@ -133,7 +150,7 @@ class MoneyController(
     private fun resetForm() {
         editing = null
         amount = ""
-        comment = ""
+        comment = TextFieldValue("")
         categoryId = null
         amountError = false
     }

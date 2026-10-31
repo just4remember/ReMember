@@ -48,14 +48,37 @@ class MoneyRepository(private val db: ReMemberDatabase, private val currency: ()
     fun observeCategories(type: MoneyType): Flow<List<MoneyCategory>> =
         dao.observeCategories(type).map { list -> list.map { it.toModel() } }
 
-    /** Создаёт категорию (id = 0) или обновляет существующую. Возвращает id. */
-    suspend fun saveCategory(category: MoneyCategory): Long =
-        if (category.id == 0L) {
-            dao.insertCategory(category.toEntity())
-        } else {
+    fun observeAllCategories(): Flow<List<MoneyCategory>> =
+        dao.observeAllCategories().map { list -> list.map { it.toModel() } }
+
+    fun observeComments(type: MoneyType, categoryId: Long?): Flow<List<String>> = dao.observeComments(type, categoryId)
+
+    /**
+     * Создаёт категорию (id = 0) в конце списка или обновляет существующую. Возвращает id.
+     * Новая с именем убранной возвращает убранную — вместе с её прошлыми операциями.
+     */
+    suspend fun saveCategory(category: MoneyCategory): Long = db.withTransaction {
+        if (category.id != 0L) {
             dao.updateCategory(category.toEntity())
-            category.id
+            return@withTransaction category.id
         }
+        val order = dao.nextCategoryOrder(category.type)
+        val archived = dao.findCategory(category.type, category.name)?.takeIf { it.archived }
+        if (archived != null) {
+            dao.updateCategory(archived.copy(icon = category.icon, sortOrder = order, archived = false))
+            archived.id
+        } else {
+            dao.insertCategory(category.copy(sortOrder = order).toEntity())
+        }
+    }
+
+    /** Порядок категорий — как в [ids]. */
+    suspend fun reorderCategories(ids: List<Long>) = db.withTransaction {
+        ids.forEachIndexed { index, id -> dao.setCategoryOrder(id, index) }
+    }
+
+    /** Убрать категорию из выбора. Прошлые операции и их название остаются. */
+    suspend fun archiveCategory(id: Long) = dao.archiveCategory(id)
 
     fun observeForDate(date: LocalDate): Flow<List<MoneyTransaction>> =
         dao.observeForDate(date).map { list -> list.map { it.toModel() } }

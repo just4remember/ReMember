@@ -1,6 +1,7 @@
 package dev.chaik.remember.feature.today.money
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -31,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +59,7 @@ import dev.chaik.remember.core.data.FAVORITE_EXPENSE_CATEGORIES
 import dev.chaik.remember.core.model.MoneyCategory
 import dev.chaik.remember.core.model.MoneyTransaction
 import dev.chaik.remember.core.model.MoneyType
+import dev.chaik.remember.core.model.commentHints
 import dev.chaik.remember.core.ui.format.MoneyFormat
 
 private val IncomeColor = Color(0xFF4CAF50)
@@ -66,15 +70,15 @@ fun MoneyContent(controller: MoneyController, modifier: Modifier = Modifier) {
     val transactions by controller.transactions.collectAsStateWithLifecycle()
     val expenseCategories by controller.expenseCategories.collectAsStateWithLifecycle()
     val incomeCategories by controller.incomeCategories.collectAsStateWithLifecycle()
-    val categories = remember(expenseCategories, incomeCategories) {
-        (expenseCategories + incomeCategories).associateBy { it.id }
-    }
+    val allCategories by controller.allCategories.collectAsStateWithLifecycle()
+    val categories = remember(allCategories) { allCategories.associateBy { it.id } }
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         DayTotals(transactions)
         MoneyForm(
             controller = controller,
             categories = if (controller.type == MoneyType.EXPENSE) expenseCategories else incomeCategories,
+            allCategories = categories,
         )
 
         AnimatedVisibility(controller.lastDeleted != null) {
@@ -140,7 +144,7 @@ private fun TotalCard(label: String, value: String, color: Color, modifier: Modi
 }
 
 @Composable
-private fun MoneyForm(controller: MoneyController, categories: List<MoneyCategory>) {
+private fun MoneyForm(controller: MoneyController, categories: List<MoneyCategory>, allCategories: Map<Long, MoneyCategory>) {
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -192,10 +196,13 @@ private fun MoneyForm(controller: MoneyController, categories: List<MoneyCategor
             CategoryDropdown(
                 categories = categories,
                 selectedId = controller.categoryId,
+                // Правим старую операцию, а её категорию уже убрали — название всё равно видно
+                selected = controller.categoryId?.let(allCategories::get),
                 favoriteCount = if (controller.type == MoneyType.EXPENSE) FAVORITE_EXPENSE_CATEGORIES else 0,
                 onSelect = { controller.categoryId = it },
             )
 
+            val known by controller.knownComments.collectAsStateWithLifecycle()
             OutlinedTextField(
                 value = controller.comment,
                 onValueChange = { controller.comment = it },
@@ -206,6 +213,19 @@ private fun MoneyForm(controller: MoneyController, categories: List<MoneyCategor
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            val hints = remember(known, controller.comment.text) { commentHints(known, controller.comment.text) }
+            if (hints.isNotEmpty()) {
+                // Одной строкой с прокруткой: форма не прыгает, пока набирается текст
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    hints.forEach { hint ->
+                        SuggestionChip(onClick = { controller.pickComment(hint) }, label = { Text(hint, maxLines = 1) })
+                    }
+                }
+            }
 
             Button(onClick = controller::submit, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(if (controller.editing != null) R.string.money_save else R.string.money_add))
@@ -220,11 +240,11 @@ private fun MoneyForm(controller: MoneyController, categories: List<MoneyCategor
 private fun CategoryDropdown(
     categories: List<MoneyCategory>,
     selectedId: Long?,
+    selected: MoneyCategory?,
     favoriteCount: Int,
     onSelect: (Long?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selected = categories.firstOrNull { it.id == selectedId }
 
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(

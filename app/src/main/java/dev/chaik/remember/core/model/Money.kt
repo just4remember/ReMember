@@ -38,3 +38,17 @@ data class MoneyTotals(
 }
 
 const val DEFAULT_CURRENCY = "RUB"
+
+/**
+ * Подсказки к комментарию из прошлых комментариев категории ([known] — частые первыми):
+ * подходящие по набранному тексту, без повторов и без уже набранного целиком.
+ */
+fun commentHints(known: List<String>, typed: String, limit: Int = COMMENT_HINTS): List<String> {
+    val query = typed.trim().lowercase()
+    return known
+        .distinctBy { it.lowercase() }
+        .filter { val text = it.lowercase(); text != query && text.contains(query) }
+        .take(limit)
+}
+
+private const val COMMENT_HINTS = 12

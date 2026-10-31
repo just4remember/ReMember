@@ -66,6 +66,8 @@ import dev.chaik.remember.feature.time.AlarmEditorRoute
 import dev.chaik.remember.feature.time.AlarmEditorScreen
 import dev.chaik.remember.feature.time.TimeRoute
 import dev.chaik.remember.feature.time.TimeScreen
+import dev.chaik.remember.feature.today.money.MoneyCategoriesRoute
+import dev.chaik.remember.feature.today.money.MoneyCategoriesScreen
 import dev.chaik.remember.feature.today.TodayRoute
 import dev.chaik.remember.feature.today.TodayScreen
 
@@ -78,7 +80,8 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
 
     return entryProvider {
         // Корни вкладок
-        entry<TodayRoute> { TodayScreen(onBack = backFor(it)) }
+        entry<TodayRoute> { TodayScreen(onOpenMoneyCategories = { backStack.add(MoneyCategoriesRoute) }, onBack = backFor(it)) }
+        entry<MoneyCategoriesRoute> { MoneyCategoriesScreen(onBack = back) }
         entry<NotesRoute> {
             NotesScreen(
                 onBack = backFor(it),

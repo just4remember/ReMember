@@ -17,6 +17,30 @@ interface MoneyDao {
     @Query("SELECT * FROM money_category WHERE type = :type AND archived = 0 ORDER BY sort_order, name")
     fun observeCategories(type: MoneyType): Flow<List<MoneyCategoryEntity>>
 
+    /** Все, включая убранные: у прошлых операций остаётся название категории. */
+    @Query("SELECT * FROM money_category")
+    fun observeAllCategories(): Flow<List<MoneyCategoryEntity>>
+
+    @Query("SELECT IFNULL(MAX(sort_order) + 1, 0) FROM money_category WHERE type = :type AND archived = 0")
+    suspend fun nextCategoryOrder(type: MoneyType): Int
+
+    @Query("UPDATE money_category SET sort_order = :order WHERE id = :id")
+    suspend fun setCategoryOrder(id: Long, order: Int)
+
+    @Query("UPDATE money_category SET archived = 1 WHERE id = :id")
+    suspend fun archiveCategory(id: Long)
+
+    /** Прошлые комментарии категории (без категории — NULL): сначала частые, среди них свежие. */
+    @Query(
+        """
+        SELECT comment FROM money_transaction
+        WHERE type = :type AND category_id IS :categoryId AND comment != ''
+        GROUP BY comment
+        ORDER BY COUNT(*) DESC, MAX(created_at) DESC
+        """,
+    )
+    fun observeComments(type: MoneyType, categoryId: Long?): Flow<List<String>>
+
     @Insert
     suspend fun insertCategory(category: MoneyCategoryEntity): Long
 

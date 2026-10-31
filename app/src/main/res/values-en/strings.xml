@@ -852,6 +852,15 @@
     <string name="network_ip_show">Show IP</string>
     <string name="network_ip_hide">Hide IP</string>
     <string name="data_permissions">Permissions</string>
+    <string name="money_categories">Categories</string>
+    <string name="money_categories_hint">The first %1$d are frequent: a line separates them in the picker</string>
+    <string name="money_category_new">New category</string>
+    <string name="money_category_edit">Category</string>
+    <string name="money_category_icon">Icon (emoji)</string>
+    <string name="money_category_name">Name</string>
+    <string name="money_category_taken">This category already exists</string>
+    <string name="money_category_delete">Delete category?</string>
+    <string name="money_category_delete_text">It will leave the picker. Past entries keep this label</string>
     <string name="data_performance">Performance</string>
     <string name="data_perf_ram">Memory</string>
     <string name="data_perf_ram_hint">app, %1$s total</string>

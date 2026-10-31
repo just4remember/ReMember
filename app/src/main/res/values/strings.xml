@@ -901,6 +901,15 @@
     <string name="network_ip_show">Показать IP</string>
     <string name="network_ip_hide">Скрыть IP</string>
     <string name="data_permissions">Разрешения</string>
+    <string name="money_categories">Категории</string>
+    <string name="money_categories_hint">Первые %1$d — частые: в списке выбора они отделены чертой</string>
+    <string name="money_category_new">Новая категория</string>
+    <string name="money_category_edit">Категория</string>
+    <string name="money_category_icon">Значок (эмодзи)</string>
+    <string name="money_category_name">Название</string>
+    <string name="money_category_taken">Такая категория уже есть</string>
+    <string name="money_category_delete">Удалить категорию?</string>
+    <string name="money_category_delete_text">Она исчезнет из выбора. Прошлые операции останутся с этой подписью</string>
     <string name="data_performance">Производительность</string>
     <string name="data_perf_ram">Память</string>
     <string name="data_perf_ram_hint">приложение, всего %1$s</string>

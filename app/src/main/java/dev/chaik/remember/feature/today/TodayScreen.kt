@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.outlined.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -111,7 +112,7 @@ private val FabSpace = 96.dp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
+fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
     val context = LocalContext.current
     val container = context.appContainer
     val viewModel = viewModel { TodayViewModel(container) }
@@ -190,6 +191,11 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
         actions = {
             val streak by viewModel.streak.collectAsStateWithLifecycle()
             StreakFlame(streak, Modifier.padding(end = 12.dp))
+            if (mode == TodayMode.Money) {
+                IconButton(onClick = onOpenMoneyCategories) {
+                    Icon(Icons.Outlined.Settings, stringResource(R.string.money_categories))
+                }
+            }
             if (!viewModel.isToday) {
                 IconButton(onClick = { viewModel.selectDate(viewModel.currentDay) }) {
                     Icon(Icons.Outlined.Today, stringResource(R.string.today_go_today))
