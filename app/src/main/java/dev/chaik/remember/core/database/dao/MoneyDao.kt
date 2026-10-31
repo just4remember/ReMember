@@ -28,7 +28,7 @@ interface MoneyDao {
 
     // Операции
 
-    @Query("SELECT * FROM money_transaction WHERE date = :date ORDER BY created_at")
+    @Query("SELECT * FROM money_transaction WHERE date = :date ORDER BY created_at DESC")
     fun observeForDate(date: LocalDate): Flow<List<MoneyTransactionEntity>>
 
     @Query("SELECT * FROM money_transaction WHERE date BETWEEN :from AND :to ORDER BY date DESC, created_at DESC")

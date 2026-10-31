@@ -193,7 +193,13 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
                         )
                         TodayMode.Sleep -> {
                             if (viewModel.sleep.isLoaded) SleepContent(viewModel.sleep, Modifier.padding(top = 8.dp))
-                            Spacer(Modifier.height(bottomSpace))
+                            // Пустое место под текстом: тап ставит курсор в конец записи сна
+                            Spacer(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(bottomSpace)
+                                    .clickable(interactionSource = null, indication = null) { viewModel.sleep.dream.focusEnd() },
+                            )
                         }
                         TodayMode.Money -> {
                             MoneyContent(viewModel.money, Modifier.padding(top = 8.dp))
@@ -226,9 +232,10 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
                 padding = buttonsPadding,
             )
 
-            // Панель форматирования — только когда печатаем в записи дня
+            // Панель форматирования — когда печатаем в записи дня или сна; фото — только в записи дня
+            val typingDream = mode == TodayMode.Sleep && viewModel.sleep.dream.hasFocus
             AnimatedVisibility(
-                visible = keyboardVisible && mode == TodayMode.Day && day.editor.hasFocus,
+                visible = keyboardVisible && ((mode == TodayMode.Day && day.editor.hasFocus) || typingDream),
                 enter = slideInVertically { it } + fadeIn(),
                 exit = slideOutVertically { it } + fadeOut(),
                 modifier = Modifier
@@ -236,8 +243,8 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
                     .imePadding(),
             ) {
                 EditorToolbar(
-                    state = day.editor,
-                    onAddPhoto = launchPicker,
+                    state = if (mode == TodayMode.Sleep) viewModel.sleep.dream else day.editor,
+                    onAddPhoto = if (mode == TodayMode.Sleep) null else launchPicker,
                     onHideKeyboard = {
                         keyboard?.hide()
                         focusManager.clearFocus()

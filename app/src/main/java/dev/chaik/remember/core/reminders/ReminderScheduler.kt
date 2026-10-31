@@ -236,9 +236,9 @@ class ReminderScheduler(
     private companion object {
         val GRACE: Duration = Duration.ofMinutes(30)
         const val LOOKAHEAD_DAYS = 2L
-        const val ID_DAY = 1
-        const val ID_SLEEP = 2
-        const val ID_SUMMARY = 3
-        const val ID_TEST = 4
+        const val ID_DAY = NotificationIds.DAY
+        const val ID_SLEEP = NotificationIds.SLEEP
+        const val ID_SUMMARY = NotificationIds.SUMMARY
+        const val ID_TEST = NotificationIds.TEST
     }
 }

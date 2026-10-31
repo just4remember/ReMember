@@ -485,6 +485,8 @@
     <string name="gym_weight_range">Вес: %1$s – %2$s</string>
     <string name="channel_workout">Тренировка в зале</string>
     <string name="channel_health">Цель по шагам</string>
+    <string name="notify_goals_title">Все цели на сегодня выполнены!</string>
+    <string name="notify_goals_text">Шаги, активное время и калории — все три кольца закрыты</string>
     <string name="notify_steps_title">Цель по шагам выполнена!</string>
     <string name="notify_steps_text">Сегодня уже %1$s шагов при цели %2$s</string>
     <string name="channel_workout_live">Идущая тренировка</string>
@@ -566,8 +568,8 @@
     <string name="pages_today_auto_hint">При открытии утром (4:00–11:59) — «Сон», в остальное время — «День». Если выключить — всегда «День»</string>
     <string name="pages_sleep_guess">Время сна по телефону</string>
     <string name="pages_sleep_guess_hint">На «Сне» — кнопка подставить, когда вы отложили телефон вечером и взяли утром</string>
-    <string name="pages_steps_title">Уведомление о цели по шагам</string>
-    <string name="pages_steps_hint">Приложение время от времени смотрит шаги в Health Connect и поздравит, когда дневная цель выполнена. Тихие часы — как у напоминаний</string>
+    <string name="pages_steps_title">Уведомления о целях</string>
+    <string name="pages_steps_hint">Приложение время от времени смотрит активность в Health Connect и поздравит, когда выполнена цель по шагам и когда выполнены все три цели. Тихие часы — как у напоминаний</string>
     <string name="pages_steps_off">Выключено</string>
     <string name="pages_steps_permission">Нужно разрешение Health Connect читать шаги в фоне — без него проверка ничего не увидит</string>
     <string name="pages_steps_allow">Разрешить</string>

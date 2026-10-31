@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.health
 
+import dev.chaik.remember.core.health.DEFAULT_WEIGHT_KG
 import android.os.RemoteException
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -109,7 +110,6 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
 
     private companion object {
         const val TAG = "HealthData"
-        const val DEFAULT_WEIGHT_KG = 70.0
     }
 }
 

@@ -10,6 +10,9 @@ data class DayActivity(
     val calories: Double = 0.0,
 )
 
+/** Вес для оценки калорий, пока он не записан в тренировках. */
+const val DEFAULT_WEIGHT_KG = 70.0
+
 /** Цели на день; меняются в «⋮ → Цели». */
 data class HealthGoals(
     val steps: Long = 6000,

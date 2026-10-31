@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.content.edit
 import dev.chaik.remember.R
 import dev.chaik.remember.core.reminders.Message
+import dev.chaik.remember.core.reminders.NotificationIds
 import dev.chaik.remember.core.reminders.Notifier
 import dev.chaik.remember.core.reminders.NotificationType
 import dev.chaik.remember.core.reminders.OpenTarget
@@ -50,8 +51,17 @@ object StepsGoalRules {
         notificationsEnabled: Boolean,
         quiet: QuietHours,
         now: LocalTime,
+    ): StepsGoalAction = decide(goal > 0 && steps >= goal, alreadyNotified, notificationsEnabled, quiet, now)
+
+    /** То же для любой цели: [reached] — достигнута ли она. */
+    fun decide(
+        reached: Boolean,
+        alreadyNotified: Boolean,
+        notificationsEnabled: Boolean,
+        quiet: QuietHours,
+        now: LocalTime,
     ): StepsGoalAction = when {
-        !notificationsEnabled || alreadyNotified || goal <= 0 || steps < goal -> StepsGoalAction.NONE
+        !notificationsEnabled || alreadyNotified || !reached -> StepsGoalAction.NONE
         !quiet.contains(now) -> StepsGoalAction.NOTIFY
         else -> when (quiet.mode) {
             QuietMode.POSTPONE -> StepsGoalAction.NONE
@@ -59,13 +69,21 @@ object StepsGoalRules {
             QuietMode.SKIP -> StepsGoalAction.SKIP
         }
     }
+
+    /** Выполнены ли сразу все три цели «Здоровья». */
+    fun allGoalsMet(activity: DayActivity, goals: HealthGoals): Boolean =
+        goals.steps > 0 && goals.activeMinutes > 0 && goals.calories > 0 &&
+            activity.steps >= goals.steps &&
+            activity.activeMinutes >= goals.activeMinutes &&
+            activity.calories >= goals.calories
 }
 
 /**
- * Уведомление «цель по шагам выполнена». Android не сообщает о новых шагах сам, поэтому
+ * Уведомления «цель по шагам выполнена» и «все цели выполнены». Android не сообщает о новых шагах сам, поэтому
  * раз в [AppSettings.stepsGoalCheckMinutes][dev.chaik.remember.core.settings.AppSettings.stepsGoalCheckMinutes]
- * минут приложение просыпается и смотрит шаги за сегодня в Health Connect (нужно разрешение
- * на чтение в фоне). Поздравляет один раз в день.
+ * минут приложение просыпается и смотрит активность за сегодня в Health Connect (нужно разрешение
+ * на чтение в фоне). Каждое поздравление — один раз в день; если шаги и все цели выполнены
+ * к одной проверке, приходит только «все цели».
  */
 class StepsGoalWatcher(
     private val context: Context,
@@ -74,6 +92,8 @@ class StepsGoalWatcher(
     private val goals: HealthGoalsStore,
     private val health: HealthConnectSource,
     private val notifier: Notifier,
+    /** Вес для оценки калорий, как на странице «Здоровье». */
+    private val bodyWeightKg: suspend () -> Double,
 ) {
     private val alarms = context.getSystemService(AlarmManager::class.java)
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -99,44 +119,75 @@ class StepsGoalWatcher(
         try {
             if (settings.settings.value.stepsGoalCheckMinutes <= 0) return@withLock
             val today = LocalDate.now()
-            val alreadyNotified = prefs.getLong(KEY_NOTIFIED_DAY, -1) == today.toEpochDay()
-            if (alreadyNotified || health.availability != HealthAvailability.AVAILABLE) return@withLock
+            val day = today.toEpochDay()
+            val allNotified = prefs.getLong(KEY_ALL_NOTIFIED_DAY, -1) == day
+            if (allNotified || health.availability != HealthAvailability.AVAILABLE) return@withLock
 
-            val goal = goals.goals.value.steps
-            val steps = health.stepsToday()
+            val targets = goals.goals.value
+            val activity = health.day(today, bodyWeightKg())
             val reminderSettings = reminders.settings.value
-            val action = StepsGoalRules.decide(
-                steps = steps,
-                goal = goal,
+            val now = LocalTime.now()
+            val allAction = StepsGoalRules.decide(
+                reached = StepsGoalRules.allGoalsMet(activity, targets),
                 alreadyNotified = false,
                 notificationsEnabled = reminderSettings.enabled,
                 quiet = reminderSettings.quiet,
-                now = LocalTime.now(),
+                now = now,
             )
-            Log.i(TAG, "Шаги: $steps из $goal → $action")
-            if (action == StepsGoalAction.NONE) return@withLock
-            if (action != StepsGoalAction.SKIP) {
-                notifier.ensureChannels(reminderSettings.sound)
-                val number = NumberFormat.getIntegerInstance()
-                notifier.post(
-                    Message(
-                        id = ID_STEPS,
-                        type = NotificationType.HEALTH,
-                        title = context.getString(R.string.notify_steps_title),
-                        text = context.getString(R.string.notify_steps_text, number.format(steps), number.format(goal)),
-                        target = OpenTarget.Health,
-                        silent = action == StepsGoalAction.NOTIFY_SILENT,
-                    ),
-                    reminderSettings.sound,
+            val stepsAction = StepsGoalRules.decide(
+                steps = activity.steps,
+                goal = targets.steps,
+                alreadyNotified = prefs.getLong(KEY_NOTIFIED_DAY, -1) == day,
+                notificationsEnabled = reminderSettings.enabled,
+                quiet = reminderSettings.quiet,
+                now = now,
+            )
+            Log.i(TAG, "Шаги: ${activity.steps} из ${targets.steps} → $stepsAction, все цели → $allAction")
+            val number = NumberFormat.getIntegerInstance()
+            if (allAction != StepsGoalAction.NONE) {
+                post(
+                    action = allAction,
+                    id = NotificationIds.HEALTH_GOALS,
+                    title = context.getString(R.string.notify_goals_title),
+                    text = context.getString(R.string.notify_goals_text),
                 )
+                // Все цели включают шаги: второе поздравление уже ни к чему
+                prefs.edit {
+                    putLong(KEY_ALL_NOTIFIED_DAY, day)
+                    putLong(KEY_NOTIFIED_DAY, day)
+                }
+            } else if (stepsAction != StepsGoalAction.NONE) {
+                post(
+                    action = stepsAction,
+                    id = NotificationIds.STEPS,
+                    title = context.getString(R.string.notify_steps_title),
+                    text = context.getString(R.string.notify_steps_text, number.format(activity.steps), number.format(targets.steps)),
+                )
+                prefs.edit { putLong(KEY_NOTIFIED_DAY, day) }
             }
-            prefs.edit { putLong(KEY_NOTIFIED_DAY, today.toEpochDay()) }
         } catch (e: Exception) {
             // Нет разрешения на чтение в фоне или Health Connect недоступен — попробуем в следующий раз
             Log.w(TAG, "Не удалось проверить шаги", e)
         } finally {
             schedule()
         }
+    }
+
+    private fun post(action: StepsGoalAction, id: Int, title: String, text: String) {
+        if (action == StepsGoalAction.SKIP) return
+        val sound = reminders.settings.value.sound
+        notifier.ensureChannels(sound)
+        notifier.post(
+            Message(
+                id = id,
+                type = NotificationType.HEALTH,
+                title = title,
+                text = text,
+                target = OpenTarget.Health,
+                silent = action == StepsGoalAction.NOTIFY_SILENT,
+            ),
+            sound,
+        )
     }
 
     private fun alarmIntent(): PendingIntent = PendingIntent.getBroadcast(
@@ -150,7 +201,7 @@ class StepsGoalWatcher(
         const val TAG = "StepsGoal"
         const val PREFS = "steps_goal"
         const val KEY_NOTIFIED_DAY = "notified_day"
-        const val ID_STEPS = 5
+        const val KEY_ALL_NOTIFIED_DAY = "all_notified_day"
         const val REQUEST_ALARM = 1
     }
 }

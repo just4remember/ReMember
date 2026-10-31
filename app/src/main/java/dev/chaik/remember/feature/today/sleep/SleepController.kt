@@ -4,7 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.text.input.TextFieldValue
+import dev.chaik.remember.core.editor.EditorState
 import dev.chaik.remember.core.data.SleepRepository
 import dev.chaik.remember.core.model.SleepEntry
 import dev.chaik.remember.core.sleep.PhoneUsageHistory
@@ -32,13 +32,17 @@ class SleepController(
     private val usage: PhoneUsageHistory,
     /** Включена ли подсказка времени сна (Настройки → Страницы). */
     private val guessEnabled: () -> Boolean,
+    /** Заполнена запись дня или нет — чтобы утром больше не открывать «Сон» сам (см. [TodaySession]). */
+    private val onFilledChange: (LocalDate, Boolean) -> Unit = { _, _ -> },
 ) {
     var bedTime by mutableStateOf<LocalTime?>(null)
     var wakeTime by mutableStateOf<LocalTime?>(null)
 
     /** В половинках звезды из 5. */
     var quality by mutableStateOf<Int?>(null)
-    var dream by mutableStateOf(TextFieldValue(""))
+
+    /** Что приснилось — тот же редактор, что у записи дня, только без фото. */
+    val dream = EditorState()
 
     var isLoaded by mutableStateOf(false)
         private set
@@ -74,8 +78,9 @@ class SleepController(
             bedTime = entry?.bedTime?.atZone(zone)?.toLocalTime()
             wakeTime = entry?.wakeTime?.atZone(zone)?.toLocalTime()
             quality = entry?.quality
-            dream = TextFieldValue(entry?.dream.orEmpty())
+            dream.load(entry?.dream.orEmpty())
             saved = snapshot(date)
+            onFilledChange(date, entry != null)
             isLoaded = true
         }
         autosaveJob = scope.launch { autosave() }
@@ -124,12 +129,13 @@ class SleepController(
         bedTime = bedInstant(date, bedTime, wakeTime),
         wakeTime = wakeInstant(date, wakeTime),
         quality = quality,
-        dream = dream.text,
+        dream = dream.markdown,
     )
 
     private suspend fun save(entry: SleepEntry) = lock.withLock {
         if (!isLoaded || entry == saved || entry.date != date) return@withLock
         val empty = entry.bedTime == null && entry.wakeTime == null && entry.quality == null && entry.dream.isBlank()
+        onFilledChange(entry.date, !empty)
         when {
             !empty -> {
                 repository.save(entry)

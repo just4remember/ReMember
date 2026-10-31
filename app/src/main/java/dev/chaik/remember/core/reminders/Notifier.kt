@@ -29,6 +29,16 @@ enum class NotificationType(val id: String, @param:StringRes val title: Int) {
     HEALTH("health", R.string.channel_health),
 }
 
+/** Постоянные номера уведомлений: новое такое же заменяет прежнее, а приложение может их убрать. */
+object NotificationIds {
+    const val DAY = 1
+    const val SLEEP = 2
+    const val SUMMARY = 3
+    const val TEST = 4
+    const val STEPS = 5
+    const val HEALTH_GOALS = 6
+}
+
 /** Готовое к показу уведомление. */
 data class Message(
     /** Одно и то же напоминание заменяет прежнее, а не копится. */
@@ -136,6 +146,18 @@ class Notifier(private val context: Context) {
         ),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
+
+    /**
+     * Вошли в приложение — напоминания о записи дня и сна и поздравления «Здоровья» больше не нужны
+     * в шторке. Сводка о планах на день остаётся.
+     */
+    fun clearOnAppOpen() {
+        val notifications = NotificationManagerCompat.from(context)
+        notifications.cancel(NotificationIds.DAY)
+        notifications.cancel(NotificationIds.SLEEP)
+        notifications.cancel(NotificationIds.STEPS)
+        notifications.cancel(NotificationIds.HEALTH_GOALS)
+    }
 
     fun post(message: Message, sound: SoundMode) {
         if (!canPost) return

@@ -30,4 +30,13 @@ class StepsGoalRulesTest {
         // Вне тихих часов — как обычно
         assertEquals(StepsGoalAction.NOTIFY, decide(7000, quiet = quiet(QuietMode.SKIP), now = noon))
     }
+
+    @Test
+    fun `все цели — только когда выполнены все три`() {
+        val goals = HealthGoals(steps = 6000, activeMinutes = 90, calories = 500)
+        assertEquals(true, StepsGoalRules.allGoalsMet(DayActivity(6000, 90, 500.0), goals))
+        assertEquals(false, StepsGoalRules.allGoalsMet(DayActivity(5999, 90, 500.0), goals))
+        assertEquals(false, StepsGoalRules.allGoalsMet(DayActivity(6000, 89, 500.0), goals))
+        assertEquals(false, StepsGoalRules.allGoalsMet(DayActivity(6000, 90, 499.9), goals))
+    }
 }

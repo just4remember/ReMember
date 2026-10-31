@@ -11,11 +11,12 @@ import java.time.LocalTime
  *
  * При открытии приложения (запуск или возвращение после долгой паузы) режим выбирается
  * по времени: утром — сон, в остальное время — день. Если это выключено в «Страницах»
- * ([autoMode] = false) — при открытии всегда день.
+ * ([autoMode] = false) или сон за сегодня уже записан ([sleepFilled]) — при открытии день.
  */
 class TodaySession(
     private val clock: () -> LocalTime = LocalTime::now,
     private val autoMode: () -> Boolean = { true },
+    private val sleepFilled: () -> Boolean = { false },
 ) {
     var mode by mutableStateOf(openingMode())
 
@@ -32,7 +33,7 @@ class TodaySession(
         leftAt = 0
     }
 
-    private fun openingMode(): TodayMode = if (autoMode()) defaultFor(clock()) else TodayMode.Day
+    private fun openingMode(): TodayMode = if (autoMode() && !sleepFilled()) defaultFor(clock()) else TodayMode.Day
 
     companion object {
         /** Пауза, после которой возвращение считается новым открытием приложения. */

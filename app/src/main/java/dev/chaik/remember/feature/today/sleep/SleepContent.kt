@@ -1,5 +1,7 @@
 package dev.chaik.remember.feature.today.sleep
 
+import dev.chaik.remember.core.editor.RichEditor
+import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +21,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -109,15 +110,22 @@ fun SleepContent(controller: SleepController, modifier: Modifier = Modifier) {
             )
         }
 
-        OutlinedTextField(
-            value = controller.dream,
-            onValueChange = { controller.dream = it },
-            label = { Text(stringResource(R.string.sleep_dream)) },
-            placeholder = { Text(stringResource(R.string.sleep_dream_hint)) },
-            minLines = 6,
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Column {
+            Text(
+                text = stringResource(R.string.sleep_dream),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            RichEditor(
+                state = controller.dream,
+                // Фото в запись сна не вставляются
+                photoFile = { File("") },
+                onOpenPhotos = { _, _ -> },
+                placeholder = stringResource(R.string.sleep_dream_hint),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 
     picking?.let { field ->

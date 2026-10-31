@@ -23,6 +23,7 @@ import dev.chaik.remember.core.health.HealthGoalsStore
 import dev.chaik.remember.core.health.StepsGoalWatcher
 import dev.chaik.remember.core.network.NetworkMonitor
 import dev.chaik.remember.core.sleep.PhoneUsageHistory
+import dev.chaik.remember.core.sleep.SleepFilledStore
 import dev.chaik.remember.core.network.NetworkSettingsStore
 import dev.chaik.remember.core.photos.PhotoLibrary
 import dev.chaik.remember.core.photos.PhotoStorage
@@ -32,6 +33,7 @@ import dev.chaik.remember.core.reminders.ReminderScheduler
 import dev.chaik.remember.core.reminders.ReminderSettingsStore
 import dev.chaik.remember.core.security.AppLock
 import dev.chaik.remember.core.settings.AppSettingsStore
+import dev.chaik.remember.core.health.DEFAULT_WEIGHT_KG
 import dev.chaik.remember.feature.today.TodaySession
 import dev.chaik.remember.core.security.DatabaseKeyManager
 import dev.chaik.remember.core.security.PrefsLockStore
@@ -73,7 +75,12 @@ class AppContainer(context: Context) {
     var welcomeShown = false
 
     /** Режим страницы «Сегодня» — общий на весь запуск. */
-    val todaySession by lazy { TodaySession(autoMode = { settings.settings.value.todayAutoMode }) }
+    val todaySession by lazy {
+        TodaySession(autoMode = { settings.settings.value.todayAutoMode }, sleepFilled = { sleepFilled.isFilledToday() })
+    }
+
+    /** Записан ли сон за сегодня — читается при открытии приложения, пока база ещё закрыта. */
+    val sleepFilled by lazy { SleepFilledStore(appContext) }
 
     /** Профиль и персонализация. */
     val settings by lazy { AppSettingsStore(appContext) }
@@ -113,7 +120,11 @@ class AppContainer(context: Context) {
     }
 
     /** Поздравление с целью по шагам — проверка в фоне. */
-    val stepsGoalWatcher by lazy { StepsGoalWatcher(appContext, settings, reminderSettings, healthGoals, health, notifier) }
+    val stepsGoalWatcher by lazy {
+        StepsGoalWatcher(appContext, settings, reminderSettings, healthGoals, health, notifier) {
+            workoutRepository.lastBodyWeight() ?: DEFAULT_WEIGHT_KG
+        }
+    }
 
     /** Раздел «Время»: будильники, звонок, таймер, секундомер. */
     val timeStore by lazy { TimeStore(appContext) }

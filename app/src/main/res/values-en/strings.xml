@@ -461,6 +461,8 @@
     <string name="gym_weight_range">Weight: %1$s – %2$s</string>
     <string name="channel_workout">Gym workout</string>
     <string name="channel_health">Step goal</string>
+    <string name="notify_goals_title">All of today\'s goals are done!</string>
+    <string name="notify_goals_text">Steps, active time and calories — all three rings are closed</string>
     <string name="notify_steps_title">Step goal reached!</string>
     <string name="notify_steps_text">%1$s steps today, goal %2$s</string>
     <string name="channel_workout_live">Workout in progress</string>
@@ -540,8 +542,8 @@
     <string name="pages_today_auto_hint">Opens on “Sleep” in the morning (4:00–11:59) and on “Day” the rest of the time. When off — always “Day”</string>
     <string name="pages_sleep_guess">Sleep time from phone</string>
     <string name="pages_sleep_guess_hint">On “Sleep” — a button to fill in when you put the phone down at night and picked it up in the morning</string>
-    <string name="pages_steps_title">Step goal notification</string>
-    <string name="pages_steps_hint">The app checks your steps in Health Connect from time to time and congratulates you once the daily goal is reached. Quiet hours work as for reminders</string>
+    <string name="pages_steps_title">Goal notifications</string>
+    <string name="pages_steps_hint">The app checks your activity in Health Connect from time to time and congratulates you when the step goal and when all three goals are reached. Quiet hours work as for reminders</string>
     <string name="pages_steps_off">Off</string>
     <string name="pages_steps_permission">Health Connect needs to allow reading steps in the background — otherwise the check sees nothing</string>
     <string name="pages_steps_allow">Allow</string>

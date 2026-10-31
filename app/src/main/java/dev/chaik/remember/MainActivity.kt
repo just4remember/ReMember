@@ -48,6 +48,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        appContainer.notifier.clearOnAppOpen()
         // Вернулись из фона: если прошло больше таймаута — снова замок
         lock.onForeground()
         if (lock.locked.value) LockActivity.show(this)

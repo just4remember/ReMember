@@ -49,4 +49,15 @@ class TodaySessionTest {
         session.onForeground(now = 1 + TodaySession.NEW_OPENING_MILLIS)
         assertEquals(TodayMode.Sleep, session.mode)
     }
+
+    @Test
+    fun `сон уже записан — утром открывается день`() {
+        var filled = false
+        val session = TodaySession(clock = { LocalTime.of(8, 0) }, sleepFilled = { filled })
+        assertEquals(TodayMode.Sleep, session.mode)
+        session.onBackground(now = 1_000)
+        filled = true
+        session.onForeground(now = 1_000 + TodaySession.NEW_OPENING_MILLIS)
+        assertEquals(TodayMode.Day, session.mode)
+    }
 }
