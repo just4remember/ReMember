@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,9 +21,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +37,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +45,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chaik.remember.R
+import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.model.Rating
+import dev.chaik.remember.core.model.Tag
 import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.ui.components.FullScreenPage
 import dev.chaik.remember.core.ui.theme.ratingColor
@@ -52,27 +60,33 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 
 private val CellShape = RoundedCornerShape(10.dp)
+private val RowShape = RoundedCornerShape(16.dp)
 
 /**
  * Выбор дня — полноэкранная страница: месяцы лентой сверху вниз (старые сверху),
  * прокрутка вверх — в прошлое. Тап по дню сразу открывает его. Будущие дни недоступны.
  * В клетках — цвет и подпись оценки дня; заполненный день без оценки слегка подсвечен.
- * Закрыть — крестик, «назад» или свайп справа налево.
+ * Кнопка в шапке переключает сетку и список дней с тегами (выбор запоминается).
+ * Закрыть — крестик, «назад» или свайп.
  *
  * Раньше это был нижний лист (ModalBottomSheet), но на резком свайпе вверх
  * он «пружинил» вверх-вниз — поэтому отдельная страница.
  *
  * @param marks дни с записью → оценка в половинках (null — без оценки)
+ * @param tags дни с тегами → их теги
  * @param firstMonth самый ранний месяц в ленте
  */
 @Composable
 fun DayPickerPage(
     selected: LocalDate,
     marks: Map<LocalDate, Int?>,
+    tags: Map<LocalDate, List<Tag>>,
     firstMonth: YearMonth,
     onPick: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val store = LocalContext.current.appContainer.settings
+    val asList = LocalAppSettings.current.dayPickerList
     val today = LocalDate.now()
     val months = remember(firstMonth, today) {
         generateSequence(firstMonth) { it.plusMonths(1) }.takeWhile { it <= YearMonth.from(today) }.toList()
@@ -85,7 +99,33 @@ fun DayPickerPage(
     val firstDayOfWeek = LocalAppSettings.current.firstDayOfWeek
     val haptics = LocalHapticFeedback.current
 
-    FullScreenPage(title = stringResource(R.string.today_pick_date), onDismiss = onDismiss) {
+    FullScreenPage(
+        title = stringResource(R.string.today_pick_date),
+        onDismiss = onDismiss,
+        actions = {
+            IconButton(onClick = { store.update { it.copy(dayPickerList = !asList) } }) {
+                Icon(
+                    imageVector = if (asList) Icons.Outlined.CalendarMonth else Icons.AutoMirrored.Outlined.ViewList,
+                    contentDescription = stringResource(if (asList) R.string.today_calendar_grid else R.string.today_calendar_list),
+                )
+            }
+        },
+    ) {
+        if (asList) {
+            DayList(
+                selected = selected,
+                today = today,
+                firstMonth = firstMonth,
+                marks = marks,
+                tags = tags,
+                onPick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onPick(it)
+                },
+                modifier = Modifier.weight(1f),
+            )
+            return@FullScreenPage
+        }
         WeekdayHeader(firstDayOfWeek, Modifier.padding(horizontal = 16.dp))
         HorizontalDivider(Modifier.padding(top = 8.dp))
         LazyColumn(
@@ -108,6 +148,105 @@ fun DayPickerPage(
                         onPick(it)
                     },
                 )
+            }
+        }
+    }
+}
+
+/** Дни списка — те же границы, что у сетки: от начала [firstMonth] до сегодня, новые сверху. */
+internal fun listedDays(today: LocalDate, firstMonth: YearMonth): List<LocalDate> =
+    generateSequence(today) { it.minusDays(1) }.takeWhile { !it.isBefore(firstMonth.atDay(1)) }.toList()
+
+/** Список дней по месяцам, новые сверху: дата, оценка и теги под ней. */
+@Composable
+private fun DayList(
+    selected: LocalDate,
+    today: LocalDate,
+    firstMonth: YearMonth,
+    marks: Map<LocalDate, Int?>,
+    tags: Map<LocalDate, List<Tag>>,
+    onPick: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val months = remember(today, firstMonth) { listedDays(today, firstMonth).groupBy(YearMonth::from).toList() }
+    // Сразу у выбранного дня: заголовки месяцев — тоже элементы списка
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = remember(months) {
+            var index = 0
+            for ((_, days) in months) {
+                val at = days.indexOf(selected)
+                if (at >= 0) return@remember index + 1 + at
+                index += 1 + days.size
+            }
+            0
+        },
+    )
+    LazyColumn(
+        state = listState,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.navigationBarsPadding(),
+    ) {
+        months.forEach { (month, days) ->
+            item(key = month.toString()) {
+                Text(
+                    text = month.format(DateTimeFormatter.ofPattern("LLLL yyyy")).replaceFirstChar { it.titlecase() },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp),
+                )
+            }
+            items(days, key = { it.toString() }) { date ->
+                DayRow(date, marks[date], tags[date].orEmpty(), date == selected, onClick = { onPick(date) })
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DayRow(date: LocalDate, rating: Int?, tags: List<Tag>, isSelected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val accent = rating?.let(::ratingColor)
+    val title = remember(date) {
+        date.format(DateTimeFormatter.ofPattern("d MMMM, EEEE"))
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RowShape)
+            .background(colors.surfaceContainerHigh)
+            .then(if (isSelected) Modifier.border(2.dp, colors.primary, RowShape) else Modifier)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            if (rating != null && accent != null) {
+                Icon(Icons.Filled.Star, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                Text(
+                    text = "${Rating.format(rating)}/10",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = accent,
+                    modifier = Modifier.padding(start = 2.dp),
+                )
+            }
+        }
+        if (tags.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                tags.forEach { tag ->
+                    Text(
+                        text = tag.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.onSecondaryContainer,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(colors.secondaryContainer)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
             }
         }
     }

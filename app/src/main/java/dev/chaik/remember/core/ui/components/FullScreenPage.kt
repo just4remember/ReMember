@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -63,6 +64,8 @@ private const val AnimationMillis = 260
 fun FullScreenPage(
     title: String,
     onDismiss: () -> Unit,
+    /** Кнопки в шапке слева от крестика. */
+    actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -163,6 +166,7 @@ fun FullScreenPage(
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.weight(1f),
                     )
+                    actions()
                     IconButton(onClick = { close() }) {
                         Icon(Icons.Outlined.Close, stringResource(R.string.editor_close))
                     }

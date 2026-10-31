@@ -131,7 +131,7 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
         .setColor(context.getColor(R.color.notification_accent))
         .setContentTitle(title)
         .setOngoing(true)
-        // Live Update: время прямо в строке состояния. Своей вёрстки (RemoteViews) у таких быть не может
+        // Live Update: время прямо в строке состояния. Своя вёрстка, даже только развёрнутая, это отключает (проверено)
         .setRequestPromotedOngoing(true)
         .setOnlyAlertOnce(true)
         .setSilent(true)

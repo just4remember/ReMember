@@ -803,6 +803,8 @@
     <string name="game_lost">Not this time — the word was %1$s</string>
     <string name="game_alarm_off">Alarm is off</string>
     <string name="game_done">Done</string>
+    <string name="today_calendar_list">Show as a list with tags</string>
+    <string name="today_calendar_grid">Show as a calendar</string>
     <string name="appearance_haptics_title">Vibration</string>
     <string name="appearance_haptics">Vibration in the app</string>
     <string name="appearance_haptics_hint">Light feedback on taps and switches. Alarm ringing vibration is set in the alarm itself</string>

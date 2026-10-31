@@ -256,9 +256,11 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
 
     if (pickingDate) {
         val marks by viewModel.calendarMarks.collectAsStateWithLifecycle()
+        val tags by viewModel.calendarTags.collectAsStateWithLifecycle()
         DayPickerPage(
             selected = viewModel.date,
             marks = marks,
+            tags = tags,
             firstMonth = viewModel.calendarStart,
             onPick = {
                 viewModel.selectDate(it)

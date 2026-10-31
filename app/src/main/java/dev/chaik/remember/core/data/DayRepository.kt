@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import dev.chaik.remember.core.database.ReMemberDatabase
 import dev.chaik.remember.core.model.DayEntry
 import dev.chaik.remember.core.model.PhotoOwner
+import dev.chaik.remember.core.model.Tag
 import dev.chaik.remember.core.photos.PhotoRefs
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -31,6 +32,10 @@ class DayRepository(private val db: ReMemberDatabase) {
      */
     fun observeMarks(from: LocalDate, to: LocalDate): Flow<Map<LocalDate, Int?>> =
         dayDao.observeMarks(from, to).map { rows -> rows.associate { it.date to it.mood } }
+
+    /** Теги всех дней: день → его теги. В словаре только дни с тегами. */
+    fun observeTags(): Flow<Map<LocalDate, List<Tag>>> =
+        tagDao.observeAllDayTags().map { rows -> rows.groupBy({ it.date }, { Tag(it.tagId, it.name) }) }
 
     /** Самый ранний день с записью; null — записей нет. */
     suspend fun firstDate(): LocalDate? = dayDao.firstDate()

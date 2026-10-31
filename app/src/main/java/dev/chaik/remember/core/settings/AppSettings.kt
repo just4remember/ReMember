@@ -31,6 +31,8 @@ data class AppSettings(
     val sleepGuess: Boolean = true,
     /** Как часто проверять шаги ради уведомления о цели, минут; 0 — не проверять. */
     val stepsGoalCheckMinutes: Int = 30,
+    /** Календарь выбора дня открывается списком дней с тегами, а не сеткой. */
+    val dayPickerList: Boolean = false,
     /** Вибрация-отклик на действия во всём приложении (звонок будильника настраивается отдельно). */
     val haptics: Boolean = true,
     /** Вибрация в играх — при включённой [haptics]. */

@@ -12,6 +12,7 @@ import dev.chaik.remember.feature.today.money.MoneyController
 import dev.chaik.remember.feature.today.sleep.SleepController
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import dev.chaik.remember.core.model.Tag
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -55,6 +56,10 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     @OptIn(ExperimentalCoroutinesApi::class)
     val calendarMarks: StateFlow<Map<LocalDate, Int?>> = snapshotFlow { calendarStart }
         .flatMapLatest { container.dayRepository.observeMarks(it.atDay(1), LocalDate.now()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Теги дней — для списка в календаре выбора дня. */
+    val calendarTags: StateFlow<Map<LocalDate, List<Tag>>> = container.dayRepository.observeTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     // Смена дня: сначала сохранить старый, потом загрузить новый — строго по очереди

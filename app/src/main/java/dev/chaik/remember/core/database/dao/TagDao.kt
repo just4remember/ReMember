@@ -50,6 +50,16 @@ interface TagDao {
     )
     fun observeForDay(date: LocalDate): Flow<List<TagEntity>>
 
+    /** Теги всех дней разом — для списка дней (без запроса на каждый день). */
+    @Query(
+        """
+        SELECT day_entry_tag.date AS date, tag.id AS tagId, tag.name AS name FROM day_entry_tag
+        JOIN tag ON tag.id = day_entry_tag.tag_id
+        ORDER BY tag.`key`
+        """,
+    )
+    fun observeAllDayTags(): Flow<List<DayTagRow>>
+
     @Query("DELETE FROM day_entry_tag WHERE date = :date")
     suspend fun clearDayTags(date: LocalDate)
 
@@ -96,6 +106,8 @@ interface TagDao {
         insertNoteTags(tagIds.map { NoteTagEntity(noteId, it) })
     }
 }
+
+data class DayTagRow(val date: LocalDate, val tagId: Long, val name: String)
 
 data class NoteTagRow(
     val noteId: Long,
