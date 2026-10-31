@@ -37,6 +37,9 @@ class DayRepository(private val db: ReMemberDatabase) {
     fun observeTags(): Flow<Map<LocalDate, List<Tag>>> =
         tagDao.observeAllDayTags().map { rows -> rows.groupBy({ it.date }, { Tag(it.tagId, it.name) }) }
 
+    /** Дни, где написана запись (текст или фото), — для огонька на «Сегодня». */
+    fun observeWrittenDates(): Flow<Set<LocalDate>> = dayDao.observeWrittenDates().map { it.toSet() }
+
     /** Самый ранний день с записью; null — записей нет. */
     suspend fun firstDate(): LocalDate? = dayDao.firstDate()
 

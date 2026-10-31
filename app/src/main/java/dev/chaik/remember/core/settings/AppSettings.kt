@@ -2,6 +2,8 @@ package dev.chaik.remember.core.settings
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** Настройки приложения (Профиль и Персонализация). Язык хранит сам Android — см. [AppLanguage]. */
 data class AppSettings(
@@ -31,6 +33,8 @@ data class AppSettings(
     val sleepGuess: Boolean = true,
     /** Как часто проверять шаги ради уведомления о цели, минут; 0 — не проверять. */
     val stepsGoalCheckMinutes: Int = 30,
+    /** Во сколько сменяется день на «Сегодня», минут от полуночи; раньше этого времени — ещё вчерашний день. */
+    val dayStartMinutes: Int = 0,
     /** Календарь выбора дня открывается списком дней с тегами, а не сеткой. */
     val dayPickerList: Boolean = false,
     /** Вибрация-отклик на действия во всём приложении (звонок будильника настраивается отдельно). */
@@ -100,6 +104,13 @@ enum class BackSwipe { RIGHT_TO_LEFT, LEFT_TO_RIGHT, BOTH }
 const val WELCOME_MIN = 300
 const val WELCOME_MAX = 2000
 const val WELCOME_STEP = 100
+
+/** Варианты времени смены дня: с 00:00 до 08:00 через полчаса, минут от полуночи. */
+val DayStartOptions = (0..480 step 30).toList()
+
+/** Какой сейчас день для страницы «Сегодня»: до времени смены дня — ещё вчерашний. */
+fun AppSettings.logicalToday(now: LocalDateTime = LocalDateTime.now()): LocalDate =
+    now.minusMinutes(dayStartMinutes.toLong()).toLocalDate()
 
 /** Варианты частоты проверки шагов, минут; 0 — выключено. */
 val StepsCheckOptions = listOf(0, 15, 30, 60, 120)

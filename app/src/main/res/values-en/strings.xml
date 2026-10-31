@@ -803,6 +803,15 @@
     <string name="game_lost">Not this time — the word was %1$s</string>
     <string name="game_alarm_off">Alarm is off</string>
     <string name="game_done">Done</string>
+    <string name="profile_day_start">Day change</string>
+    <string name="profile_day_start_hint">When a new day starts on the Today page. With 04:00, an entry at 2 AM still goes to the previous day</string>
+    <string name="today_streak_levels">Streak flames</string>
+    <string name="today_streak_range">%1$d–%2$d days in a row</string>
+    <string name="today_streak_from">%1$d+ days in a row</string>
+    <plurals name="today_streak">
+        <item quantity="one">%1$d day in a row with an entry</item>
+        <item quantity="other">%1$d days in a row with an entry</item>
+    </plurals>
     <string name="today_calendar_list">Show as a list with tags</string>
     <string name="today_calendar_grid">Show as a calendar</string>
     <string name="appearance_haptics_title">Vibration</string>

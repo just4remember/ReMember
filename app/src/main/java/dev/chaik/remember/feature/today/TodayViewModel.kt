@@ -13,6 +13,9 @@ import dev.chaik.remember.feature.today.sleep.SleepController
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import dev.chaik.remember.core.model.Tag
+import dev.chaik.remember.core.data.DayStreak
+import dev.chaik.remember.core.settings.logicalToday
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -30,7 +33,11 @@ import java.time.YearMonth
  */
 class TodayViewModel(private val container: AppContainer) : ViewModel() {
 
-    var date by mutableStateOf(LocalDate.now())
+    /** Какой день сейчас с учётом времени смены дня (Профиль). */
+    var currentDay by mutableStateOf(container.settings.settings.value.logicalToday())
+        private set
+
+    var date by mutableStateOf(currentDay)
         private set
 
     /** Режим хранится в приложении ([TodaySession]) — переживает пересоздание вкладки. */
@@ -46,7 +53,15 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     )
     val money = MoneyController(viewModelScope, container.moneyRepository)
 
-    val isToday: Boolean get() = date == LocalDate.now()
+    val isToday: Boolean get() = date == currentDay
+
+    /** Сколько дней подряд написана запись дня. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val streak: StateFlow<Int> = combine(
+        container.dayRepository.observeWrittenDates(),
+        snapshotFlow { currentDay },
+    ) { dates, today -> DayStreak.length(dates, today) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     /** Самый ранний месяц в календаре выбора дня: год назад или раньше, если записи старше. */
     var calendarStart by mutableStateOf(YearMonth.now().minusMonths(CALENDAR_MONTHS_BACK))
@@ -55,7 +70,7 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     /** Заполненные дни и их оценки — для календаря выбора дня. */
     @OptIn(ExperimentalCoroutinesApi::class)
     val calendarMarks: StateFlow<Map<LocalDate, Int?>> = snapshotFlow { calendarStart }
-        .flatMapLatest { container.dayRepository.observeMarks(it.atDay(1), LocalDate.now()) }
+        .flatMapLatest { container.dayRepository.observeMarks(it.atDay(1), currentDay) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Теги дней — для списка в календаре выбора дня. */
@@ -75,6 +90,18 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
                 ?.takeIf { it < calendarStart }
                 ?.let { calendarStart = it }
         }
+    }
+
+    /**
+     * Наступил новый день: приложение могли оставить открытым. Если был открыт «сегодняшний» день,
+     * переходим на новый; прошлый день, открытый специально, не трогаем.
+     */
+    fun refreshToday() {
+        val today = container.settings.settings.value.logicalToday()
+        if (today == currentDay) return
+        val wasOnToday = isToday
+        currentDay = today
+        if (wasOnToday) selectDate(today)
     }
 
     fun selectDate(date: LocalDate) {

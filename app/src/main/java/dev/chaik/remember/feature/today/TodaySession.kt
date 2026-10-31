@@ -17,6 +17,7 @@ class TodaySession(
     private val clock: () -> LocalTime = LocalTime::now,
     private val autoMode: () -> Boolean = { true },
     private val sleepFilled: () -> Boolean = { false },
+    private val dayStartMinutes: () -> Int = { 0 },
 ) {
     var mode by mutableStateOf(openingMode())
 
@@ -33,7 +34,12 @@ class TodaySession(
         leftAt = 0
     }
 
-    private fun openingMode(): TodayMode = if (autoMode() && !sleepFilled()) defaultFor(clock()) else TodayMode.Day
+    private fun openingMode(): TodayMode {
+        val time = clock()
+        // До смены дня ещё идёт вчерашний день — его утро уже прошло
+        val newDayStarted = time.hour * 60 + time.minute >= dayStartMinutes()
+        return if (autoMode() && !sleepFilled() && newDayStarted) defaultFor(time) else TodayMode.Day
+    }
 
     companion object {
         /** Пауза, после которой возвращение считается новым открытием приложения. */

@@ -49,6 +49,7 @@ import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.model.Rating
 import dev.chaik.remember.core.model.Tag
 import dev.chaik.remember.core.settings.LocalAppSettings
+import dev.chaik.remember.core.settings.logicalToday
 import dev.chaik.remember.core.ui.components.FullScreenPage
 import dev.chaik.remember.core.ui.theme.ratingColor
 import java.time.DayOfWeek
@@ -87,7 +88,7 @@ fun DayPickerPage(
 ) {
     val store = LocalContext.current.appContainer.settings
     val asList = LocalAppSettings.current.dayPickerList
-    val today = LocalDate.now()
+    val today = LocalAppSettings.current.logicalToday()
     val months = remember(firstMonth, today) {
         generateSequence(firstMonth) { it.plusMonths(1) }.takeWhile { it <= YearMonth.from(today) }.toList()
     }

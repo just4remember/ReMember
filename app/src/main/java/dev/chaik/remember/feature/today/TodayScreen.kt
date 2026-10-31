@@ -1,5 +1,16 @@
 package dev.chaik.remember.feature.today
 
+import dev.chaik.remember.core.settings.LocalAppSettings
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.draw.clip
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -56,7 +67,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.delay
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
@@ -112,7 +128,7 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
             OpenTarget.Sleep -> TodayMode.Sleep
             else -> return@LaunchedEffect
         }
-        viewModel.selectDate((request as? OpenTarget.DayAt)?.date ?: LocalDate.now())
+        viewModel.selectDate((request as? OpenTarget.DayAt)?.date ?: viewModel.currentDay)
         viewModel.selectMode(mode)
         container.openRequests.value = null
     }
@@ -134,6 +150,15 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
         if (day.failedImports > 0) {
             Toast.makeText(context, failedImport, Toast.LENGTH_SHORT).show()
             day.consumeImportError()
+        }
+    }
+
+    // Новый день мог наступить, пока приложение открыто; смену времени в Профиле тоже подхватываем сразу
+    val dayStart = LocalAppSettings.current.dayStartMinutes
+    LaunchedEffect(dayStart) {
+        while (true) {
+            viewModel.refreshToday()
+            delay(DAY_CHECK_MS)
         }
     }
 
@@ -159,8 +184,10 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
             viewModel.selectDate(viewModel.date.plusDays(days))
         },
         actions = {
+            val streak by viewModel.streak.collectAsStateWithLifecycle()
+            StreakFlame(streak, Modifier.padding(end = 12.dp))
             if (!viewModel.isToday) {
-                IconButton(onClick = { viewModel.selectDate(LocalDate.now()) }) {
+                IconButton(onClick = { viewModel.selectDate(viewModel.currentDay) }) {
                     Icon(Icons.Outlined.Today, stringResource(R.string.today_go_today))
                 }
             }
@@ -277,6 +304,89 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
             onDismiss = { openedPhotos = null },
         )
     }
+}
+
+private const val DAY_CHECK_MS = 30_000L
+
+/** Цвет огонька с такого числа дней подряд. Следующая строка — следующий цвет. */
+private class StreakLevel(val fromDays: Int, val color: Color)
+
+private val StreakLevels = listOf(
+    StreakLevel(1, Color(0xFFFFC83D)), // жёлтый
+    StreakLevel(7, Color(0xFFFF8C2E)), // оранжевый
+    StreakLevel(14, Color(0xFFF0504D)), // красный
+    StreakLevel(30, Color(0xFF5CC8F5)), // голубой
+    StreakLevel(60, Color(0xFF4A86F0)), // синий
+    StreakLevel(100, Color(0xFFA25CE6)), // фиолетовый
+    StreakLevel(200, Color(0xFF3FB868)), // зелёный
+)
+
+private fun streakLevel(days: Int): StreakLevel? = StreakLevels.lastOrNull { days >= it.fromDays }
+
+/** Огонёк серии: значок и число одного цвета, цвет растёт вместе с серией. Тап — какие цвета бывают. */
+@Composable
+private fun StreakFlame(days: Int, modifier: Modifier = Modifier) {
+    var showLevels by remember { mutableStateOf(false) }
+    val description = pluralStringResource(R.plurals.today_streak, days, days)
+    val color = streakLevel(days)?.color ?: MaterialTheme.colorScheme.outline
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClickLabel = stringResource(R.string.today_streak_levels)) { showLevels = true }
+            .semantics(mergeDescendants = true) { contentDescription = description }
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    ) {
+        Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(22.dp))
+        Text(days.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+    }
+    if (showLevels) StreakLevelsDialog(days, description, onDismiss = { showLevels = false })
+}
+
+/** Все цвета огонька и сколько дней подряд нужно для каждого; текущий выделен. */
+@Composable
+private fun StreakLevelsDialog(days: Int, current: String, onDismiss: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val active = streakLevel(days)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.today_streak_levels)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = current,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                StreakLevels.forEachIndexed { index, level ->
+                    val next = StreakLevels.getOrNull(index + 1)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .then(if (level === active) Modifier.background(colors.surfaceContainerHighest) else Modifier)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Filled.LocalFireDepartment, null, tint = level.color, modifier = Modifier.size(26.dp))
+                        Text(
+                            text = if (next != null) {
+                                stringResource(R.string.today_streak_range, level.fromDays, next.fromDays - 1)
+                            } else {
+                                stringResource(R.string.today_streak_from, level.fromDays)
+                            },
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (level === active) FontWeight.Bold else null,
+                            color = level.color,
+                            modifier = Modifier.padding(start = 12.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok)) } },
+    )
 }
 
 /** Режим «День»: оценка, теги и запись с фото. */

@@ -45,6 +45,8 @@ import dev.chaik.remember.core.settings.Gender
 import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.feature.settings.SettingsCard
+import dev.chaik.remember.core.settings.DayStartOptions
+import dev.chaik.remember.feature.settings.SettingsDropdown
 import dev.chaik.remember.feature.settings.SettingsGroupTitle
 import dev.chaik.remember.feature.settings.SettingsRadioRow
 import kotlinx.coroutines.FlowPreview
@@ -149,6 +151,19 @@ fun ProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             }
             Text(
                 text = stringResource(R.string.profile_currency_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+
+            SettingsGroupTitle(stringResource(R.string.profile_day_start))
+            SettingsDropdown(
+                selected = settings.dayStartMinutes,
+                options = DayStartOptions.map { it to "%02d:%02d".format(it / 60, it % 60) },
+                onSelect = { minutes -> store.update { it.copy(dayStartMinutes = minutes) } },
+            )
+            Text(
+                text = stringResource(R.string.profile_day_start_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),

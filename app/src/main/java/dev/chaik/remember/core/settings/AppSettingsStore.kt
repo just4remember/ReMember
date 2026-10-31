@@ -40,6 +40,7 @@ class AppSettingsStore(context: Context) {
             islandTabs = list("island_tabs"),
             moreOrder = list("more_order"),
             todayAutoMode = prefs.getBoolean("today_auto_mode", d.todayAutoMode),
+            dayStartMinutes = prefs.getInt("day_start_minutes", d.dayStartMinutes).takeIf { it in DayStartOptions } ?: d.dayStartMinutes,
             dayPickerList = prefs.getBoolean("day_picker_list", d.dayPickerList),
             haptics = prefs.getBoolean("haptics", d.haptics),
             gameHaptics = prefs.getBoolean("game_haptics", d.gameHaptics),
@@ -73,6 +74,7 @@ class AppSettingsStore(context: Context) {
         putString("island_tabs", s.islandTabs.joinToString(","))
         putString("more_order", s.moreOrder.joinToString(","))
         putBoolean("today_auto_mode", s.todayAutoMode)
+        putInt("day_start_minutes", s.dayStartMinutes)
         putBoolean("day_picker_list", s.dayPickerList)
         putBoolean("haptics", s.haptics)
         putBoolean("game_haptics", s.gameHaptics)

@@ -33,6 +33,7 @@ import dev.chaik.remember.core.reminders.ReminderScheduler
 import dev.chaik.remember.core.reminders.ReminderSettingsStore
 import dev.chaik.remember.core.security.AppLock
 import dev.chaik.remember.core.settings.AppSettingsStore
+import dev.chaik.remember.core.settings.logicalToday
 import dev.chaik.remember.core.health.DEFAULT_WEIGHT_KG
 import dev.chaik.remember.feature.today.TodaySession
 import dev.chaik.remember.core.security.DatabaseKeyManager
@@ -76,11 +77,15 @@ class AppContainer(context: Context) {
 
     /** Режим страницы «Сегодня» — общий на весь запуск. */
     val todaySession by lazy {
-        TodaySession(autoMode = { settings.settings.value.todayAutoMode }, sleepFilled = { sleepFilled.isFilledToday() })
+        TodaySession(
+            autoMode = { settings.settings.value.todayAutoMode },
+            sleepFilled = { sleepFilled.isFilledToday() },
+            dayStartMinutes = { settings.settings.value.dayStartMinutes },
+        )
     }
 
     /** Записан ли сон за сегодня — читается при открытии приложения, пока база ещё закрыта. */
-    val sleepFilled by lazy { SleepFilledStore(appContext) }
+    val sleepFilled by lazy { SleepFilledStore(appContext) { settings.settings.value.logicalToday() } }
 
     /** Профиль и персонализация. */
     val settings by lazy { AppSettingsStore(appContext) }

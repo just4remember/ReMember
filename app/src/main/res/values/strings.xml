@@ -849,6 +849,17 @@
     <string name="game_lost">Не угадали — это было слово %1$s</string>
     <string name="game_alarm_off">Будильник выключен</string>
     <string name="game_done">Готово</string>
+    <string name="profile_day_start">Смена дня</string>
+    <string name="profile_day_start_hint">Во сколько на странице «Сегодня» начинается новый день. Например, при 04:00 запись в 2 часа ночи пойдёт во вчерашний день</string>
+    <string name="today_streak_levels">Огоньки серии</string>
+    <string name="today_streak_range">%1$d–%2$d дн. подряд</string>
+    <string name="today_streak_from">%1$d дн. подряд и больше</string>
+    <plurals name="today_streak">
+        <item quantity="one">%1$d день подряд с записью</item>
+        <item quantity="few">%1$d дня подряд с записью</item>
+        <item quantity="many">%1$d дней подряд с записью</item>
+        <item quantity="other">%1$d дня подряд с записью</item>
+    </plurals>
     <string name="today_calendar_list">Показать списком с тегами</string>
     <string name="today_calendar_grid">Показать календарём</string>
     <string name="appearance_haptics_title">Вибрация</string>

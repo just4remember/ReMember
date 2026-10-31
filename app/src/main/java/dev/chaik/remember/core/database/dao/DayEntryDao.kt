@@ -23,6 +23,10 @@ interface DayEntryDao {
     @Query("SELECT date, mood FROM day_entry WHERE date BETWEEN :from AND :to")
     fun observeMarks(from: LocalDate, to: LocalDate): Flow<List<DayMarkRow>>
 
+    /** Дни с непустым текстом: одна оценка или теги записью не считаются. Фото хранятся в тексте. */
+    @Query("SELECT date FROM day_entry WHERE trim(text, ' ' || char(9) || char(10) || char(13)) != ''")
+    fun observeWrittenDates(): Flow<List<LocalDate>>
+
     /** Самый ранний день с записью; null — записей нет. */
     @Query("SELECT MIN(date) FROM day_entry")
     suspend fun firstDate(): LocalDate?
