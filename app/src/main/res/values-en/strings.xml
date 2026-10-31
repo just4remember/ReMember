@@ -801,6 +801,11 @@
     <string name="game_lost">Not this time — the word was %1$s</string>
     <string name="game_alarm_off">Alarm is off</string>
     <string name="game_done">Done</string>
+    <string name="game_raskobki">Ra[skobki]</string>
+    <string name="game_raskobki_hint">Daily puzzle from raskobki.app</string>
+    <string name="game_raskobki_open_site">Open site in browser</string>
+    <string name="game_raskobki_error">Couldn\'t open the site. Check your connection</string>
+    <string name="game_raskobki_retry">Retry</string>
     <string name="pages_disable">Turn section off</string>
     <string name="pages_enable">Turn section on</string>
     <string name="pages_disable_hint">The eye turns a section on or off. A section that is off is gone from More and can\'t be opened. Alarms and reminders keep working</string>
@@ -810,5 +815,5 @@
     <string name="game_won_plain">Got it!</string>
     <string name="section_games">Games</string>
     <string name="section_games_hint">Mini games to warm up your brain</string>
-    <string name="game_five_letters_hint">Guess the English word in 6 tries</string>
+    <string name="game_five_letters_hint">English word in 6 tries</string>
 </resources>

@@ -19,7 +19,7 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
-    <!-- Интернет — только для страницы «Сеть» (замер скорости, проверка белых списков); записи никуда не уходят -->
+    <!-- Интернет — только для страницы «Сеть» и сайта игры Ра[скобки]; записи никуда не уходят -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 

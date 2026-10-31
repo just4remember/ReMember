@@ -847,6 +847,11 @@
     <string name="game_lost">Не угадали — это было слово %1$s</string>
     <string name="game_alarm_off">Будильник выключен</string>
     <string name="game_done">Готово</string>
+    <string name="game_raskobki">Ра[скобки]</string>
+    <string name="game_raskobki_hint">Головоломка дня с raskobki.app</string>
+    <string name="game_raskobki_open_site">Открыть сайт в браузере</string>
+    <string name="game_raskobki_error">Не удалось открыть сайт. Проверьте интернет</string>
+    <string name="game_raskobki_retry">Повторить</string>
     <string name="pages_disable">Выключить раздел</string>
     <string name="pages_enable">Включить раздел</string>
     <string name="pages_disable_hint">Глаз — включить или выключить раздел. Выключенного раздела нет в «Ещё», открыть его нельзя. Будильники и напоминания при этом продолжают работать</string>
@@ -856,5 +861,5 @@
     <string name="game_won_plain">Угадали!</string>
     <string name="section_games">Игры</string>
     <string name="section_games_hint">Мини-игры для разминки мозга</string>
-    <string name="game_five_letters_hint">Угадайте английское слово за 6 попыток</string>
+    <string name="game_five_letters_hint">Английское слово за 6 попыток</string>
 </resources>
