@@ -477,6 +477,8 @@
     <string name="gym_template_down">Move down</string>
     <string name="gym_template_delete">Delete template?</string>
     <string name="gym_template_delete_text">Past workouts stay as they are</string>
+    <string name="time_alarm_missed">The %1$s alarm did not ring</string>
+    <string name="time_alarm_missed_text">The phone was off at that time</string>
     <string name="gym_exercise_menu">Exercise actions</string>
     <string name="gym_change_kind">Set type</string>
     <string name="gym_remove_exercise">Remove from workout</string>

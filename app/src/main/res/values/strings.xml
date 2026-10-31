@@ -469,6 +469,8 @@
     <string name="gym_set_seconds">Секунды</string>
     <string name="gym_edit_set">Подход</string>
     <string name="gym_delete_set">Удалить подход</string>
+    <string name="time_alarm_missed">Будильник на %1$s не прозвонил</string>
+    <string name="time_alarm_missed_text">В это время телефон был выключен</string>
     <string name="gym_exercise_menu">Действия с упражнением</string>
     <string name="gym_search">Поиск по упражнению</string>
     <string name="gym_search_clear">Очистить поиск</string>

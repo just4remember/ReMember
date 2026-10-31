@@ -1,7 +1,11 @@
 package dev.chaik.remember
 
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.UserManager
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -18,9 +22,25 @@ import kotlinx.coroutines.launch
 class ReMemberApplication : Application() {
     val container by lazy { AppContainer(this) }
 
-    @OptIn(FlowPreview::class)
     override fun onCreate() {
         super.onCreate()
+        // После перезагрузки будильник может запустить процесс до первой разблокировки телефона:
+        // база и настройки ещё закрыты, работает только звонок. Остальное — когда телефон разблокируют
+        if (getSystemService(UserManager::class.java).isUserUnlocked) {
+            startUp()
+        } else {
+            val unlocked = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    unregisterReceiver(this)
+                    startUp()
+                }
+            }
+            registerReceiver(unlocked, IntentFilter(Intent.ACTION_USER_UNLOCKED), RECEIVER_NOT_EXPORTED)
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun startUp() {
         // Подтверждённое восстановление из копии — до того, как кто-нибудь откроет базу
         runCatching { container.backupManager.applyPendingRestore() }
             .onFailure { Log.e(TAG, "Не удалось восстановить данные из копии", it) }

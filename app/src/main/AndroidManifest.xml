@@ -92,6 +92,7 @@
         <!-- Звонок будильника: поверх экрана блокировки, отдельной задачей — приложение под ним не открывается -->
         <activity
             android:name=".feature.time.ring.AlarmActivity"
+            android:directBootAware="true"
             android:screenOrientation="portrait"
             android:excludeFromRecents="true"
             android:exported="false"
@@ -103,13 +104,16 @@
 
         <service
             android:name=".core.alarm.RingService"
+            android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
         <receiver
             android:name=".core.alarm.AlarmReceiver"
+            android:directBootAware="true"
             android:exported="false">
             <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />

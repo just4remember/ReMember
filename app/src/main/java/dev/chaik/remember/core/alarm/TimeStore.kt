@@ -1,6 +1,7 @@
 package dev.chaik.remember.core.alarm
 
 import android.content.Context
+import android.os.UserManager
 import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,10 +12,15 @@ import kotlinx.serialization.json.Json
 
 /**
  * Будильники, идущий звонок, таймер и секундомер — в SharedPreferences: личных данных тут нет,
- * а читать это нужно сразу после перезагрузки, пока зашифрованная база ещё закрыта.
+ * а читать это нужно сразу после перезагрузки. Хранилище привязано к устройству, а не к разблокировке:
+ * телефон после ночного обновления стоит на экране блокировки, а будильник звонить уже должен.
  */
 class TimeStore(context: Context) {
-    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val prefs = context.createDeviceProtectedStorageContext().let { storage ->
+        // Будильники из старых версий лежат в обычном хранилище. Оно закрыто до разблокировки — тогда перенос не удастся и повторится
+        if (context.getSystemService(UserManager::class.java).isUserUnlocked) storage.moveSharedPreferencesFrom(context, PREFS)
+        storage.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    }
 
     private val _alarms = MutableStateFlow(read(KEY_ALARMS, ListSerializer(Alarm.serializer())) ?: emptyList())
     val alarms: StateFlow<List<Alarm>> = _alarms.asStateFlow()

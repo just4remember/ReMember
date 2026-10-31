@@ -26,7 +26,10 @@ class AlarmReceiver : BroadcastReceiver() {
             ACTION_STOPWATCH_PAUSE -> controller.pauseStopwatch()
             ACTION_STOPWATCH_RESUME -> controller.startStopwatch()
             ACTION_STOPWATCH_RESET -> controller.resetStopwatch()
-            // Перезагрузка, смена времени или часового пояса, обновление приложения
+            // Первое событие приходит ещё до разблокировки, второе — после неё; повторно ничего не зазвонит
+            Intent.ACTION_LOCKED_BOOT_COMPLETED, Intent.ACTION_BOOT_COMPLETED -> controller.rescheduleAll(AlarmController.Reschedule.BOOT)
+            Intent.ACTION_TIME_CHANGED, Intent.ACTION_TIMEZONE_CHANGED -> controller.rescheduleAll(AlarmController.Reschedule.TIME_CHANGED)
+            // Обновление приложения
             else -> controller.rescheduleAll()
         }
     }

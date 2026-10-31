@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.net.toUri
+import dev.chaik.remember.R
 
 /** Звук будильника: громкость «Будильник» телефона, а не мультимедиа. */
 val AlarmAudioAttributes: AudioAttributes = AudioAttributes.Builder()
@@ -18,13 +19,18 @@ val AlarmAudioAttributes: AudioAttributes = AudioAttributes.Builder()
     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
     .build()
 
-/** Включить мелодию будильника по кругу. Своя мелодия могла пропасть (файл удалили) — тогда мелодия телефона. */
+/**
+ * Включить мелодию будильника по кругу. Своя мелодия могла пропасть (файл удалили), а до первой
+ * разблокировки после перезагрузки файлы телефона недоступны — тогда мелодия телефона или, в крайнем
+ * случае, сигнал из самого приложения: без звука будильник не остаётся.
+ */
 fun playAlarmSound(context: Context, ringtone: String?, wakeLock: Boolean = false): MediaPlayer? {
     val sources = listOfNotNull(
         ringtone?.toUri(),
         RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM),
         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+        "android.resource://${context.packageName}/${R.raw.alarm_fallback}".toUri(),
     )
     return sources.firstNotNullOfOrNull { play(context, it, wakeLock) }
 }

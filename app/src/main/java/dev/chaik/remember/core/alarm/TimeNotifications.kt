@@ -82,6 +82,21 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
         return builder.build()
     }
 
+    /** Телефон был выключен слишком долго: звонить уже поздно, но сказать об этом надо. */
+    fun missed(alarm: Alarm) {
+        ensureChannels()
+        post(
+            ID_MISSED,
+            NotificationCompat.Builder(context, RING_CHANNEL)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(context.getColor(R.color.notification_accent))
+                .setContentTitle(context.getString(R.string.time_alarm_missed, alarm.time.toString()))
+                .setContentText(context.getString(R.string.time_alarm_missed_text))
+                .setAutoCancel(true)
+                .build(),
+        )
+    }
+
     /** Висящие уведомления таймера и секундомера — по их текущему состоянию. */
     fun refreshLive() {
         val notify = NotificationManagerCompat.from(context)
@@ -170,6 +185,7 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
         const val ID_RING = 300
         private const val ID_TIMER = 301
         private const val ID_STOPWATCH = 302
+        private const val ID_MISSED = 303
         private const val REQUEST_RING_SCREEN = 310
         private const val REQUEST_SNOOZE = 311
         private const val REQUEST_DISMISS = 312

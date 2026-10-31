@@ -80,6 +80,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.isImeVisible
@@ -251,7 +253,14 @@ private fun TextBlockField(
             decorationBox = { inner ->
                 Box {
                     if (placeholder != null && block.value.text.isEmpty()) {
-                        Text(placeholder, style = style.copy(color = MaterialTheme.colorScheme.outline))
+                        // На уровне красной строки: там же начнётся набранный текст
+                        Text(
+                            text = placeholder,
+                            style = style.copy(
+                                color = MaterialTheme.colorScheme.outline,
+                                textIndent = TextIndent(firstLine = (settings.paragraphIndent / 10f).em),
+                            ),
+                        )
                     }
                     inner()
                     val shown = shownCorrection

@@ -30,6 +30,10 @@ data class Alarm(
     val hard: Boolean = false,
     /** Усиленный: через сколько минут бездействия в игре звонок повторится. */
     val againMinutes: Int = 5,
+    /** На когда поставлен (мс с 1970): после выключения телефона видно, что звонок пропущен. */
+    val ringAt: Long? = null,
+    /** До какого момента отложен (мс с 1970): после перезагрузки отложенный звонок ставится заново. */
+    val snoozeAt: Long? = null,
 ) {
     val time: LocalTime get() = LocalTime.of(hour, minute)
     val weekDays: Set<DayOfWeek> get() = days.map(DayOfWeek::of).toSet()
@@ -54,6 +58,24 @@ fun Alarm.nextRing(now: ZonedDateTime): ZonedDateTime {
     return today.plusDays(1).atTime(time).atZone(now.zone)
 }
 
+/** Что делать с будильником, срок которого прошёл, пока телефон был выключен. */
+enum class MissedRing { NONE, RING_NOW, TOO_LATE }
+
+/**
+ * Пропущен ли звонок к моменту [now]. [margin] — запас: при обычном запуске приложения системный
+ * будильник может как раз сработать сам. Опоздание больше [MISSED_GRACE_MS] — звонить уже незачем.
+ */
+fun Alarm.missedRing(now: Long, margin: Long): MissedRing {
+    val at = ringAt?.takeIf { enabled } ?: return MissedRing.NONE
+    return when {
+        now - at <= margin || now <= at -> MissedRing.NONE
+        now - at <= MISSED_GRACE_MS -> MissedRing.RING_NOW
+        else -> MissedRing.TOO_LATE
+    }
+}
+
+const val MISSED_GRACE_MS = 2 * 60 * 60_000L
+
 /** Что звонит. */
 enum class RingKind { ALARM, TIMER }
 
@@ -73,6 +95,8 @@ data class RingSession(
     val game: WordGameState? = null,
     /** Когда будильник зазвонит снова, если в игре ничего не делать (мс с 1970). */
     val againAt: Long? = null,
+    /** Когда начался звонок (мс с 1970). */
+    val startedAt: Long = 0,
 ) {
     val hard: Boolean get() = kind == RingKind.ALARM && alarm?.hard == true
     val canSnooze: Boolean get() = kind == RingKind.ALARM && alarm?.snooze == true && !again && game == null

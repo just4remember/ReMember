@@ -39,12 +39,45 @@ class AlarmController(
         val alarm = store.alarm(id) ?: return
         save(alarm.copy(enabled = enabled))
         // Выключили — отложенный звонок тоже не нужен
-        if (!enabled) scheduler.cancel(AlarmKey.Snooze(id))
+        if (!enabled) {
+            store.alarm(id)?.let { store.saveAlarm(it.copy(snoozeAt = null)) }
+            scheduler.cancel(AlarmKey.Snooze(id))
+        }
     }
 
-    /** После перезагрузки, смены времени и при запуске: поставить всё заново. */
-    fun rescheduleAll() {
-        store.alarms.value.forEach(::schedule)
+    /** Почему будильники ставятся заново. */
+    enum class Reschedule {
+        /** Телефон включился: все системные будильники пропали, срок мог пройти. */
+        BOOT,
+
+        /** Запуск приложения или его обновление. */
+        STARTUP,
+
+        /** Смена времени или часового пояса: прошедший срок — не пропуск. */
+        TIME_CHANGED,
+    }
+
+    /** Поставить всё заново. Звонок, пропущенный из-за выключенного телефона, прозвучит сейчас. */
+    fun rescheduleAll(reason: Reschedule = Reschedule.STARTUP) {
+        val now = System.currentTimeMillis()
+        store.alarms.value.forEach { alarm ->
+            val missed = when (reason) {
+                Reschedule.BOOT -> alarm.missedRing(now, margin = 0)
+                Reschedule.STARTUP -> alarm.missedRing(now, margin = FIRING_NOW_MS)
+                Reschedule.TIME_CHANGED -> MissedRing.NONE
+            }
+            when (missed) {
+                MissedRing.RING_NOW -> onAlarm(alarm.id)
+                MissedRing.TOO_LATE -> {
+                    notifications.missed(alarm)
+                    schedule(if (alarm.days.isEmpty()) alarm.copy(enabled = false) else alarm)
+                }
+                MissedRing.NONE -> schedule(alarm)
+            }
+            alarm.snoozeAt?.let { snoozeAt ->
+                if (snoozeAt > now) scheduler.set(AlarmKey.Snooze(alarm.id), Instant.ofEpochMilli(snoozeAt)) else onSnoozeEnd(alarm.id)
+            }
+        }
         val timer = store.timer.value
         timer.endsAt?.let { endsAt ->
             if (endsAt > System.currentTimeMillis()) scheduler.set(AlarmKey.Timer, Instant.ofEpochMilli(endsAt)) else onTimerEnd()
@@ -54,17 +87,25 @@ class AlarmController(
         when {
             session == null -> Unit
             session.hard -> scheduler.set(AlarmKey.Again, Instant.now().plusSeconds(60))
-            session.ringing && !RingService.running -> store.setSession(null)
+            // Только старый звонок: новый мог только что начаться, а служба ещё не успела запуститься
+            session.ringing && !RingService.running && now - session.startedAt > FIRING_NOW_MS -> store.setSession(null)
         }
         notifications.refreshLive()
     }
 
     private fun schedule(alarm: Alarm) {
         if (alarm.enabled) {
-            scheduler.set(AlarmKey.Ring(alarm.id), alarm.nextRing(ZonedDateTime.now()).toInstant())
+            val at = alarm.nextRing(ZonedDateTime.now()).toInstant()
+            remember(alarm, at.toEpochMilli())
+            scheduler.set(AlarmKey.Ring(alarm.id), at)
         } else {
+            remember(alarm, null)
             scheduler.cancel(AlarmKey.Ring(alarm.id))
         }
+    }
+
+    private fun remember(alarm: Alarm, ringAt: Long?) {
+        if (alarm.ringAt != ringAt || store.alarm(alarm.id) != alarm) store.saveAlarm(alarm.copy(ringAt = ringAt))
     }
 
     // ---- Звонок ----
@@ -72,19 +113,20 @@ class AlarmController(
     fun onAlarm(id: Long) {
         val alarm = store.alarm(id)?.takeIf { it.enabled } ?: return
         // Однократный будильник после звонка выключается, повторяющийся — ставится на следующий раз
-        if (alarm.days.isEmpty()) store.saveAlarm(alarm.copy(enabled = false)) else schedule(alarm)
+        schedule(if (alarm.days.isEmpty()) alarm.copy(enabled = false) else alarm)
         ring(alarm)
     }
 
     fun onSnoozeEnd(id: Long) {
         val alarm = store.alarm(id) ?: return
+        if (alarm.snoozeAt != null) store.saveAlarm(alarm.copy(snoozeAt = null))
         ring(alarm)
     }
 
     /** Повторный звонок: в игре усиленного будильника долго ничего не делали. */
     fun onAgain() {
         val session = store.session.value?.takeIf { it.hard } ?: return
-        store.setSession(session.copy(ringing = true, again = true))
+        store.setSession(session.copy(ringing = true, again = true, startedAt = System.currentTimeMillis()))
         RingService.start(context)
     }
 
@@ -93,7 +135,7 @@ class AlarmController(
         notifications.refreshLive()
         // Таймер не перебивает игру усиленного будильника
         if (store.session.value?.hard == true) return
-        store.setSession(RingSession(RingKind.TIMER))
+        store.setSession(RingSession(RingKind.TIMER, startedAt = System.currentTimeMillis()))
         RingService.start(context)
     }
 
@@ -107,6 +149,7 @@ class AlarmController(
                 alarm = if (keep) store.session.value?.alarm else alarm,
                 again = keep,
                 game = game,
+                startedAt = System.currentTimeMillis(),
             ),
         )
         RingService.start(context)
@@ -131,7 +174,9 @@ class AlarmController(
     fun snooze() {
         val session = store.session.value?.takeIf { it.canSnooze } ?: return
         val alarm = session.alarm ?: return
-        scheduler.set(AlarmKey.Snooze(alarm.id), Instant.now().plusSeconds(alarm.snoozeMinutes * 60L))
+        val at = Instant.now().plusSeconds(alarm.snoozeMinutes * 60L)
+        store.alarm(alarm.id)?.let { store.saveAlarm(it.copy(snoozeAt = at.toEpochMilli())) }
+        scheduler.set(AlarmKey.Snooze(alarm.id), at)
         finish()
     }
 
@@ -248,5 +293,8 @@ class AlarmController(
     companion object {
         /** Через сколько минут бездействия в игре будильник звонит снова, если у него не задано своё. */
         private const val DEFAULT_AGAIN_MINUTES = 5
+
+        /** Минута запаса: при запуске приложения системный будильник может как раз срабатывать сам. */
+        private const val FIRING_NOW_MS = 60_000L
     }
 }

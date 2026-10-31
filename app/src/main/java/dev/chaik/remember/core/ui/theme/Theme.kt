@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.os.UserManager
+import androidx.compose.runtime.remember
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.settings.AccentColor
 import dev.chaik.remember.core.settings.AppSettings
@@ -36,7 +38,13 @@ import dev.chaik.remember.core.settings.ThemeMode
 @Composable
 fun ReMemberTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val settings by context.appContainer.settings.settings.collectAsStateWithLifecycle()
+    // До первой разблокировки настройки закрыты: звонок будильника идёт в оформлении по умолчанию
+    val unlocked = remember { context.getSystemService(UserManager::class.java).isUserUnlocked }
+    val settings = if (unlocked) {
+        context.appContainer.settings.settings.collectAsStateWithLifecycle().value
+    } else {
+        remember { AppSettings() }
+    }
     val dark = isDarkTheme(settings.theme)
 
     val preset = settings.accent.argb
