@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /** Настройки страницы «Сеть»: свой сервер замера и сайты для проверки белых списков. */
 data class NetworkSettings(
+    /** Замерять через Selectel (Россия); свой сервер при этом не используется. */
+    val selectelServer: Boolean = false,
     val customServer: Boolean = false,
     val downloadUrl: String = "",
     val uploadUrl: String = "",
@@ -27,8 +29,15 @@ data class NetworkSettings(
     )
 
     val server: SpeedServer
-        get() = if (customServer && downloadUrl.isNotBlank()) SpeedServer.Custom(downloadUrl, uploadUrl.ifBlank { null }) else SpeedServer.Cloudflare
+        get() = when {
+            selectelServer -> SelectelServer
+            customServer && downloadUrl.isNotBlank() -> SpeedServer.Custom(downloadUrl, uploadUrl.ifBlank { null })
+            else -> SpeedServer.Cloudflare
+        }
 }
+
+/** Открытый тестовый файл Selectel. Адреса для отдачи у него нет — замеряется только загрузка. */
+val SelectelServer = SpeedServer.Custom(downloadUrl = "https://speedtest.selectel.ru/1GB", uploadUrl = null)
 
 /** Варианты длительности загрузки и отдачи, секунд. */
 val TestSecondsOptions = listOf(5, 10, 15, 20, 30)
@@ -52,6 +61,7 @@ class NetworkSettingsStore(context: Context) {
         val next = transform(state.value)
         if (next == state.value) return
         prefs.edit {
+            putBoolean(KEY_SELECTEL, next.selectelServer)
             putBoolean(KEY_CUSTOM, next.customServer)
             putString(KEY_DOWNLOAD, next.downloadUrl)
             putString(KEY_UPLOAD, next.uploadUrl)
@@ -67,6 +77,7 @@ class NetworkSettingsStore(context: Context) {
     private fun read(): NetworkSettings {
         val d = NetworkSettings()
         return NetworkSettings(
+            selectelServer = prefs.getBoolean(KEY_SELECTEL, d.selectelServer),
             customServer = prefs.getBoolean(KEY_CUSTOM, d.customServer),
             downloadUrl = prefs.getString(KEY_DOWNLOAD, d.downloadUrl).orEmpty(),
             uploadUrl = prefs.getString(KEY_UPLOAD, d.uploadUrl).orEmpty(),
@@ -83,6 +94,7 @@ class NetworkSettingsStore(context: Context) {
 
     private companion object {
         const val PREFS = "network"
+        const val KEY_SELECTEL = "selectel_server"
         const val KEY_CUSTOM = "custom_server"
         const val KEY_DOWNLOAD = "download_url"
         const val KEY_UPLOAD = "upload_url"

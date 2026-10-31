@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
+import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.wordgame.GuessError
 import dev.chaik.remember.core.wordgame.LetterMark
 import dev.chaik.remember.core.wordgame.WordGame
@@ -109,6 +110,7 @@ fun WordGameScreen(
     val dictionary = LocalContext.current.appContainer.wordDictionary
     val game = remember(dictionary) { WordGame(dictionary) }
     val haptics = LocalHapticFeedback.current
+    val gameHaptics = LocalAppSettings.current.gameHaptics
     var error by remember { mutableStateOf<GuessError?>(null) }
     var shakes by remember { mutableIntStateOf(0) }
     LaunchedEffect(error, shakes) {
@@ -150,7 +152,7 @@ fun WordGameScreen(
 
     fun press(key: Char) {
         if (!settled) return
-        haptics.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+        if (gameHaptics) haptics.performHapticFeedback(HapticFeedbackType.KeyboardTap)
         when (key) {
             KeyEnter -> {
                 val (next, problem) = game.submit(state)

@@ -40,6 +40,8 @@ class AppSettingsStore(context: Context) {
             islandTabs = list("island_tabs"),
             moreOrder = list("more_order"),
             todayAutoMode = prefs.getBoolean("today_auto_mode", d.todayAutoMode),
+            haptics = prefs.getBoolean("haptics", d.haptics),
+            gameHaptics = prefs.getBoolean("game_haptics", d.gameHaptics),
             notesByEdit = prefs.getBoolean("notes_by_edit", d.notesByEdit),
             disabledPages = list("disabled_pages"),
             sleepGuess = prefs.getBoolean("sleep_guess", d.sleepGuess),
@@ -70,6 +72,8 @@ class AppSettingsStore(context: Context) {
         putString("island_tabs", s.islandTabs.joinToString(","))
         putString("more_order", s.moreOrder.joinToString(","))
         putBoolean("today_auto_mode", s.todayAutoMode)
+        putBoolean("haptics", s.haptics)
+        putBoolean("game_haptics", s.gameHaptics)
         putBoolean("notes_by_edit", s.notesByEdit)
         putString("disabled_pages", s.disabledPages.joinToString(","))
         putBoolean("sleep_guess", s.sleepGuess)

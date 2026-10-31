@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Идущий таймер и секундомер: бегущее время в строке состояния (Live Updates) -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <!-- Подсказка времени сна: история «экран погас / разблокировали»; доступ включают вручную в настройках -->
     <uses-permission

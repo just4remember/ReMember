@@ -17,7 +17,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chaik.remember.appContainer
@@ -58,9 +61,15 @@ fun ReMemberTheme(content: @Composable () -> Unit) {
         activity?.window?.isNavigationBarContrastEnforced = false
     }
 
-    CompositionLocalProvider(LocalAppSettings provides settings) {
+    // Вибрацию выключили — весь отклик приложения идёт в «пустую» вибрацию
+    val haptics = if (settings.haptics) LocalHapticFeedback.current else SilentHaptics
+    CompositionLocalProvider(LocalAppSettings provides settings, LocalHapticFeedback provides haptics) {
         MaterialTheme(colorScheme = colorScheme, typography = typography(settings.font), content = content)
     }
+}
+
+private object SilentHaptics : HapticFeedback {
+    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) = Unit
 }
 
 /** Тёмная ли тема сейчас — для цвета значков в строке состояния. */

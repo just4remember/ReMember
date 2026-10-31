@@ -803,6 +803,12 @@
     <string name="game_lost">Not this time — the word was %1$s</string>
     <string name="game_alarm_off">Alarm is off</string>
     <string name="game_done">Done</string>
+    <string name="appearance_haptics_title">Vibration</string>
+    <string name="appearance_haptics">Vibration in the app</string>
+    <string name="appearance_haptics_hint">Light feedback on taps and switches. Alarm ringing vibration is set in the alarm itself</string>
+    <string name="appearance_game_haptics">Vibration in games</string>
+    <string name="network_server_selectel">Selectel, Russia (speedtest.selectel.ru)</string>
+    <string name="network_server_selectel_hint">Measures ping and download. This server doesn\'t accept uploads</string>
     <string name="game_raskobki">Ra[skobki]</string>
     <string name="game_raskobki_hint">Daily puzzle from raskobki.app</string>
     <string name="game_raskobki_open_site">Open site in browser</string>

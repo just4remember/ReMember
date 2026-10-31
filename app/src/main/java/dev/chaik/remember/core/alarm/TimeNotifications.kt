@@ -98,7 +98,9 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
                 builder.setWhen(timer.endsAt ?: now).setUsesChronometer(true).setChronometerCountDown(true).setShowWhen(true)
                     .addAction(0, context.getString(R.string.time_pause), broadcast(AlarmReceiver.ACTION_TIMER_PAUSE, REQUEST_TIMER_PAUSE))
             } else {
-                builder.setContentText(context.getString(R.string.time_paused_left, formatDuration(timer.left(now))))
+                val left = formatDuration(timer.left(now))
+                builder.setContentText(context.getString(R.string.time_paused_left, left))
+                    .setShortCriticalText(left)
                     .addAction(0, context.getString(R.string.time_resume), broadcast(AlarmReceiver.ACTION_TIMER_RESUME, REQUEST_TIMER_RESUME))
             }
             builder.addAction(0, context.getString(R.string.time_reset), broadcast(AlarmReceiver.ACTION_TIMER_RESET, REQUEST_TIMER_RESET))
@@ -114,7 +116,9 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
                 builder.setWhen(now - stopwatch.elapsed(now)).setUsesChronometer(true).setShowWhen(true)
                     .addAction(0, context.getString(R.string.time_pause), broadcast(AlarmReceiver.ACTION_STOPWATCH_PAUSE, REQUEST_SW_PAUSE))
             } else {
-                builder.setContentText(context.getString(R.string.time_paused_left, formatDuration(stopwatch.elapsed(now))))
+                val elapsed = formatDuration(stopwatch.elapsed(now))
+                builder.setContentText(context.getString(R.string.time_paused_left, elapsed))
+                    .setShortCriticalText(elapsed)
                     .addAction(0, context.getString(R.string.time_resume), broadcast(AlarmReceiver.ACTION_STOPWATCH_RESUME, REQUEST_SW_RESUME))
             }
             builder.addAction(0, context.getString(R.string.time_reset), broadcast(AlarmReceiver.ACTION_STOPWATCH_RESET, REQUEST_SW_RESET))
@@ -127,6 +131,8 @@ class TimeNotifications(private val context: Context, private val store: TimeSto
         .setColor(context.getColor(R.color.notification_accent))
         .setContentTitle(title)
         .setOngoing(true)
+        // Live Update: время прямо в строке состояния. Своей вёрстки (RemoteViews) у таких быть не может
+        .setRequestPromotedOngoing(true)
         .setOnlyAlertOnce(true)
         .setSilent(true)
         .setCategory(NotificationCompat.CATEGORY_STOPWATCH)

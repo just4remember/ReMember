@@ -160,6 +160,23 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 )
             }
 
+            SettingsGroupTitle(stringResource(R.string.appearance_haptics_title))
+            SettingsCard {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.appearance_haptics),
+                    hint = stringResource(R.string.appearance_haptics_hint),
+                    checked = settings.haptics,
+                    onChange = { on -> store.update { it.copy(haptics = on) } },
+                )
+                if (settings.haptics) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.appearance_game_haptics),
+                        checked = settings.gameHaptics,
+                        onChange = { on -> store.update { it.copy(gameHaptics = on) } },
+                    )
+                }
+            }
+
             SettingsGroupTitle(stringResource(R.string.appearance_back_swipe))
             SettingsCard {
                 listOf(

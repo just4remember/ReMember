@@ -207,11 +207,22 @@ fun NetworkScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
 
     if (editingServer) {
         ServerDialog(
-            customServer = settings.customServer,
+            initial = when {
+                settings.selectelServer -> ServerChoice.SELECTEL
+                settings.customServer -> ServerChoice.CUSTOM
+                else -> ServerChoice.CLOUDFLARE
+            },
             downloadUrl = settings.downloadUrl,
             uploadUrl = settings.uploadUrl,
-            onSave = { custom, download, upload ->
-                viewModel.store.update { it.copy(customServer = custom, downloadUrl = download.trim(), uploadUrl = upload.trim()) }
+            onSave = { choice, download, upload ->
+                viewModel.store.update {
+                    it.copy(
+                        selectelServer = choice == ServerChoice.SELECTEL,
+                        customServer = choice == ServerChoice.CUSTOM,
+                        downloadUrl = download.trim(),
+                        uploadUrl = upload.trim(),
+                    )
+                }
                 editingServer = false
             },
             onDismiss = { editingServer = false },
@@ -446,16 +457,19 @@ private fun AddSiteDialog(onAdd: (String) -> Boolean, onDismiss: () -> Unit) {
     )
 }
 
-/** Сервер замера: Cloudflare или свой — файл для скачивания и, по желанию, адрес для отдачи. */
+private enum class ServerChoice { CLOUDFLARE, SELECTEL, CUSTOM }
+
+/** Сервер замера: Cloudflare, Selectel или свой — файл для скачивания и, по желанию, адрес для отдачи. */
 @Composable
 private fun ServerDialog(
-    customServer: Boolean,
+    initial: ServerChoice,
     downloadUrl: String,
     uploadUrl: String,
-    onSave: (Boolean, String, String) -> Unit,
+    onSave: (ServerChoice, String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var custom by remember { mutableStateOf(customServer) }
+    var choice by remember { mutableStateOf(initial) }
+    val custom = choice == ServerChoice.CUSTOM
     var download by remember { mutableStateOf(downloadUrl) }
     var upload by remember { mutableStateOf(uploadUrl) }
     val validDownload = download.trim().startsWith("http://") || download.trim().startsWith("https://")
@@ -464,8 +478,16 @@ private fun ServerDialog(
         title = { Text(stringResource(R.string.network_server)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SettingsRadioRow(label = "Cloudflare (speed.cloudflare.com)", selected = !custom, onClick = { custom = false })
-                SettingsRadioRow(label = stringResource(R.string.network_server_custom), selected = custom, onClick = { custom = true })
+                SettingsRadioRow(label = "Cloudflare (speed.cloudflare.com)", selected = choice == ServerChoice.CLOUDFLARE, onClick = { choice = ServerChoice.CLOUDFLARE })
+                SettingsRadioRow(label = stringResource(R.string.network_server_selectel), selected = choice == ServerChoice.SELECTEL, onClick = { choice = ServerChoice.SELECTEL })
+                if (choice == ServerChoice.SELECTEL) {
+                    Text(
+                        text = stringResource(R.string.network_server_selectel_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                SettingsRadioRow(label = stringResource(R.string.network_server_custom), selected = custom, onClick = { choice = ServerChoice.CUSTOM })
                 if (custom) {
                     OutlinedTextField(
                         value = download,
@@ -493,7 +515,7 @@ private fun ServerDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = !custom || validDownload, onClick = { onSave(custom, download, upload) }) {
+            TextButton(enabled = !custom || validDownload, onClick = { onSave(choice, download, upload) }) {
                 Text(stringResource(R.string.gym_save))
             }
         },

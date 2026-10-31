@@ -849,6 +849,12 @@
     <string name="game_lost">Не угадали — это было слово %1$s</string>
     <string name="game_alarm_off">Будильник выключен</string>
     <string name="game_done">Готово</string>
+    <string name="appearance_haptics_title">Вибрация</string>
+    <string name="appearance_haptics">Вибрация в приложении</string>
+    <string name="appearance_haptics_hint">Лёгкий отклик на нажатия и переключения. Вибрация звонка будильника настраивается в самом будильнике</string>
+    <string name="appearance_game_haptics">Вибрация в играх</string>
+    <string name="network_server_selectel">Selectel, Россия (speedtest.selectel.ru)</string>
+    <string name="network_server_selectel_hint">Замеряет пинг и загрузку. Отдачу этот сервер не принимает</string>
     <string name="game_raskobki">Ра[скобки]</string>
     <string name="game_raskobki_hint">Головоломка дня с raskobki.app</string>
     <string name="game_raskobki_open_site">Открыть сайт в браузере</string>
