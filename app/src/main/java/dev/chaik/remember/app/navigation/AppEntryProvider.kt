@@ -79,7 +79,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
             NotesScreen(
                 onBack = backFor(it),
                 onOpen = { backStack.add(NoteEditorRoute(noteId = it)) },
-                onCreate = { backStack.add(NoteEditorRoute(folderId = it)) },
+                onCreate = { backStack.add(NoteEditorRoute(folderId = it, opening = System.nanoTime())) },
             )
         }
         entry<TasksRoute> { TasksScreen(onBack = backFor(it), onOpen = { backStack.add(TaskEditorRoute(it)) }) }

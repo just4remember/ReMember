@@ -58,7 +58,7 @@ import kotlinx.serialization.Serializable
 data object SecurityRoute : NavKey
 
 /** Что спрашивает окно PIN: задать новый, сменить (старый + новый) или подтвердить старым. */
-private enum class PinDialogMode { SET, CHANGE, CONFIRM_DISABLE }
+private enum class PinDialogMode { SET, CHANGE, CONFIRM_DISABLE, CONFIRM_APP_OFF }
 
 /** Безопасность: PIN-код (поставить, сменить, выключить), отпечаток, через сколько блокировать. */
 @Composable
@@ -111,6 +111,13 @@ fun SecurityScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             SettingsCard {
                 SettingsSwitchRow(
+                    title = stringResource(R.string.security_lock_app),
+                    hint = stringResource(R.string.security_lock_app_hint),
+                    checked = settings.lockApp,
+                    // Включить можно сразу, выключить — только зная PIN
+                    onChange = { on -> if (on) lock.setLockApp(true) else dialog = PinDialogMode.CONFIRM_APP_OFF },
+                )
+                SettingsSwitchRow(
                     title = stringResource(R.string.security_lock),
                     hint = stringResource(R.string.security_lock_hint),
                     checked = true,
@@ -137,14 +144,16 @@ fun SecurityScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 }
             }
 
-            SettingsGroupTitle(stringResource(R.string.security_timeout))
-            SettingsCard {
-                AppLock.TimeoutOptions.forEach { millis ->
-                    SettingsRadioRow(
-                        label = timeoutLabel(millis),
-                        selected = settings.timeoutMillis == millis,
-                        onClick = { lock.setTimeout(millis) },
-                    )
+            if (settings.lockApp) {
+                SettingsGroupTitle(stringResource(R.string.security_timeout))
+                SettingsCard {
+                    AppLock.TimeoutOptions.forEach { millis ->
+                        SettingsRadioRow(
+                            label = timeoutLabel(millis),
+                            selected = settings.timeoutMillis == millis,
+                            onClick = { lock.setTimeout(millis) },
+                        )
+                    }
                 }
             }
         }
@@ -188,7 +197,11 @@ private fun PinDialog(
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     val needCurrent = mode != PinDialogMode.SET && !fingerprintOk
-    val needNew = mode != PinDialogMode.CONFIRM_DISABLE
+    val needNew = mode == PinDialogMode.SET || mode == PinDialogMode.CHANGE
+    /** Что сделать, когда старый PIN подтверждён в окне без нового PIN. */
+    fun confirmed() {
+        if (mode == PinDialogMode.CONFIRM_APP_OFF) lock.setLockApp(false) else lock.disable()
+    }
     val lengthError = stringResource(R.string.security_pin_length, AppLock.MIN_PIN, AppLock.MAX_PIN)
     val mismatchError = stringResource(R.string.security_pin_mismatch)
     val wrongTemplate = pluralWrong()
@@ -221,7 +234,7 @@ private fun PinDialog(
                     PinResult.Unlocked -> Unit
                 }
             }
-            if (needNew) lock.setPin(new) else lock.disable()
+            if (needNew) lock.setPin(new) else confirmed()
             onDone()
         }
     }
@@ -235,6 +248,7 @@ private fun PinDialog(
                         PinDialogMode.SET -> R.string.security_set_pin
                         PinDialogMode.CHANGE -> R.string.security_change_pin
                         PinDialogMode.CONFIRM_DISABLE -> R.string.security_disable_title
+                        PinDialogMode.CONFIRM_APP_OFF -> R.string.security_lock_app_off_title
                     },
                 ),
             )
@@ -248,8 +262,8 @@ private fun PinDialog(
                             onClick = {
                                 confirmWithFingerprint {
                                     error = null
-                                    if (mode == PinDialogMode.CONFIRM_DISABLE) {
-                                        lock.disable()
+                                    if (!needNew) {
+                                        confirmed()
                                         onDone()
                                     } else {
                                         fingerprintOk = true
@@ -286,7 +300,7 @@ private fun PinDialog(
         },
         confirmButton = {
             TextButton(enabled = !busy, onClick = ::submit) {
-                Text(stringResource(if (mode == PinDialogMode.CONFIRM_DISABLE) R.string.security_disable else R.string.gym_save))
+                Text(stringResource(if (needNew) R.string.gym_save else R.string.security_disable))
             }
         },
         dismissButton = { TextButton(onClick = onDone) { Text(stringResource(R.string.action_cancel)) } },

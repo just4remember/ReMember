@@ -16,6 +16,7 @@ class AppLockTest {
         override var biometric: Boolean = true,
         override var timeoutMillis: Long = AppLock.DEFAULT_TIMEOUT_MILLIS,
     ) : LockStore {
+        override var lockApp = true
         override var failedAttempts = 0
         override var lockoutUntil = 0L
         override var backgroundSince = 0L
@@ -26,6 +27,33 @@ class AppLockTest {
     /** Блокировка с PIN 1111 — как после «Установить PIN» в настройках. */
     private val store = MemoryStore(enabled = true, pinHash = PinHasher.hash(PIN))
     private val lock = AppLock(store, clock = { now })
+
+    @Test
+    fun `без входа приложение открыто, а PIN для заметок работает`() = runTest {
+        store.lockApp = false
+        val app = AppLock(store, clock = { now })
+        assertFalse(app.locked.value)
+        assertTrue(app.enabled)
+
+        app.onBackground()
+        now += AppLock.DEFAULT_TIMEOUT_MILLIS
+        app.onForeground()
+        assertFalse(app.locked.value)
+
+        assertEquals(PinResult.Unlocked, app.unlockWithPin(PIN))
+        assertTrue(app.unlockWithPin("9999") is PinResult.Wrong)
+    }
+
+    @Test
+    fun `смена PIN не включает вход, а новый PIN включает`() = runTest {
+        lock.setLockApp(false)
+        lock.setPin("2222")
+        assertFalse(store.lockApp)
+
+        lock.disable()
+        lock.setPin("3333")
+        assertTrue(store.lockApp)
+    }
 
     @Test
     fun `хэш PIN проверяется и не совпадает с другим PIN`() {

@@ -10,6 +10,9 @@ import kotlinx.coroutines.withContext
 interface LockStore {
     /** Блокировка включена (PIN задан в Настройках → Безопасность). */
     var enabled: Boolean
+
+    /** Спрашивать ли PIN при входе в приложение. Без этого PIN защищает только заметки. */
+    var lockApp: Boolean
     var pinHash: String?
 
     /** Сколько цифр в PIN — экран блокировки проверяет PIN, как только набраны все. */
@@ -33,7 +36,8 @@ sealed interface PinResult {
 }
 
 /**
- * Блокировка приложения. Включается, когда в Настройках задан PIN.
+ * Блокировка приложения. Включается, когда в Настройках задан PIN. Вход можно выключить отдельно
+ * ([setLockApp]): PIN останется для защищённых заметок.
  *
  * - при каждом запуске приложение заблокировано;
  * - ушли в фон больше чем на [timeoutMillis] — при возвращении снова блокировка;
@@ -53,7 +57,7 @@ class AppLock(
     val pinLength: Int get() = store.pinLength
     val biometricEnabled: Boolean get() = store.biometric
 
-    private val _locked = MutableStateFlow(store.enabled)
+    private val _locked = MutableStateFlow(store.enabled && store.lockApp)
 
     /** Ушли не «насовсем», а в системное окно по нашей просьбе (выбор фото, файла, разрешение). */
     @Volatile
@@ -80,7 +84,7 @@ class AppLock(
     fun onForeground() {
         val wasExternal = external
         external = false
-        if (!enabled) return
+        if (!enabled || !store.lockApp) return
         val since = store.backgroundSince
         store.backgroundSince = 0
         val limit = if (wasExternal) maxOf(timeoutMillis, EXTERNAL_GRACE_MILLIS) else timeoutMillis
@@ -120,6 +124,8 @@ class AppLock(
         require(pin.length in MIN_PIN..MAX_PIN && pin.all(Char::isDigit)) { "PIN — от $MIN_PIN до $MAX_PIN цифр" }
         store.pinHash = withContext(Dispatchers.Default) { PinHasher.hash(pin) }
         store.pinLength = pin.length
+        // Новый PIN включает и вход; при смене PIN выбор остаётся прежним
+        if (!store.enabled) store.lockApp = true
         store.enabled = true
         store.failedAttempts = 0
         store.lockoutUntil = 0
@@ -132,6 +138,14 @@ class AppLock(
         store.pinHash = null
         store.backgroundSince = 0
         _locked.value = false
+        _settings.value = readSettings()
+    }
+
+    /** Спрашивать ли PIN при входе в приложение. Сейчас приложение остаётся открытым. */
+    fun setLockApp(on: Boolean) {
+        store.lockApp = on
+        store.backgroundSince = 0
+        if (!on) _locked.value = false
         _settings.value = readSettings()
     }
 
@@ -152,7 +166,7 @@ class AppLock(
         _locked.value = false
     }
 
-    private fun readSettings() = LockSettings(store.enabled, store.biometric, store.timeoutMillis)
+    private fun readSettings() = LockSettings(store.enabled, store.lockApp, store.biometric, store.timeoutMillis)
 
     companion object {
         const val MIN_PIN = 4
@@ -170,4 +184,4 @@ class AppLock(
 }
 
 /** Что видно на странице «Безопасность». */
-data class LockSettings(val enabled: Boolean, val biometric: Boolean, val timeoutMillis: Long)
+data class LockSettings(val enabled: Boolean, val lockApp: Boolean, val biometric: Boolean, val timeoutMillis: Long)

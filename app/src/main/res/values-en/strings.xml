@@ -642,8 +642,11 @@
     <string name="security_off_text">The lock is off. Set a PIN and Re:Member will ask for it or your fingerprint at launch and after a pause.</string>
     <string name="security_set_pin">Set PIN</string>
     <string name="security_change_pin">Change PIN</string>
-    <string name="security_lock">Lock</string>
-    <string name="security_lock_hint">Turning it off requires the current PIN</string>
+    <string name="security_lock_app">App entry</string>
+    <string name="security_lock_app_hint">PIN or fingerprint when opening Re:Member. Protected notes ask for them either way</string>
+    <string name="security_lock_app_off_title">Turn off PIN entry</string>
+    <string name="security_lock">PIN</string>
+    <string name="security_lock_hint">Turning it off deletes the PIN: app entry and note protection stop working</string>
     <string name="security_biometric">Fingerprint unlock</string>
     <string name="security_biometric_hint">The PIN always works as a fallback</string>
     <string name="security_timeout">Lock after leaving the app</string>
@@ -803,6 +806,12 @@
     <string name="game_lost">Not this time — the word was %1$s</string>
     <string name="game_alarm_off">Alarm is off</string>
     <string name="game_done">Done</string>
+    <string name="tags_frequent">Frequently used</string>
+    <string name="tags_all">All tags</string>
+    <string name="notes_protect">Protect note</string>
+    <string name="notes_unprotect">Remove protection</string>
+    <string name="notes_protected">Protected note</string>
+    <string name="notes_protect_need_pin">A protected note opens with a PIN or fingerprint, so first set a PIN in Settings → Security</string>
     <string name="day_rating_unlock">Unlock rating</string>
     <string name="network_ip">Public IP</string>
     <string name="network_ip_unknown">Couldn\'t find out</string>

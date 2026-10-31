@@ -31,6 +31,7 @@ import dev.chaik.remember.core.reminders.Notifier
 import dev.chaik.remember.core.reminders.OpenTarget
 import dev.chaik.remember.core.reminders.ReminderScheduler
 import dev.chaik.remember.core.reminders.ReminderSettingsStore
+import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.core.security.AppLock
 import dev.chaik.remember.core.settings.AppSettingsStore
 import dev.chaik.remember.core.settings.logicalToday
@@ -74,6 +75,12 @@ class AppContainer(context: Context) {
 
     /** Приветствие уже показано в этом запуске — при пересоздании экрана (смена темы) не повторять. */
     var welcomeShown = false
+
+    /**
+     * Открытые сейчас экраны с защищённым содержимым. При смене вкладки они убираются из её стека:
+     * далёкая вкладка выгружается сразу, и сам экран об уходе узнать не успевает.
+     */
+    val protectedScreens = mutableSetOf<NavKey>()
 
     /** Режим страницы «Сегодня» — общий на весь запуск. */
     val todaySession by lazy {

@@ -51,6 +51,8 @@ class NoteEditorViewModel(
         private set
     var pinned by mutableStateOf(false)
         private set
+    var isProtected by mutableStateOf(false)
+        private set
 
     var isLoaded by mutableStateOf(false)
         private set
@@ -66,7 +68,7 @@ class NoteEditorViewModel(
     private val lock = Mutex()
 
     val allTags: StateFlow<List<Tag>> =
-        container.tagRepository.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        container.tagRepository.observeForNotes().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val folders: StateFlow<List<NoteFolder>> =
         notes.observeFolders().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -82,6 +84,7 @@ class NoteEditorViewModel(
                     tags = note.tags
                     folderId = note.folderId
                     pinned = note.pinned
+                    isProtected = note.isProtected
                     editor.applyPhotoSizes(photos.photos(editor.photoIds))
                 }
             }
@@ -121,6 +124,10 @@ class NoteEditorViewModel(
 
     fun togglePinned() {
         pinned = !pinned
+    }
+
+    fun changeProtected(value: Boolean) {
+        isProtected = value
     }
 
     fun moveToFolder(folderId: Long?) {
@@ -168,7 +175,7 @@ class NoteEditorViewModel(
         if (isLoaded) flush()
     }
 
-    private fun snapshot() = Snapshot(title, editor.markdown, tags, folderId, pinned)
+    private fun snapshot() = Snapshot(title, editor.markdown, tags, folderId, pinned, isProtected)
 
     private suspend fun save(snapshot: Snapshot) = lock.withLock {
         if (deleted || !isLoaded || snapshot == saved) return@withLock
@@ -181,6 +188,7 @@ class NoteEditorViewModel(
                 text = snapshot.markdown,
                 folderId = snapshot.folderId,
                 pinned = snapshot.pinned,
+                isProtected = snapshot.isProtected,
                 tags = snapshot.tags,
             ),
         )
@@ -193,6 +201,7 @@ class NoteEditorViewModel(
         val tags: List<Tag>,
         val folderId: Long?,
         val pinned: Boolean,
+        val isProtected: Boolean,
     ) {
         val isEmpty get() = title.isBlank() && markdown.isBlank() && tags.isEmpty()
     }

@@ -63,6 +63,9 @@ fun LockScreen(
     lock: AppLock,
     onUnlocked: () -> Unit,
     onBiometric: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    /** Подпись вместо названия приложения. */
+    title: String? = null,
 ) {
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
@@ -87,7 +90,8 @@ fun LockScreen(
     fun submit(pin: String) {
         checking = true
         scope.launch {
-            when (val result = lock.unlockWithPin(pin)) {
+            val result = lock.unlockWithPin(pin)
+            when (result) {
                 PinResult.Unlocked -> onUnlocked()
                 is PinResult.Wrong -> attemptsLeft = result.attemptsLeft
                 is PinResult.LockedOut -> {
@@ -95,7 +99,8 @@ fun LockScreen(
                     lockoutUntil = result.untilMillis
                 }
             }
-            if (lock.locked.value) {
+            // Неверный PIN. Смотрим на результат, а не на замок приложения: заметку проверяют и в открытом приложении
+            if (result != PinResult.Unlocked) {
                 haptics.performHapticFeedback(HapticFeedbackType.Reject)
                 shake.animateTo(
                     targetValue = 0f,
@@ -125,14 +130,17 @@ fun LockScreen(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .safeDrawingPadding()
             .padding(24.dp),
     ) {
-        AppIcon(size = 72.dp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
+        // Внутри экрана места меньше (шапка и островок), значок там не нужен: клавиатура не должна сжиматься
+        if (title == null) {
+            AppIcon(size = 72.dp)
+            Spacer(Modifier.height(16.dp))
+        }
+        Text(title ?: stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
         Text(
             text = when {

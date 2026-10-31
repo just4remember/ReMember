@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -67,6 +68,7 @@ import dev.chaik.remember.app.ui.FloatingIsland
 import dev.chaik.remember.app.ui.IslandHeight
 import dev.chaik.remember.core.security.AppLock
 import dev.chaik.remember.core.ui.LocalIslandPadding
+import dev.chaik.remember.core.ui.LocalTabVisible
 import dev.chaik.remember.core.ui.components.SwipeBackHost
 import dev.chaik.remember.core.ui.theme.ReMemberTheme
 import kotlinx.coroutines.flow.drop
@@ -150,10 +152,18 @@ private fun MainScaffold() {
     }
 
     // Лёгкая вибрация при смене вкладки — и по тапу, и по свайпу
-    val session = LocalContext.current.appContainer.todaySession
+    val appContainer = LocalContext.current.appContainer
+    val session = appContainer.todaySession
+    val latestTabs by rememberUpdatedState(tabs)
+    val latestStacks by rememberUpdatedState(backStacks)
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.drop(1).collect {
+        snapshotFlow { pagerState.currentPage }.drop(1).collect { page ->
             session.onTabChanged()
+            // Защищённые заметки закрываются: по возвращении на вкладку будет список
+            val shown = latestTabs.getOrNull(page)
+            latestStacks.forEach { (tab, stack) ->
+                if (tab != shown) stack.removeAll { it in appContainer.protectedScreens }
+            }
             haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
             focusManager.clearFocus()
         }
@@ -220,7 +230,9 @@ private fun MainScaffold() {
                 beyondViewportPageCount = 1,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
-                tabs.getOrNull(page)?.let { TabContent(backStacks.getValue(it)) }
+                CompositionLocalProvider(LocalTabVisible provides (page == pagerState.currentPage)) {
+                    tabs.getOrNull(page)?.let { TabContent(backStacks.getValue(it)) }
+                }
             }
         }
 

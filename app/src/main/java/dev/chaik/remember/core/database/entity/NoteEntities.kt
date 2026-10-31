@@ -35,6 +35,8 @@ data class NoteEntity(
     val text: String,
     @ColumnInfo(name = "folder_id") val folderId: Long?,
     val pinned: Boolean,
+    /** Открывается только по PIN или отпечатку. */
+    @ColumnInfo(name = "is_protected", defaultValue = "0") val isProtected: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
 )

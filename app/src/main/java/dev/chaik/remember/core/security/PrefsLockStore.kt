@@ -12,6 +12,10 @@ class PrefsLockStore(context: Context) : LockStore {
         get() = prefs.getBoolean(KEY_ENABLED, false)
         set(value) = prefs.edit { putBoolean(KEY_ENABLED, value) }
 
+    override var lockApp: Boolean
+        get() = prefs.getBoolean(KEY_LOCK_APP, true)
+        set(value) = prefs.edit { putBoolean(KEY_LOCK_APP, value) }
+
     override var pinHash: String?
         get() = prefs.getString(KEY_PIN_HASH, null)
         set(value) = prefs.edit { putString(KEY_PIN_HASH, value) }
@@ -42,6 +46,7 @@ class PrefsLockStore(context: Context) : LockStore {
 
     private companion object {
         const val KEY_ENABLED = "enabled"
+        const val KEY_LOCK_APP = "lock_app"
         const val KEY_PIN_HASH = "pin_hash"
         const val KEY_PIN_LENGTH = "pin_length"
         const val KEY_BIOMETRIC = "biometric"

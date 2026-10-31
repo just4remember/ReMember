@@ -80,6 +80,7 @@ internal fun NoteEntity.toModel(tags: List<TagEntity> = emptyList()) = Note(
     text = text,
     folderId = folderId,
     pinned = pinned,
+    isProtected = isProtected,
     tags = tags.map { it.toModel() },
     createdAt = createdAt,
     updatedAt = updatedAt,
@@ -91,6 +92,7 @@ internal fun Note.toEntity(createdAt: Instant, updatedAt: Instant) = NoteEntity(
     text = text,
     folderId = folderId,
     pinned = pinned,
+    isProtected = isProtected,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )

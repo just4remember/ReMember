@@ -63,7 +63,7 @@ class DayController(
 
     /** Все теги — подсказки при добавлении. */
     val allTags: StateFlow<List<Tag>> =
-        tagRepository.observeAll().stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        tagRepository.observeForDays().stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private var date: LocalDate? = null
     private var exists = false

@@ -674,8 +674,11 @@
     <string name="security_off_text">Блокировка выключена. Задайте PIN-код — тогда при запуске и после паузы Re:Member попросит его или отпечаток.</string>
     <string name="security_set_pin">Установить PIN-код</string>
     <string name="security_change_pin">Сменить PIN-код</string>
-    <string name="security_lock">Блокировка</string>
-    <string name="security_lock_hint">Выключить можно, введя текущий PIN</string>
+    <string name="security_lock_app">Вход в приложение</string>
+    <string name="security_lock_app_hint">PIN или отпечаток при открытии Re:Member. Защищённые заметки просят их в любом случае</string>
+    <string name="security_lock_app_off_title">Выключить вход по PIN</string>
+    <string name="security_lock">PIN-код</string>
+    <string name="security_lock_hint">Выключение удалит PIN: вход и защита заметок перестанут работать</string>
     <string name="security_biometric">Вход по отпечатку</string>
     <string name="security_biometric_hint">PIN всегда остаётся запасным способом</string>
     <string name="security_timeout">Блокировать после ухода в фон</string>
@@ -849,6 +852,12 @@
     <string name="game_lost">Не угадали — это было слово %1$s</string>
     <string name="game_alarm_off">Будильник выключен</string>
     <string name="game_done">Готово</string>
+    <string name="tags_frequent">Часто используемые</string>
+    <string name="tags_all">Все теги</string>
+    <string name="notes_protect">Защитить заметку</string>
+    <string name="notes_unprotect">Снять защиту</string>
+    <string name="notes_protected">Защищённая заметка</string>
+    <string name="notes_protect_need_pin">Заметка открывается по PIN или отпечатку, поэтому сначала задайте PIN в «Настройки» → «Безопасность»</string>
     <string name="day_rating_unlock">Разблокировать оценку</string>
     <string name="network_ip">Внешний IP</string>
     <string name="network_ip_unknown">Не удалось узнать</string>

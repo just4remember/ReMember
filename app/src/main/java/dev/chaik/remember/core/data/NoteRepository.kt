@@ -38,11 +38,12 @@ class NoteRepository(private val db: ReMemberDatabase) {
                 NoteSummary(
                     id = row.id,
                     title = row.title,
-                    preview = MarkdownPreview.plain(row.head, maxChars = PREVIEW_CHARS),
-                    coverPhotoId = row.coverPhotoId,
+                    preview = if (row.isProtected) "" else MarkdownPreview.plain(row.head, maxChars = PREVIEW_CHARS),
+                    coverPhotoId = row.coverPhotoId.takeUnless { row.isProtected },
                     folderId = row.folderId,
                     pinned = row.pinned,
-                    tags = tags[row.id].orEmpty(),
+                    isProtected = row.isProtected,
+                    tags = if (row.isProtected) emptyList() else tags[row.id].orEmpty(),
                     createdAt = row.createdAt,
                     updatedAt = row.updatedAt,
                 )

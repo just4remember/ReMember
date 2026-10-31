@@ -5,11 +5,18 @@ import dev.chaik.remember.core.model.Tag
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/** Общие теги для записей дней и заметок. */
+/**
+ * Теги дней и заметок. Списки у них независимые: тег попадает в список вкладки, только если
+ * используется на ней. Таблица имён общая, но снаружи это незаметно.
+ */
 class TagRepository(db: ReMemberDatabase) {
     private val dao = db.tagDao()
 
-    fun observeAll(): Flow<List<Tag>> = dao.observeAll().map { list -> list.map { it.toModel() } }
+    /** Теги дней: чаще всего используемые — первыми. */
+    fun observeForDays(): Flow<List<Tag>> = dao.observeDayTagsByUse().map { list -> list.map { it.toModel() } }
+
+    /** Теги заметок: чаще всего используемые — первыми. */
+    fun observeForNotes(): Flow<List<Tag>> = dao.observeNoteTagsByUse().map { list -> list.map { it.toModel() } }
 
     /** Тег по имени (без учёта регистра); если такого нет — создаётся. */
     suspend fun getOrCreate(name: String): Tag = dao.getOrCreate(name.trim()).toModel()

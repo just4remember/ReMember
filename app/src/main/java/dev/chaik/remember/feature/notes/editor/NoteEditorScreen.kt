@@ -59,8 +59,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.activity.compose.LocalActivity
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.fragment.app.FragmentActivity
+import dev.chaik.remember.core.security.BiometricUnlock
+import dev.chaik.remember.feature.lock.LockScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
@@ -72,16 +84,51 @@ import dev.chaik.remember.core.editor.PhotoViewer
 import dev.chaik.remember.core.editor.RichEditor
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.core.ui.components.TagChips
+import dev.chaik.remember.core.ui.LocalTabVisible
 import dev.chaik.remember.core.ui.primaryCornerModifier
 import dev.chaik.remember.feature.notes.ConfirmDialog
 import dev.chaik.remember.feature.notes.FolderPickerDialog
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 
 /** Заметка: [noteId] = 0 — новая, в папке [folderId]. */
 @Serializable
-data class NoteEditorRoute(val noteId: Long = 0, val folderId: Long? = null) : NavKey
+data class NoteEditorRoute(
+    val noteId: Long = 0,
+    val folderId: Long? = null,
+    /** Отличает новые заметки друг от друга: у каждой должно быть своё состояние экрана. */
+    val opening: Long = 0,
+) : NavKey
 
 private const val MAX_PHOTOS_PER_PICK = 10
+
+/** Вход в защищённую заметку: тот же PIN и отпечаток, что у приложения; окно отпечатка — сразу. */
+@Composable
+private fun ProtectedNoteLock(title: String, onUnlocked: () -> Unit, modifier: Modifier = Modifier) {
+    val container = LocalContext.current.appContainer
+    val lock = container.appLock
+    val activity = LocalActivity.current as? FragmentActivity
+    val biometricTitle = stringResource(R.string.notes_protected)
+    val usePin = stringResource(R.string.lock_biometric_use_pin)
+    val showBiometric: (() -> Unit)? = activity
+        ?.takeIf { lock.biometricEnabled && BiometricUnlock.isAvailable(it) }
+        ?.let { host ->
+            {
+                lock.allowExternal()
+                BiometricUnlock.prompt(host, biometricTitle, usePin, onSuccess = onUnlocked)
+            }
+        }
+    // Окно отпечатка не показываем поверх другой вкладки, в фоне и пока закрыто само приложение
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val tabVisible = LocalTabVisible.current
+    LaunchedEffect(tabVisible) {
+        if (!tabVisible) return@LaunchedEffect
+        lifecycle.currentStateFlow.first { it.isAtLeast(Lifecycle.State.RESUMED) }
+        lock.locked.first { !it }
+        showBiometric?.invoke()
+    }
+    LockScreen(lock = lock, onUnlocked = onUnlocked, onBiometric = showBiometric, modifier = modifier, title = title)
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -97,7 +144,41 @@ fun NoteEditorScreen(
     val allTags by viewModel.allTags.collectAsStateWithLifecycle()
     val folders by viewModel.folders.collectAsStateWithLifecycle()
 
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.flush() }
+    // Защита. Без PIN в приложении проверять нечем: заметка открыта, а кнопка просит сначала задать PIN
+    val lock = container.appLock
+    val focusManager = LocalFocusManager.current
+    var unlocked by remember { mutableStateOf(false) }
+    var disablingProtection by remember { mutableStateOf(false) }
+    var needPin by remember { mutableStateOf(false) }
+    var openingPicker by remember { mutableStateOf(false) }
+    val askToOpen = viewModel.isLoaded && viewModel.isProtected && lock.enabled && !unlocked
+    val showLock = askToOpen || disablingProtection
+    fun relock() {
+        if (!viewModel.isProtected) return
+        focusManager.clearFocus()
+        unlocked = false
+        disablingProtection = false
+    }
+    // Смена вкладки закроет защищённую заметку (см. protectedScreens), обычная останется открытой
+    val protectedNow = viewModel.isProtected && lock.enabled
+    LaunchedEffect(protectedNow) {
+        if (protectedNow) container.protectedScreens.add(route) else container.protectedScreens.remove(route)
+    }
+    val tabVisible = LocalTabVisible.current
+    LaunchedEffect(tabVisible) {
+        if (!tabVisible) {
+            viewModel.flush()
+            relock()
+        }
+    }
+    BackHandler(enabled = disablingProtection) { disablingProtection = false }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.flush()
+        // Окно выбора фото из самой заметки — не уход из неё
+        if (!openingPicker) relock()
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { openingPicker = false }
 
     val pickPhotos = rememberLauncherForActivityResult(PickMultipleVisualMedia(MAX_PHOTOS_PER_PICK)) {
         viewModel.addPhotos(it)
@@ -105,6 +186,7 @@ fun NoteEditorScreen(
     val launchPicker = {
         // Выбор фото — системное окно: блокировка по возвращении не нужна
         container.appLock.allowExternal()
+        openingPicker = true
         pickPhotos.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
     }
     val failedImport = stringResource(R.string.editor_photo_import_failed)
@@ -120,7 +202,6 @@ fun NoteEditorScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     val keyboardVisible = WindowInsets.isImeVisible
     val keyboard = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
     // В шапке — папка заметки, чтобы было видно, где она лежит
     val folderName = folders.firstOrNull { it.id == viewModel.folderId }?.name
@@ -129,8 +210,31 @@ fun NoteEditorScreen(
     ScreenScaffold(
         title = folderName,
         modifier = modifier,
-        onBack = onBack,
+        onBack = if (disablingProtection) ({ disablingProtection = false }) else onBack,
         actions = {
+            if (showLock) return@ScreenScaffold
+            IconButton(
+                onClick = {
+                    when {
+                        viewModel.isProtected && lock.enabled -> {
+                            focusManager.clearFocus()
+                            disablingProtection = true
+                        }
+                        viewModel.isProtected -> viewModel.changeProtected(false)
+                        lock.enabled -> {
+                            unlocked = true
+                            viewModel.changeProtected(true)
+                        }
+                        else -> needPin = true
+                    }
+                },
+            ) {
+                Icon(
+                    imageVector = if (viewModel.isProtected) Icons.Filled.Lock else Icons.Outlined.LockOpen,
+                    contentDescription = stringResource(if (viewModel.isProtected) R.string.notes_unprotect else R.string.notes_protect),
+                    tint = if (viewModel.isProtected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             IconButton(onClick = viewModel::togglePinned) {
                 Icon(
                     imageVector = if (viewModel.pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
@@ -146,6 +250,23 @@ fun NoteEditorScreen(
             }
         },
     ) { padding ->
+        if (showLock) {
+            ProtectedNoteLock(
+                title = stringResource(if (disablingProtection) R.string.notes_unprotect else R.string.notes_protected),
+                onUnlocked = {
+                    if (disablingProtection) {
+                        disablingProtection = false
+                        viewModel.changeProtected(false)
+                    }
+                    unlocked = true
+                },
+                // Шапка и островок уже учитывают системные панели: второй раз их не вычитаем
+                modifier = Modifier
+                    .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding())
+                    .consumeWindowInsets(WindowInsets.safeDrawing),
+            )
+            return@ScreenScaffold
+        }
         val bottomSpace = if (keyboardVisible) EditorToolbarHeight + 24.dp else padding.calculateBottomPadding() + 96.dp
 
         Box(Modifier.fillMaxSize()) {
@@ -246,6 +367,15 @@ fun NoteEditorScreen(
             onDismiss = { confirmDelete = false },
         )
     }
+    if (needPin) {
+        AlertDialog(
+            onDismissRequest = { needPin = false },
+            title = { Text(stringResource(R.string.notes_protect)) },
+            text = { Text(stringResource(R.string.notes_protect_need_pin)) },
+            confirmButton = { TextButton(onClick = { needPin = false }) { Text(stringResource(R.string.action_ok)) } },
+        )
+    }
+
     openedPhotos?.let { (ids, index) ->
         PhotoViewer(
             files = ids.map(container.photoStorage::file),

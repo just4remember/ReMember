@@ -50,12 +50,15 @@ class PhotoLibrary(
      */
     val removed: SharedFlow<Set<String>> = removedEvents.asSharedFlow()
 
-    /** Все фото, новые сверху. */
+    /** Все фото, новые сверху; фото из защищённых заметок в галерею не попадают. */
     fun observe(): Flow<List<LibraryPhoto>> =
         combine(photoDao.observeAll(), photoDao.observeRefs(), notes.observeAll()) { photos, refs, allNotes ->
             val titles = allNotes.associate { it.id to it.title }
             val byPhoto = refs.groupBy { it.photoId }
-            photos.map { photo ->
+            val hidden = allNotes.filter { it.isProtected }.map { it.id }.toSet()
+            photos.filterNot { photo ->
+                byPhoto[photo.id].orEmpty().any { it.ownerType == PhotoOwner.NOTE && it.ownerId in hidden }
+            }.map { photo ->
                 LibraryPhoto(
                     id = photo.id,
                     width = photo.width,

@@ -9,6 +9,7 @@ data class Note(
     val text: String = "",
     val folderId: Long? = null,
     val pinned: Boolean = false,
+    val isProtected: Boolean = false,
     val tags: List<Tag> = emptyList(),
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
@@ -30,6 +31,8 @@ data class NoteSummary(
     val coverPhotoId: String?,
     val folderId: Long?,
     val pinned: Boolean,
+    /** Защищена: начало текста, обложка и теги в список не попадают. */
+    val isProtected: Boolean,
     val tags: List<Tag>,
     val createdAt: Instant,
     val updatedAt: Instant,

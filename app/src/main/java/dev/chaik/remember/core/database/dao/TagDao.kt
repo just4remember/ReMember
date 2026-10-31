@@ -14,9 +14,6 @@ import java.time.LocalDate
 
 @Dao
 interface TagDao {
-    @Query("SELECT * FROM tag ORDER BY `key`")
-    fun observeAll(): Flow<List<TagEntity>>
-
     @Query("SELECT * FROM tag WHERE `key` = :key")
     suspend fun findByKey(key: String): TagEntity?
 
@@ -27,6 +24,30 @@ interface TagDao {
     @Transaction
     suspend fun getOrCreate(name: String): TagEntity =
         findByKey(tagKey(name)) ?: TagEntity(name = name).let { it.copy(id = insert(it)) }
+
+    /** Теги дней: чаще всего встречающиеся — первыми. */
+    @Query(
+        """
+        SELECT tag.* FROM tag
+        JOIN day_entry_tag ON tag.id = day_entry_tag.tag_id
+        GROUP BY tag.id
+        ORDER BY COUNT(*) DESC, tag.`key`
+        """,
+    )
+    fun observeDayTagsByUse(): Flow<List<TagEntity>>
+
+    /** Теги заметок: чаще всего встречающиеся — первыми. Теги защищённых заметок сюда не попадают. */
+    @Query(
+        """
+        SELECT tag.* FROM tag
+        JOIN note_tag ON tag.id = note_tag.tag_id
+        JOIN note ON note.id = note_tag.note_id
+        WHERE note.is_protected = 0
+        GROUP BY tag.id
+        ORDER BY COUNT(*) DESC, tag.`key`
+        """,
+    )
+    fun observeNoteTagsByUse(): Flow<List<TagEntity>>
 
     /** Удалить теги, которые больше нигде не используются. */
     @Query(

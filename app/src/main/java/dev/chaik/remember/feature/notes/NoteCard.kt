@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
@@ -102,6 +103,16 @@ fun NoteCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
+                    if (note.isProtected) {
+                        Icon(
+                            Icons.Filled.Lock,
+                            contentDescription = stringResource(R.string.notes_protected),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(start = 4.dp)
+                                .size(16.dp),
+                        )
+                    }
                     if (note.pinned) {
                         Icon(
                             Icons.Filled.PushPin,
@@ -177,14 +188,17 @@ fun NoteCard(
                     onMove()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.notes_delete), color = MaterialTheme.colorScheme.error) },
-                leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                onClick = {
-                    menuOpen = false
-                    onDelete()
-                },
-            )
+            // Защищённую заметку удалить можно только изнутри, после PIN или отпечатка
+            if (!note.isProtected) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.notes_delete), color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                    onClick = {
+                        menuOpen = false
+                        onDelete()
+                    },
+                )
+            }
         }
     }
 }

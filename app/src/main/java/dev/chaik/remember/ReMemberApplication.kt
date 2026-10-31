@@ -33,6 +33,7 @@ class ReMemberApplication : Application() {
                     // Ушли из приложения — заодно убрать фото, которые убрали из записей.
                     // Чуть ждём: открытые записи сохраняются при уходе в фон
                     cleanupPhotos(afterMs = BACKGROUND_CLEANUP_DELAY_MS)
+                    cleanupTags(afterMs = BACKGROUND_CLEANUP_DELAY_MS)
                 }
 
                 // Вернулись после долгой паузы — «Сегодня» снова в режиме по времени суток
@@ -84,6 +85,19 @@ class ReMemberApplication : Application() {
         }
         // Не мешаем запуску: уборка — через пару секунд после старта
         cleanupPhotos(afterMs = STARTUP_CLEANUP_DELAY_MS)
+        cleanupTags(afterMs = STARTUP_CLEANUP_DELAY_MS)
+    }
+
+    /**
+     * Удалить теги, которых нет ни у одного дня и ни у одной заметки. Не сразу после снятия тега,
+     * а при уходе в фон и при запуске: иначе тег исчезал бы прямо из открытого окна выбора.
+     */
+    private fun cleanupTags(afterMs: Long) {
+        container.appScope.launch {
+            delay(afterMs)
+            runCatching { container.tagRepository.deleteUnused() }
+                .onFailure { Log.w(TAG, "Уборка тегов не удалась", it) }
+        }
     }
 
     /** Удалить фото, которые ни в одной записи больше не стоят (см. PhotoStorage.UNUSED_GRACE). */
