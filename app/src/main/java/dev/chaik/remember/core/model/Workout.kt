@@ -78,6 +78,33 @@ data class WorkoutSet(
     }
 }
 
+/** Шаблон тренировки: заготовленный список упражнений, без подходов. */
+data class WorkoutTemplate(
+    val id: Long = 0,
+    val name: String,
+    val exercises: List<Exercise> = emptyList(),
+)
+
+/**
+ * Какие упражнения добавить в тренировку: шаблоны стыкуются по порядку выбора.
+ * Упражнение, которое уже есть в тренировке или встретилось в прошлом шаблоне, второй раз не добавляется.
+ */
+fun stackTemplates(templates: List<List<Long>>, present: Collection<Long>): List<Long> =
+    templates.flatten().distinct().filterNot { it in present }
+
+/** Упражнения, которые при добавлении шаблонов оказались повторами: уже были в тренировке или встретились дважды. */
+fun repeatedInTemplates(templates: List<List<Long>>, present: Collection<Long>): Set<Long> {
+    val all = templates.flatten()
+    return all.filter { id -> id in present || all.count { it == id } > 1 }.toSet()
+}
+
+/** Тренировки, где есть упражнение с таким текстом в названии; пустой запрос — все. */
+fun List<WorkoutSummary>.withExercise(query: String): List<WorkoutSummary> {
+    val text = query.trim().lowercase()
+    if (text.isEmpty()) return this
+    return filter { summary -> summary.exerciseNames.any { it.lowercase().contains(text) } }
+}
+
 /** Краткая строка для списка тренировок. */
 data class WorkoutSummary(
     val id: Long,

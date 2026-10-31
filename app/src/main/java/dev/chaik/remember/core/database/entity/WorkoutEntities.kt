@@ -73,6 +73,29 @@ data class WorkoutSetEntity(
     val speed: Double? = null,
 )
 
+/** Шаблон тренировки: заранее заготовленный список упражнений. */
+@Entity(tableName = "workout_template")
+data class WorkoutTemplateEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    @ColumnInfo(name = "created_at") val createdAt: Instant,
+)
+
+@Entity(
+    tableName = "workout_template_exercise",
+    foreignKeys = [
+        ForeignKey(entity = WorkoutTemplateEntity::class, parentColumns = ["id"], childColumns = ["template_id"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = ExerciseEntity::class, parentColumns = ["id"], childColumns = ["exercise_id"], onDelete = ForeignKey.CASCADE),
+    ],
+    indices = [Index("template_id"), Index("exercise_id")],
+)
+data class WorkoutTemplateExerciseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "template_id") val templateId: Long,
+    @ColumnInfo(name = "exercise_id") val exerciseId: Long,
+    @ColumnInfo(name = "sort_order") val sortOrder: Int,
+)
+
 /** Упражнение тренировки вместе с названием — для списка и страницы тренировки. */
 data class WorkoutExerciseRow(
     val id: Long,

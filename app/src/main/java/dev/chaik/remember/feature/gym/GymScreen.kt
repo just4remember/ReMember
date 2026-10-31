@@ -25,7 +25,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
@@ -76,6 +84,7 @@ import dev.chaik.remember.core.data.ImportProblem
 import dev.chaik.remember.core.data.WorkoutImportException
 import dev.chaik.remember.core.model.WorkoutSummary
 import dev.chaik.remember.core.model.formatKg
+import dev.chaik.remember.core.model.withExercise
 import dev.chaik.remember.core.ui.components.DueDatePickerDialog
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.core.ui.components.TimePickerDialog
@@ -99,12 +108,15 @@ data object GymRoute : NavKey
 fun GymScreen(
     onBack: (() -> Unit)?,
     onOpen: (workoutId: Long) -> Unit,
+    onTemplates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val container = LocalContext.current.appContainer
     val viewModel = viewModel { GymViewModel(container) }
     val summaries by viewModel.summaries.collectAsStateWithLifecycle()
     val active = summaries?.firstOrNull { it.active }
+    var query by rememberSaveable { mutableStateOf("") }
+    val shown = summaries.orEmpty().withExercise(query)
 
     // Тренировку закончили — по возвращении в список прокручиваем к самому верху, к ней.
     // Последнюю идущую помним в сохраняемом состоянии: пока открыта тренировка, этот экран не на виду
@@ -136,7 +148,8 @@ fun GymScreen(
         val ids = summaries.orEmpty().map { it.id }.toSet()
         if (!ids.containsAll(selected)) selected = selected intersect ids
     }
-    val allIds = summaries.orEmpty().map { it.id }.toSet()
+    // «Выбрать все» при поиске — только найденные
+    val allIds = shown.map { it.id }.toSet()
 
     ScreenScaffold(
         title = if (selecting) stringResource(R.string.gym_selected, selected.size) else stringResource(R.string.section_gym),
@@ -156,6 +169,7 @@ fun GymScreen(
                 IconButton(onClick = { selected = emptySet() }) { Icon(Icons.Outlined.Close, stringResource(R.string.gym_select_cancel)) }
                 return@ScreenScaffold
             }
+            IconButton(onClick = onTemplates) { Icon(Icons.AutoMirrored.Outlined.ListAlt, stringResource(R.string.gym_templates)) }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.gym_more)) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -205,7 +219,41 @@ fun GymScreen(
                     ),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    items(list.asReversed(), key = { it.id }) { summary ->
+                    item(key = "search") {
+                        val focus = LocalFocusManager.current
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            placeholder = { Text(stringResource(R.string.gym_search)) },
+                            leadingIcon = { Icon(Icons.Outlined.Search, null) },
+                            trailingIcon = if (query.isEmpty()) {
+                                null
+                            } else {
+                                {
+                                    IconButton(onClick = { query = "" }) { Icon(Icons.Outlined.Close, stringResource(R.string.gym_search_clear)) }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(20.dp),
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (shown.isEmpty()) {
+                        item(key = "nothing") {
+                            Text(
+                                text = stringResource(R.string.gym_search_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 24.dp),
+                            )
+                        }
+                    }
+                    items(shown.asReversed(), key = { it.id }) { summary ->
                         val isSelected = summary.id in selected
                         WorkoutCard(
                             summary = summary,

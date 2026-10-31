@@ -20,6 +20,10 @@ import dev.chaik.remember.feature.games.raskobki.RaskobkiRoute
 import dev.chaik.remember.feature.games.raskobki.RaskobkiScreen
 import dev.chaik.remember.feature.gym.GymRoute
 import dev.chaik.remember.feature.gym.GymScreen
+import dev.chaik.remember.feature.gym.templates.TemplateEditorRoute
+import dev.chaik.remember.feature.gym.templates.TemplateEditorScreen
+import dev.chaik.remember.feature.gym.templates.TemplatesRoute
+import dev.chaik.remember.feature.gym.templates.TemplatesScreen
 import dev.chaik.remember.feature.gym.workout.WorkoutRoute
 import dev.chaik.remember.feature.gym.workout.WorkoutScreen
 import dev.chaik.remember.feature.health.HealthRoute
@@ -103,7 +107,15 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<StatsRoute> { StatsScreen(onBack = backFor(it)) }
         entry<FinanceRoute> { FinanceScreen(onBack = backFor(it)) }
         entry<HealthRoute> { HealthScreen(onBack = backFor(it)) }
-        entry<GymRoute> { GymScreen(onBack = backFor(it), onOpen = { backStack.add(WorkoutRoute(it)) }) }
+        entry<GymRoute> {
+            GymScreen(
+                onBack = backFor(it),
+                onOpen = { id -> backStack.add(WorkoutRoute(id)) },
+                onTemplates = { backStack.add(TemplatesRoute) },
+            )
+        }
+        entry<TemplatesRoute> { TemplatesScreen(onBack = back, onOpen = { id -> backStack.add(TemplateEditorRoute(id)) }) }
+        entry<TemplateEditorRoute> { TemplateEditorScreen(route = it, onBack = back) }
         entry<WorkoutRoute> { WorkoutScreen(route = it, onBack = back) }
         entry<NetworkRoute> { NetworkScreen(onBack = backFor(it)) }
         entry<TimeRoute> { TimeScreen(onBack = backFor(it), onOpenAlarm = { id -> backStack.add(AlarmEditorRoute(id)) }) }

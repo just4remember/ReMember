@@ -31,6 +31,8 @@ import dev.chaik.remember.core.database.entity.TaskEntity
 import dev.chaik.remember.core.database.entity.WorkoutEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseEntity
 import dev.chaik.remember.core.database.entity.WorkoutSetEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
 
 /**
  * Вся база приложения.
@@ -39,7 +41,7 @@ import dev.chaik.remember.core.database.entity.WorkoutSetEntity
  * (`autoMigrations` — для простых случаев). Схемы лежат в app/schemas.
  */
 @Database(
-    version = 6,
+    version = 7,
     entities = [
         DayEntryEntity::class,
         SleepEntryEntity::class,
@@ -59,6 +61,8 @@ import dev.chaik.remember.core.database.entity.WorkoutSetEntity
         WorkoutEntity::class,
         WorkoutExerciseEntity::class,
         WorkoutSetEntity::class,
+        WorkoutTemplateEntity::class,
+        WorkoutTemplateExerciseEntity::class,
     ],
     autoMigrations = [
         // 2: задачи и подзадачи — только новые таблицы
@@ -71,6 +75,8 @@ import dev.chaik.remember.core.database.entity.WorkoutSetEntity
         AutoMigration(from = 4, to = 5),
         // 6: защищённые заметки
         AutoMigration(from = 5, to = 6),
+        // 7: шаблоны тренировок — только новые таблицы
+        AutoMigration(from = 6, to = 7),
     ],
     exportSchema = true,
 )

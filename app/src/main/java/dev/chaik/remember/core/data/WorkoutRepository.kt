@@ -7,6 +7,8 @@ import dev.chaik.remember.core.database.entity.WorkoutEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseRow
 import dev.chaik.remember.core.database.entity.WorkoutSetEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
 import dev.chaik.remember.core.model.Exercise
 import dev.chaik.remember.core.model.ExerciseKind
 import dev.chaik.remember.core.model.ExerciseSession
@@ -14,6 +16,9 @@ import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutExercise
 import dev.chaik.remember.core.model.WorkoutSet
 import dev.chaik.remember.core.model.WorkoutSummary
+import dev.chaik.remember.core.model.WorkoutTemplate
+import dev.chaik.remember.core.model.repeatedInTemplates
+import dev.chaik.remember.core.model.stackTemplates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -76,6 +81,51 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
                 )
             }
         }
+
+    /** Шаблоны в порядке создания. */
+    fun observeTemplates(): Flow<List<WorkoutTemplate>> =
+        combine(dao.observeTemplates(), dao.observeTemplateExercises()) { templates, rows ->
+            val byTemplate = rows.groupBy { it.templateId }
+            templates.map { template ->
+                WorkoutTemplate(
+                    id = template.id,
+                    name = template.name,
+                    exercises = byTemplate[template.id].orEmpty().map { Exercise(it.id, it.name, ExerciseKind.fromCode(it.kind)) },
+                )
+            }
+        }
+
+    /** Сохранить шаблон; [id] = 0 — новый. Возвращает id. */
+    suspend fun saveTemplate(id: Long, name: String, exerciseIds: List<Long>): Long = db.withTransaction {
+        val templateId = if (id == 0L) {
+            dao.insertTemplate(WorkoutTemplateEntity(name = name, createdAt = Instant.now()))
+        } else {
+            dao.renameTemplate(id, name)
+            id
+        }
+        dao.clearTemplateExercises(templateId)
+        dao.insertTemplateExercises(exerciseIds.mapIndexed { i, exerciseId -> WorkoutTemplateExerciseEntity(0, templateId, exerciseId, i) })
+        templateId
+    }
+
+    suspend fun deleteTemplate(id: Long) = dao.deleteTemplate(id)
+
+    /** Добавить в конец тренировки упражнения шаблонов — в порядке [templateIds]. Возвращает пропущенные повторы. */
+    suspend fun applyTemplates(workoutId: Long, templateIds: List<Long>): Set<Long> = db.withTransaction {
+        val templates = templateIds.map { dao.templateExerciseIds(it) }
+        val present = dao.workoutExerciseIds(workoutId)
+        var order = dao.nextExerciseOrder(workoutId)
+        stackTemplates(templates, present).forEach { exerciseId ->
+            dao.insertWorkoutExercise(WorkoutExerciseEntity(0, workoutId, exerciseId, order++))
+        }
+        repeatedInTemplates(templates, present)
+    }
+
+    /** Упражнение из справочника; незнакомое название туда попадает. */
+    suspend fun exerciseFor(name: String, kind: ExerciseKind): Exercise = db.withTransaction {
+        val id = getOrCreateExercise(name, kind)
+        Exercise(id, name.trim(), findExercise(name)?.kind ?: kind)
+    }
 
     suspend fun findExercise(name: String): Exercise? = dao.exerciseByKey(name.trim().lowercase())?.toModel()
 

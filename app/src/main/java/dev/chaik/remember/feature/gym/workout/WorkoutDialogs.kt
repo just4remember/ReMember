@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -282,6 +283,7 @@ fun AddExerciseDialog(
                     )
                 }
                 if (query.isNotEmpty() && known == null) {
+                    HorizontalDivider(Modifier.padding(top = 4.dp))
                     Text(
                         text = stringResource(R.string.gym_exercise_kind),
                         style = MaterialTheme.typography.labelLarge,

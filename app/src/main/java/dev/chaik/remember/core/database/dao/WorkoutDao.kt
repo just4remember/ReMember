@@ -9,9 +9,13 @@ import dev.chaik.remember.core.database.entity.WorkoutEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseRow
 import dev.chaik.remember.core.database.entity.WorkoutSetEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateEntity
+import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalTime
+
+data class TemplateExerciseRow(val templateId: Long, val id: Long, val name: String, val kind: String)
 
 data class ExerciseSetRow(
     val workoutId: Long,
@@ -126,6 +130,42 @@ interface WorkoutDao {
 
     @Query("DELETE FROM workout_set WHERE id = :id")
     suspend fun deleteSet(id: Long)
+
+    // Шаблоны
+
+    @Query("SELECT * FROM workout_template ORDER BY created_at, id")
+    fun observeTemplates(): Flow<List<WorkoutTemplateEntity>>
+
+    @Query(
+        """
+        SELECT te.template_id AS templateId, e.id AS id, e.name AS name, e.kind AS kind
+        FROM workout_template_exercise te
+        JOIN exercise e ON e.id = te.exercise_id
+        ORDER BY te.template_id, te.sort_order
+        """,
+    )
+    fun observeTemplateExercises(): Flow<List<TemplateExerciseRow>>
+
+    @Query("SELECT exercise_id FROM workout_template_exercise WHERE template_id = :templateId ORDER BY sort_order")
+    suspend fun templateExerciseIds(templateId: Long): List<Long>
+
+    @Query("SELECT exercise_id FROM workout_exercise WHERE workout_id = :workoutId")
+    suspend fun workoutExerciseIds(workoutId: Long): List<Long>
+
+    @Insert
+    suspend fun insertTemplate(template: WorkoutTemplateEntity): Long
+
+    @Query("UPDATE workout_template SET name = :name WHERE id = :id")
+    suspend fun renameTemplate(id: Long, name: String)
+
+    @Query("DELETE FROM workout_template WHERE id = :id")
+    suspend fun deleteTemplate(id: Long)
+
+    @Query("DELETE FROM workout_template_exercise WHERE template_id = :templateId")
+    suspend fun clearTemplateExercises(templateId: Long)
+
+    @Insert
+    suspend fun insertTemplateExercises(entries: List<WorkoutTemplateExerciseEntity>)
 
     // Справочник упражнений
 

@@ -12,7 +12,10 @@ import dev.chaik.remember.core.model.ExerciseKind
 import dev.chaik.remember.core.model.ExerciseSession
 import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutSet
+import dev.chaik.remember.core.model.WorkoutTemplate
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +40,9 @@ class WorkoutViewModel(private val container: AppContainer, private val workoutI
 
     val exercises: StateFlow<List<Exercise>> =
         workouts.observeExercises().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val templates: StateFlow<List<WorkoutTemplate>> =
+        workouts.observeTemplates().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     var note by mutableStateOf("")
     var isLoaded by mutableStateOf(false)
@@ -82,6 +88,23 @@ class WorkoutViewModel(private val container: AppContainer, private val workoutI
         scope.launch { workouts.addExercise(workoutId, name, kind) }
     }
 
+    /** Упражнения, которые шаблон хотел добавить повторно: подсвечены пару секунд. */
+    var highlighted by mutableStateOf(emptySet<Long>())
+        private set
+    private var highlightJob: Job? = null
+
+    fun applyTemplates(templateIds: List<Long>) {
+        scope.launch {
+            val repeated = workouts.applyTemplates(workoutId, templateIds)
+            highlightJob?.cancel()
+            highlightJob = viewModelScope.launch {
+                highlighted = repeated
+                delay(HIGHLIGHT_MS)
+                highlighted = emptySet()
+            }
+        }
+    }
+
     fun removeExercise(workoutExerciseId: Long) {
         scope.launch { workouts.removeExercise(workoutExerciseId) }
     }
@@ -114,5 +137,6 @@ class WorkoutViewModel(private val container: AppContainer, private val workoutI
 
     private companion object {
         const val NOTE_SAVE_DELAY_MS = 600L
+        const val HIGHLIGHT_MS = 2_000L
     }
 }

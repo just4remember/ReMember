@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym.workout
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -35,6 +37,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,12 +67,14 @@ import dev.chaik.remember.core.model.ExerciseHistory
 import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutExercise
 import dev.chaik.remember.core.model.WorkoutSet
+import dev.chaik.remember.core.model.WorkoutTemplate
 import dev.chaik.remember.core.model.formatKg
 import dev.chaik.remember.core.ui.components.DueDatePickerDialog
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.core.ui.components.TimePickerDialog
 import dev.chaik.remember.feature.calendar.formatDay
 import dev.chaik.remember.feature.gym.BodyWeightDialog
+import dev.chaik.remember.feature.gym.TemplatePickerDialog
 import dev.chaik.remember.feature.gym.durationLabel
 import dev.chaik.remember.feature.gym.formatTime
 import dev.chaik.remember.feature.gym.workoutDuration
@@ -95,6 +100,7 @@ private sealed interface Sheet {
     data object WeightRange : Sheet
     data class Finish(val end: LocalTime, val suggested: Double?) : Sheet
     data object AddExercise : Sheet
+    data object ApplyTemplates : Sheet
     data class AddSet(val entry: WorkoutExercise) : Sheet
     data class EditSet(val entry: WorkoutExercise, val set: WorkoutSet) : Sheet
     data class Kind(val entry: WorkoutExercise) : Sheet
@@ -112,6 +118,7 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
     val viewModel = viewModel { WorkoutViewModel(container, route.workoutId) }
     val workout by viewModel.workout.collectAsStateWithLifecycle()
     val dictionary by viewModel.exercises.collectAsStateWithLifecycle()
+    val templates by viewModel.templates.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     var sheet by remember { mutableStateOf<Sheet?>(null) }
@@ -155,6 +162,7 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
                 current.exercises.forEach { entry ->
                     ExerciseCard(
                         entry = entry,
+                        highlighted = entry.exercise.id in viewModel.highlighted,
                         onAddSet = { sheet = Sheet.AddSet(entry) },
                         onEditSet = { sheet = Sheet.EditSet(entry, it) },
                         onChangeKind = { sheet = Sheet.Kind(entry) },
@@ -165,6 +173,12 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
                 FilledTonalButton(onClick = { sheet = Sheet.AddExercise }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                     Icon(Icons.Outlined.Add, null, Modifier.size(20.dp))
                     Text(stringResource(R.string.gym_add_exercise), modifier = Modifier.padding(start = 8.dp))
+                }
+                if (templates.isNotEmpty()) {
+                    OutlinedButton(onClick = { sheet = Sheet.ApplyTemplates }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.AutoMirrored.Outlined.ListAlt, null, Modifier.size(20.dp))
+                        Text(stringResource(R.string.gym_templates_add), modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
                 OutlinedTextField(
                     value = viewModel.note,
@@ -200,7 +214,7 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
     }
 
     if (current != null) {
-        Sheets(sheet, current, dictionary, viewModel, onBack, open = { sheet = it }, close = { sheet = null })
+        Sheets(sheet, current, dictionary, templates, viewModel, onBack, open = { sheet = it }, close = { sheet = null })
     }
 }
 
@@ -295,6 +309,7 @@ private fun PickPartDialog(title: String, parts: List<Pair<String, () -> Unit>>,
 @Composable
 private fun ExerciseCard(
     entry: WorkoutExercise,
+    highlighted: Boolean,
     onAddSet: () -> Unit,
     onEditSet: (WorkoutSet) -> Unit,
     onChangeKind: () -> Unit,
@@ -302,11 +317,14 @@ private fun ExerciseCard(
     onRemove: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+    val background by animateColorAsState(if (highlighted) colors.errorContainer else colors.surfaceContainerLow)
+    val nameColor by animateColorAsState(if (highlighted) colors.error else colors.onSurface)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(background)
             .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -314,6 +332,7 @@ private fun ExerciseCard(
                 text = entry.exercise.name,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+                color = nameColor,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = onChart) {
@@ -359,6 +378,7 @@ private fun Sheets(
     sheet: Sheet?,
     workout: Workout,
     dictionary: List<Exercise>,
+    templates: List<WorkoutTemplate>,
     viewModel: WorkoutViewModel,
     onBack: () -> Unit,
     open: (Sheet) -> Unit,
@@ -442,6 +462,14 @@ private fun Sheets(
             dictionary = dictionary,
             onAdd = { name, kind ->
                 viewModel.addExercise(name, kind)
+                close()
+            },
+            onDismiss = close,
+        )
+        Sheet.ApplyTemplates -> TemplatePickerDialog(
+            templates = templates,
+            onConfirm = { ids ->
+                viewModel.applyTemplates(ids)
                 close()
             },
             onDismiss = close,
