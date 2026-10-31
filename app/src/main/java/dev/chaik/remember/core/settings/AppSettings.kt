@@ -132,7 +132,7 @@ const val GAP_MAX = 32
 const val GAP_STEP = 2
 
 /** Шрифт приложения: системный или один из встроенных (res/font, лицензия OFL). */
-enum class AppFont { SYSTEM, INTER, NUNITO }
+enum class AppFont { SYSTEM, INTER, NUNITO, MEDEO }
 
 /** Выбор времени: циферблат или ввод цифрами. */
 enum class TimePickerStyle { DIAL, INPUT }

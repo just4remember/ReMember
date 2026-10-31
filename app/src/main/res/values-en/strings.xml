@@ -852,6 +852,17 @@
     <string name="network_ip_show">Show IP</string>
     <string name="network_ip_hide">Hide IP</string>
     <string name="data_permissions">Permissions</string>
+    <string name="data_performance">Performance</string>
+    <string name="data_perf_ram">Memory</string>
+    <string name="data_perf_ram_hint">app, %1$s total</string>
+    <string name="data_perf_cpu">CPU</string>
+    <string name="data_perf_cpu_hint">app, %1$d cores</string>
+    <string name="data_perf_disk">Disk</string>
+    <string name="data_perf_disk_hint">app, %1$s free</string>
+    <string name="data_perf_battery">Battery</string>
+    <string name="data_perf_battery_draw">phone draw, %1$d %% charged</string>
+    <string name="data_perf_battery_charge">phone charging, %1$d %%</string>
+    <string name="data_perf_ma">%1$d mA</string>
     <string name="data_permissions_hint">Removes notifications and Health Connect access. Internet can\'t be revoked, and usage access and full-screen display are changed in Android settings</string>
     <string name="data_permissions_revoke">Revoke all permissions</string>
     <string name="data_permissions_revoke_action">Revoke and close</string>

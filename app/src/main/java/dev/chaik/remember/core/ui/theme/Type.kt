@@ -35,6 +35,7 @@ private fun variableFamily(resource: Int) = FontFamily(
 
 private val Inter = variableFamily(R.font.inter)
 private val Nunito = variableFamily(R.font.nunito)
+private val Medeo = variableFamily(R.font.medeo)
 
 /** Типографика с выбранным в Персонализации шрифтом; размеры и толщины — как у Material. */
 fun typography(font: AppFont): Typography {
@@ -42,6 +43,7 @@ fun typography(font: AppFont): Typography {
         AppFont.SYSTEM -> return Base
         AppFont.INTER -> Inter
         AppFont.NUNITO -> Nunito
+        AppFont.MEDEO -> Medeo
     }
     return with(Base) {
         Typography(
@@ -69,4 +71,5 @@ fun fontFamilyOf(font: AppFont): FontFamily = when (font) {
     AppFont.SYSTEM -> FontFamily.Default
     AppFont.INTER -> Inter
     AppFont.NUNITO -> Nunito
+    AppFont.MEDEO -> Medeo
 }

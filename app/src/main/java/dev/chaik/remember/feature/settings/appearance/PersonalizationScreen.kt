@@ -144,6 +144,7 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     AppFont.SYSTEM to stringResource(R.string.appearance_font_system),
                     AppFont.INTER to stringResource(R.string.appearance_font_inter),
                     AppFont.NUNITO to stringResource(R.string.appearance_font_nunito),
+                    AppFont.MEDEO to stringResource(R.string.appearance_font_medeo),
                 ),
                 onSelect = { font -> store.update { it.copy(font = font) } },
                 itemStyle = { font -> fontStyle.copy(fontFamily = fontFamilyOf(font)) },

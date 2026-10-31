@@ -760,6 +760,7 @@
     <string name="appearance_font_system">Системный</string>
     <string name="appearance_font_inter" translatable="false">Inter</string>
     <string name="appearance_font_nunito" translatable="false">Nunito</string>
+    <string name="appearance_font_medeo" translatable="false">Medeo</string>
     <string name="appearance_font_sample">Как прошёл день? 0123456789</string>
     <string name="appearance_hands">Удобство</string>
     <string name="appearance_left_handed">Режим левши</string>
@@ -900,6 +901,17 @@
     <string name="network_ip_show">Показать IP</string>
     <string name="network_ip_hide">Скрыть IP</string>
     <string name="data_permissions">Разрешения</string>
+    <string name="data_performance">Производительность</string>
+    <string name="data_perf_ram">Память</string>
+    <string name="data_perf_ram_hint">приложение, всего %1$s</string>
+    <string name="data_perf_cpu">Процессор</string>
+    <string name="data_perf_cpu_hint">приложение, ядер: %1$d</string>
+    <string name="data_perf_disk">Диск</string>
+    <string name="data_perf_disk_hint">приложение, свободно %1$s</string>
+    <string name="data_perf_battery">Батарея</string>
+    <string name="data_perf_battery_draw">телефон расходует, заряд %1$d %%</string>
+    <string name="data_perf_battery_charge">телефон заряжается, %1$d %%</string>
+    <string name="data_perf_ma">%1$d мА</string>
     <string name="data_permissions_hint">Снимает уведомления и доступ к Health Connect. Интернет отозвать нельзя, а история использования и показ на весь экран меняются в настройках Android</string>
     <string name="data_permissions_revoke">Отозвать все разрешения</string>
     <string name="data_permissions_revoke_action">Отозвать и закрыть</string>

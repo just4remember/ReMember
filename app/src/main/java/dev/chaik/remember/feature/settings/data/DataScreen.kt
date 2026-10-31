@@ -15,7 +15,18 @@ import android.net.Uri
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.BatteryStd
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.chaik.remember.core.system.PerformanceMonitor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -139,6 +150,72 @@ private fun PermissionsCard() {
     }
 }
 
+/** Четыре окошка с показателями; обновляются, только пока страница на экране. */
+@Composable
+private fun PerformanceTiles() {
+    val context = LocalContext.current
+    val flow = remember { PerformanceMonitor(context.applicationContext).observe() }
+    val data by flow.collectAsStateWithLifecycle(null)
+    val snapshot = data
+    fun size(bytes: Long?) = bytes?.let { Formatter.formatShortFileSize(context, it) } ?: "…"
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PerformanceTile(
+                icon = Icons.Outlined.Memory,
+                label = stringResource(R.string.data_perf_ram),
+                value = size(snapshot?.ramBytes),
+                hint = snapshot?.let { stringResource(R.string.data_perf_ram_hint, size(it.ramTotalBytes)) }.orEmpty(),
+                modifier = Modifier.weight(1f),
+            )
+            PerformanceTile(
+                icon = Icons.Outlined.Speed,
+                label = stringResource(R.string.data_perf_cpu),
+                value = snapshot?.cpuPercent?.let { "%.1f %%".format(it) } ?: "…",
+                hint = snapshot?.let { stringResource(R.string.data_perf_cpu_hint, it.cores) }.orEmpty(),
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PerformanceTile(
+                icon = Icons.Outlined.Storage,
+                label = stringResource(R.string.data_perf_disk),
+                value = size(snapshot?.appDiskBytes),
+                hint = snapshot?.let { stringResource(R.string.data_perf_disk_hint, size(it.diskFreeBytes)) }.orEmpty(),
+                modifier = Modifier.weight(1f),
+            )
+            PerformanceTile(
+                icon = Icons.Outlined.BatteryStd,
+                label = stringResource(R.string.data_perf_battery),
+                value = snapshot?.batteryMilliamps?.let { stringResource(R.string.data_perf_ma, it) } ?: "…",
+                hint = snapshot?.batteryLevel?.let {
+                    stringResource(if (snapshot.charging) R.string.data_perf_battery_charge else R.string.data_perf_battery_draw, it)
+                }.orEmpty(),
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PerformanceTile(icon: ImageVector, label: String, value: String, hint: String, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(colors.surfaceContainerLow)
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = colors.primary, modifier = Modifier.size(18.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
+        }
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        // Две строки всегда: иначе окошки в ряду разной высоты
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, minLines = 2, maxLines = 2)
+    }
+}
+
 @Composable
 fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -191,6 +268,9 @@ fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier
                     Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.outline)
                 }
             }
+
+            SettingsGroupTitle(stringResource(R.string.data_performance))
+            PerformanceTiles()
 
             SettingsGroupTitle(stringResource(R.string.data_permissions))
             PermissionsCard()
