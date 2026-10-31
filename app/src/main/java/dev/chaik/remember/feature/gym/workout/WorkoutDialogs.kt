@@ -46,9 +46,10 @@ import dev.chaik.remember.feature.gym.label
 private const val MAX_SUGGESTIONS = 6
 
 /**
- * Подход: поля под вид упражнения. Новый подход приходит с цифрами прошлого —
- * обычно остаётся поменять одну. Текст первого поля выделен: можно сразу печатать поверх.
- * [onDelete] — только для уже записанного подхода.
+ * Подход: поля под вид упражнения. Новый подход приходит пустым, а в полях серым подсказка [hint]:
+ * незаполненное поле при сохранении берёт значение из неё, поэтому повторить результат — просто «Сохранить».
+ * [note] — пояснение под полями. Записанный подход приходит в [initial], текст первого поля выделен,
+ * [onDelete] — только для него.
  */
 @Composable
 fun SetDialog(
@@ -57,6 +58,8 @@ fun SetDialog(
     onSave: (WorkoutSet) -> Unit,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    hint: WorkoutSet? = null,
+    note: (@Composable () -> Unit)? = null,
 ) {
     fun selected(text: String) = TextFieldValue(text, TextRange(0, text.length))
     var weight by remember { mutableStateOf(selected(initial?.weight?.let(::formatKg).orEmpty())) }
@@ -68,12 +71,23 @@ fun SetDialog(
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
+    val hintWeight = hint?.weight?.let(::formatKg).orEmpty()
+    val hintReps = hint?.reps?.toString().orEmpty()
+    val hintMinutes = hint?.seconds?.let { (it / 60).toString() }.orEmpty()
+    val hintSeconds = hint?.seconds?.let { (it % 60).toString() }.orEmpty()
+    val hintSpeed = hint?.speed?.let(::formatKg).orEmpty()
+    val weightText = weight.text.ifEmpty { hintWeight }
+    val repsText = reps.text.ifEmpty { hintReps }
+    val minutesText = minutes.text.ifEmpty { hintMinutes }
+    val secondsText = seconds.text.ifEmpty { hintSeconds }
+    val speedText = speed.text.ifEmpty { hintSpeed }
+
     val result = when (kind) {
-        ExerciseKind.WEIGHT_REPS -> WorkoutSet(weight = parseKg(weight.text), reps = reps.text.toIntOrNull())
+        ExerciseKind.WEIGHT_REPS -> WorkoutSet(weight = parseKg(weightText), reps = repsText.toIntOrNull())
             .takeIf { it.weight != null || it.reps != null }
-        ExerciseKind.REPS -> reps.text.toIntOrNull()?.let { WorkoutSet(reps = it) }
-        ExerciseKind.TIME -> totalSeconds(minutes.text, seconds.text)?.let { WorkoutSet(seconds = it) }
-        ExerciseKind.SPEED_TIME -> WorkoutSet(speed = parseKg(speed.text), seconds = totalSeconds(minutes.text, seconds.text))
+        ExerciseKind.REPS -> repsText.toIntOrNull()?.let { WorkoutSet(reps = it) }
+        ExerciseKind.TIME -> totalSeconds(minutesText, secondsText)?.let { WorkoutSet(seconds = it) }
+        ExerciseKind.SPEED_TIME -> WorkoutSet(speed = parseKg(speedText), seconds = totalSeconds(minutesText, secondsText))
             .takeIf { it.speed != null || it.seconds != null }
     }
     val save = { result?.let { onSave(it.copy(id = initial?.id ?: 0)) } }
@@ -83,53 +97,53 @@ fun SetDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.gym_edit_set)) },
         text = {
-            when (kind) {
-                ExerciseKind.WEIGHT_REPS -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = weight,
-                        onValueChange = { v -> if (v.text.length <= 6 && v.text.all { it.isDigit() || it == ',' || it == '.' }) weight = v },
-                        label = { Text(stringResource(R.string.gym_set_weight)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focus),
-                    )
-                    OutlinedTextField(
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                when (kind) {
+                    ExerciseKind.WEIGHT_REPS -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SetField(
+                            caption = stringResource(R.string.gym_set_weight),
+                            value = weight,
+                            onChange = { v -> if (v.text.length <= 6 && v.text.all { it.isDigit() || it == ',' || it == '.' }) weight = v },
+                            hint = hintWeight,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                            modifier = Modifier.weight(1f),
+                            fieldModifier = Modifier.focusRequester(focus),
+                        )
+                        SetField(
+                            caption = stringResource(R.string.gym_set_reps),
+                            value = reps,
+                            onChange = { v -> if (v.text.length <= 4 && v.text.all(Char::isDigit)) reps = v },
+                            hint = hintReps,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = done,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    ExerciseKind.REPS -> SetField(
+                        caption = stringResource(R.string.gym_set_reps),
                         value = reps,
-                        onValueChange = { v -> if (v.text.length <= 4 && v.text.all(Char::isDigit)) reps = v },
-                        label = { Text(stringResource(R.string.gym_set_reps)) },
-                        singleLine = true,
+                        onChange = { v -> if (v.text.length <= 4 && v.text.all(Char::isDigit)) reps = v },
+                        hint = hintReps,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                         keyboardActions = done,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        fieldModifier = Modifier.focusRequester(focus),
                     )
+                    ExerciseKind.TIME -> TimeFields(minutes, seconds, hintMinutes, hintSeconds, { minutes = it }, { seconds = it }, done, Modifier.focusRequester(focus))
+                    ExerciseKind.SPEED_TIME -> {
+                        SetField(
+                            caption = stringResource(R.string.gym_set_speed),
+                            value = speed,
+                            onChange = { v -> if (v.text.length <= 5 && v.text.all { it.isDigit() || it == ',' || it == '.' }) speed = v },
+                            hint = hintSpeed,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                            modifier = Modifier.fillMaxWidth(),
+                            fieldModifier = Modifier.focusRequester(focus),
+                        )
+                        TimeFields(minutes, seconds, hintMinutes, hintSeconds, { minutes = it }, { seconds = it }, done)
+                    }
                 }
-                ExerciseKind.REPS -> OutlinedTextField(
-                    value = reps,
-                    onValueChange = { v -> if (v.text.length <= 4 && v.text.all(Char::isDigit)) reps = v },
-                    label = { Text(stringResource(R.string.gym_set_reps)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                    keyboardActions = done,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focus),
-                )
-                ExerciseKind.TIME -> TimeFields(minutes, seconds, { minutes = it }, { seconds = it }, done, Modifier.focusRequester(focus))
-                ExerciseKind.SPEED_TIME -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = speed,
-                        onValueChange = { v -> if (v.text.length <= 5 && v.text.all { it.isDigit() || it == ',' || it == '.' }) speed = v },
-                        label = { Text(stringResource(R.string.gym_set_speed)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focus),
-                    )
-                    TimeFields(minutes, seconds, { minutes = it }, { seconds = it }, done)
-                }
+                note?.invoke()
             }
         },
         confirmButton = {
@@ -148,32 +162,62 @@ fun SetDialog(
     )
 }
 
+/**
+ * Поле подхода. Подпись над полем, а не внутри: подсказка должна быть видна сразу во всех полях,
+ * а встроенная подпись показывает её только в поле с курсором.
+ */
+@Composable
+private fun SetField(
+    caption: String,
+    value: TextFieldValue,
+    onChange: (TextFieldValue) -> Unit,
+    hint: String,
+    keyboardOptions: KeyboardOptions,
+    modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(caption, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            placeholder = if (hint.isEmpty()) null else ({ Text(hint) }),
+            singleLine = true,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            modifier = fieldModifier.fillMaxWidth(),
+        )
+    }
+}
+
 /** Минуты и секунды двумя полями: на цифровой клавиатуре Samsung нет двоеточия. */
 @Composable
 private fun TimeFields(
     minutes: TextFieldValue,
     seconds: TextFieldValue,
+    hintMinutes: String,
+    hintSeconds: String,
     onMinutes: (TextFieldValue) -> Unit,
     onSeconds: (TextFieldValue) -> Unit,
     done: KeyboardActions,
     firstFieldModifier: Modifier = Modifier,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        OutlinedTextField(
+        SetField(
+            caption = stringResource(R.string.gym_set_minutes),
             value = minutes,
-            onValueChange = { v -> if (v.text.length <= 3 && v.text.all(Char::isDigit)) onMinutes(v) },
-            label = { Text(stringResource(R.string.gym_set_minutes)) },
-            singleLine = true,
+            onChange = { v -> if (v.text.length <= 3 && v.text.all(Char::isDigit)) onMinutes(v) },
+            hint = hintMinutes,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            modifier = Modifier
-                .weight(1f)
-                .then(firstFieldModifier),
+            modifier = Modifier.weight(1f),
+            fieldModifier = firstFieldModifier,
         )
-        OutlinedTextField(
+        SetField(
+            caption = stringResource(R.string.gym_set_seconds),
             value = seconds,
-            onValueChange = { v -> if (v.text.length <= 2 && v.text.all(Char::isDigit)) onSeconds(v) },
-            label = { Text(stringResource(R.string.gym_set_seconds)) },
-            singleLine = true,
+            onChange = { v -> if (v.text.length <= 2 && v.text.all(Char::isDigit)) onSeconds(v) },
+            hint = hintSeconds,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             keyboardActions = done,
             modifier = Modifier.weight(1f),

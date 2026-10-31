@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
@@ -49,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +60,7 @@ import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.model.Exercise
+import dev.chaik.remember.core.model.ExerciseHistory
 import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutExercise
 import dev.chaik.remember.core.model.WorkoutSet
@@ -95,6 +98,7 @@ private sealed interface Sheet {
     data class AddSet(val entry: WorkoutExercise) : Sheet
     data class EditSet(val entry: WorkoutExercise, val set: WorkoutSet) : Sheet
     data class Kind(val entry: WorkoutExercise) : Sheet
+    data class Chart(val entry: WorkoutExercise) : Sheet
     data object Delete : Sheet
 }
 
@@ -154,6 +158,7 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
                         onAddSet = { sheet = Sheet.AddSet(entry) },
                         onEditSet = { sheet = Sheet.EditSet(entry, it) },
                         onChangeKind = { sheet = Sheet.Kind(entry) },
+                        onChart = { sheet = Sheet.Chart(entry) },
                         onRemove = { viewModel.removeExercise(entry.id) },
                     )
                 }
@@ -293,6 +298,7 @@ private fun ExerciseCard(
     onAddSet: () -> Unit,
     onEditSet: (WorkoutSet) -> Unit,
     onChangeKind: () -> Unit,
+    onChart: () -> Unit,
     onRemove: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -310,6 +316,9 @@ private fun ExerciseCard(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
             )
+            IconButton(onClick = onChart) {
+                Icon(Icons.AutoMirrored.Outlined.ShowChart, stringResource(R.string.gym_chart), tint = MaterialTheme.colorScheme.outline)
+            }
             Box {
                 IconButton(onClick = { menu = true }) {
                     Icon(Icons.Outlined.MoreVert, stringResource(R.string.gym_exercise_menu), tint = MaterialTheme.colorScheme.outline)
@@ -437,15 +446,49 @@ private fun Sheets(
             },
             onDismiss = close,
         )
-        is Sheet.AddSet -> SetDialog(
-            kind = sheet.entry.exercise.kind,
-            initial = sheet.entry.sets.lastOrNull()?.copy(id = 0),
-            onSave = { set ->
-                viewModel.addSet(sheet.entry.id, set)
-                close()
-            },
-            onDismiss = close,
-        )
+        is Sheet.AddSet -> {
+            val exerciseId = sheet.entry.exercise.id
+            val history by remember(exerciseId) { viewModel.history(exerciseId) }.collectAsStateWithLifecycle(emptyList())
+            val hint = ExerciseHistory.hint(ExerciseHistory.before(history, workout), sheet.entry.sets.size)
+            val kmh = stringResource(R.string.unit_kmh)
+            SetDialog(
+                kind = sheet.entry.exercise.kind,
+                initial = null,
+                // В прошлый раз такого подхода не было — подсказываем предыдущий из этой тренировки
+                hint = hint?.set ?: sheet.entry.sets.lastOrNull(),
+                note = hint?.let {
+                    {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = stringResource(R.string.gym_last_time, formatDay(it.date), it.set.format(sheet.entry.exercise.kind, kmh)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = pluralStringResource(R.plurals.gym_result_held, it.heldFor, it.heldFor),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                },
+                onSave = { set ->
+                    viewModel.addSet(sheet.entry.id, set)
+                    close()
+                },
+                onDismiss = close,
+            )
+        }
+        is Sheet.Chart -> {
+            val exerciseId = sheet.entry.exercise.id
+            val history by remember(exerciseId) { viewModel.history(exerciseId) }.collectAsStateWithLifecycle(emptyList())
+            ExerciseChartDialog(
+                name = sheet.entry.exercise.name,
+                kind = sheet.entry.exercise.kind,
+                points = ExerciseHistory.progress(history, sheet.entry.exercise.kind),
+                onDismiss = close,
+            )
+        }
         is Sheet.EditSet -> SetDialog(
             kind = sheet.entry.exercise.kind,
             initial = sheet.set,

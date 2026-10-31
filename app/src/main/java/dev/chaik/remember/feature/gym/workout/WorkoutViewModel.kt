@@ -9,9 +9,11 @@ import androidx.lifecycle.viewModelScope
 import dev.chaik.remember.app.AppContainer
 import dev.chaik.remember.core.model.Exercise
 import dev.chaik.remember.core.model.ExerciseKind
+import dev.chaik.remember.core.model.ExerciseSession
 import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutSet
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
@@ -99,6 +101,8 @@ class WorkoutViewModel(private val container: AppContainer, private val workoutI
     fun deleteSet(setId: Long) {
         scope.launch { workouts.deleteSet(setId) }
     }
+
+    fun history(exerciseId: Long): Flow<List<ExerciseSession>> = workouts.observeHistory(exerciseId)
 
     /** Прошлый вес для формы «после», если «до» не записан. */
     suspend fun lastBodyWeight(): Double? = workouts.lastBodyWeight()

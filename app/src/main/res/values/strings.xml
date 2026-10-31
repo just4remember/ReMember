@@ -470,6 +470,25 @@
     <string name="gym_edit_set">Подход</string>
     <string name="gym_delete_set">Удалить подход</string>
     <string name="gym_exercise_menu">Действия с упражнением</string>
+    <string name="gym_last_time">В прошлый раз, %1$s: %2$s</string>
+    <plurals name="gym_result_held">
+        <item quantity="one">Результат держится %d тренировку</item>
+        <item quantity="few">Результат держится %d тренировки</item>
+        <item quantity="many">Результат держится %d тренировок</item>
+        <item quantity="other">Результат держится %d тренировки</item>
+    </plurals>
+    <string name="gym_chart">График упражнения</string>
+    <string name="gym_chart_empty">Пока нет записанных подходов</string>
+    <string name="gym_chart_weight">Самый большой вес за тренировку</string>
+    <string name="gym_chart_reps">Больше всего повторов за подход</string>
+    <string name="gym_chart_time">Самый долгий подход за тренировку</string>
+    <string name="gym_chart_speed">Самая высокая скорость за тренировку</string>
+    <string name="gym_chart_kg">кг</string>
+    <string name="gym_chart_empty_range">За этот срок записей нет</string>
+    <string name="gym_chart_month">Месяц</string>
+    <string name="gym_chart_quarter">3 месяца</string>
+    <string name="gym_chart_year">Год</string>
+    <string name="gym_chart_all">Всё время</string>
     <string name="gym_change_kind">Вид подходов</string>
     <string name="gym_remove_exercise">Убрать из тренировки</string>
     <string name="gym_note">Заметка к тренировке</string>

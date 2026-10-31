@@ -445,6 +445,23 @@
     <string name="gym_set_seconds">Seconds</string>
     <string name="gym_edit_set">Set</string>
     <string name="gym_delete_set">Delete set</string>
+    <string name="gym_last_time">Last time, %1$s: %2$s</string>
+    <plurals name="gym_result_held">
+        <item quantity="one">Result held for %d workout</item>
+        <item quantity="other">Result held for %d workouts</item>
+    </plurals>
+    <string name="gym_chart">Exercise chart</string>
+    <string name="gym_chart_empty">No sets recorded yet</string>
+    <string name="gym_chart_weight">Heaviest weight per workout</string>
+    <string name="gym_chart_reps">Most reps in a set</string>
+    <string name="gym_chart_time">Longest set per workout</string>
+    <string name="gym_chart_speed">Top speed per workout</string>
+    <string name="gym_chart_kg">kg</string>
+    <string name="gym_chart_empty_range">No records for this period</string>
+    <string name="gym_chart_month">Month</string>
+    <string name="gym_chart_quarter">3 months</string>
+    <string name="gym_chart_year">Year</string>
+    <string name="gym_chart_all">All time</string>
     <string name="gym_exercise_menu">Exercise actions</string>
     <string name="gym_change_kind">Set type</string>
     <string name="gym_remove_exercise">Remove from workout</string>

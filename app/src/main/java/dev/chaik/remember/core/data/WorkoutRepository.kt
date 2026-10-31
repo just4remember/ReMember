@@ -9,6 +9,7 @@ import dev.chaik.remember.core.database.entity.WorkoutExerciseRow
 import dev.chaik.remember.core.database.entity.WorkoutSetEntity
 import dev.chaik.remember.core.model.Exercise
 import dev.chaik.remember.core.model.ExerciseKind
+import dev.chaik.remember.core.model.ExerciseSession
 import dev.chaik.remember.core.model.Workout
 import dev.chaik.remember.core.model.WorkoutExercise
 import dev.chaik.remember.core.model.WorkoutSet
@@ -61,6 +62,20 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
     suspend fun active(): Workout? = dao.active()?.let { it.toModel(dao.observeNumber(it.id).first(), emptyList(), emptyList()) }
 
     fun observeExercises(): Flow<List<Exercise>> = dao.observeExercises().map { list -> list.map { it.toModel() } }
+
+    /** Тренировки с этим упражнением по хронологии; без подходов не считаются. */
+    fun observeHistory(exerciseId: Long): Flow<List<ExerciseSession>> =
+        dao.observeExerciseSets(exerciseId).map { rows ->
+            rows.groupBy { it.workoutId }.map { (workoutId, sets) ->
+                val first = sets.first()
+                ExerciseSession(
+                    workoutId = workoutId,
+                    date = first.date,
+                    start = first.start,
+                    sets = sets.map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed) },
+                )
+            }
+        }
 
     suspend fun findExercise(name: String): Exercise? = dao.exerciseByKey(name.trim().lowercase())?.toModel()
 

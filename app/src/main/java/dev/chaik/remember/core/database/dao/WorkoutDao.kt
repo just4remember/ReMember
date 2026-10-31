@@ -10,6 +10,19 @@ import dev.chaik.remember.core.database.entity.WorkoutExerciseEntity
 import dev.chaik.remember.core.database.entity.WorkoutExerciseRow
 import dev.chaik.remember.core.database.entity.WorkoutSetEntity
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
+import java.time.LocalTime
+
+data class ExerciseSetRow(
+    val workoutId: Long,
+    val date: LocalDate,
+    val start: LocalTime?,
+    val id: Long,
+    val weight: Double?,
+    val reps: Int?,
+    val seconds: Int?,
+    val speed: Double?,
+)
 
 @Dao
 interface WorkoutDao {
@@ -76,6 +89,20 @@ interface WorkoutDao {
             "WHERE we.workout_id = :workoutId ORDER BY s.workout_exercise_id, s.sort_order",
     )
     fun observeSets(workoutId: Long): Flow<List<WorkoutSetEntity>>
+
+    /** Все подходы упражнения по хронологии — для подсказок и графика. */
+    @Query(
+        """
+        SELECT w.id AS workoutId, w.date AS date, w.start_time AS start,
+            s.id AS id, s.weight AS weight, s.reps AS reps, s.seconds AS seconds, s.speed AS speed
+        FROM workout_set s
+        JOIN workout_exercise we ON we.id = s.workout_exercise_id
+        JOIN workout w ON w.id = we.workout_id
+        WHERE we.exercise_id = :exerciseId
+        ORDER BY w.date, IFNULL(w.start_time, -1), w.id, we.sort_order, s.sort_order
+        """,
+    )
+    fun observeExerciseSets(exerciseId: Long): Flow<List<ExerciseSetRow>>
 
     @Query("SELECT IFNULL(MAX(sort_order) + 1, 0) FROM workout_exercise WHERE workout_id = :workoutId")
     suspend fun nextExerciseOrder(workoutId: Long): Int
