@@ -116,6 +116,7 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
 
     /** Сохранить всё сейчас (приложение уходит в фон). */
     fun flush() {
+        day.lockRating()
         viewModelScope.launch {
             withContext(NonCancellable) {
                 day.flushNow()

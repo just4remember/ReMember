@@ -150,8 +150,10 @@ private fun MainScaffold() {
     }
 
     // Лёгкая вибрация при смене вкладки — и по тапу, и по свайпу
+    val session = LocalContext.current.appContainer.todaySession
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.drop(1).collect {
+            session.onTabChanged()
             haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
             focusManager.clearFocus()
         }

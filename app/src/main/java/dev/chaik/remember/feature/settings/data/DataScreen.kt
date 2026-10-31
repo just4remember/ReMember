@@ -1,5 +1,14 @@
 package dev.chaik.remember.feature.settings.data
 
+import kotlinx.coroutines.launch
+import dev.chaik.remember.core.health.HealthAvailability
+import androidx.core.net.toUri
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.OutlinedButton
+import android.provider.Settings
+import android.os.Process
+import android.app.Activity
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -72,6 +81,64 @@ private const val MIN_PASSWORD = 8
  * Данные и резервные копии: сколько места занято, экспорт всех данных в один файл
  * под паролем и восстановление из такого файла (на этом или другом телефоне).
  */
+/**
+ * Отозвать разрешения. Приложение может снять у себя только обычные разрешения и доступы Health Connect;
+ * интернет не отзывается вовсе, а история использования и показ на весь экран — только в настройках Android.
+ * Android снимает разрешения, когда процесс завершён, поэтому приложение закрывается.
+ */
+@Composable
+private fun PermissionsCard() {
+    val context = LocalContext.current
+    val container = context.appContainer
+    val scope = rememberCoroutineScope()
+    var confirm by remember { mutableStateOf(false) }
+
+    SettingsCard {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.data_permissions_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.data_permissions_revoke))
+            }
+            TextButton(
+                onClick = {
+                    // Настройки Android — не повод блокировать приложение
+                    container.appLock.allowExternal()
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri()),
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.data_permissions_system)) }
+        }
+    }
+
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text(stringResource(R.string.data_permissions_confirm_title)) },
+            text = { Text(stringResource(R.string.data_permissions_confirm_text)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm = false
+                    scope.launch {
+                        runCatching {
+                            if (container.health.availability == HealthAvailability.AVAILABLE) container.health.revokeAllPermissions()
+                        }
+                        context.revokeSelfPermissionsOnKill(listOf(Manifest.permission.POST_NOTIFICATIONS))
+                        (context as? Activity)?.finishAffinity()
+                        Process.killProcess(Process.myPid())
+                    }
+                }) { Text(stringResource(R.string.data_permissions_revoke_action), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
 @Composable
 fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -124,6 +191,9 @@ fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier
                     Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.outline)
                 }
             }
+
+            SettingsGroupTitle(stringResource(R.string.data_permissions))
+            PermissionsCard()
 
             SettingsGroupTitle(stringResource(R.string.data_backup))
             SettingsCard {

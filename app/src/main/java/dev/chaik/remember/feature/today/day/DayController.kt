@@ -44,6 +44,10 @@ class DayController(
     var mood by mutableStateOf<Int?>(null)
         private set
 
+    /** Оценка закрыта замком, чтобы случайно не сбить её. Только что выставленная ещё открыта. */
+    var ratingLocked by mutableStateOf(false)
+        private set
+
     var tags by mutableStateOf<List<Tag>>(emptyList())
         private set
 
@@ -78,6 +82,7 @@ class DayController(
             exists = entry != null
             editor.load(entry?.text.orEmpty())
             mood = entry?.mood
+            lockRating()
             tags = entry?.tags.orEmpty()
             editor.applyPhotoSizes(photos.photos(editor.photoIds))
             saved = snapshot()
@@ -91,6 +96,15 @@ class DayController(
         snapshotFlow { snapshot() }
             .debounce(AUTOSAVE_DELAY_MS)
             .collect { save(it) }
+    }
+
+    /** Закрыть оценку замком: ушли со страницы, сменили день или приложение. Без оценки замка нет. */
+    fun lockRating() {
+        ratingLocked = mood != null
+    }
+
+    fun unlockRating() {
+        ratingLocked = false
     }
 
     /** 0 звёзд — оценки нет. */

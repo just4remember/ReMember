@@ -4,7 +4,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,14 +30,27 @@ import dev.chaik.remember.core.ui.components.TagChips
 @Composable
 fun DayRating(controller: DayController, modifier: Modifier = Modifier) {
     val mood = controller.mood
+    // Ушли с этой страницы (другой режим или вкладка) — оценка закрывается
+    DisposableEffect(controller) { onDispose { controller.lockRating() } }
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         StarRating(
             halves = mood,
             onChange = controller::setMood,
             secret = true,
             starSize = 24.dp,
+            enabled = !controller.ratingLocked,
         )
         Spacer(Modifier.weight(1f))
+        if (controller.ratingLocked) {
+            IconButton(onClick = controller::unlockRating, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    imageVector = Icons.Outlined.Lock,
+                    contentDescription = stringResource(R.string.day_rating_unlock),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
         Text(
             text = when {
                 mood == null -> stringResource(R.string.day_rating_none)
@@ -42,7 +61,8 @@ fun DayRating(controller: DayController, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold,
             color = if (mood != null) StarColor else MaterialTheme.colorScheme.outline,
             maxLines = 1,
-            modifier = Modifier.padding(start = 8.dp),
+            softWrap = false,
+            modifier = Modifier.padding(start = 4.dp),
         )
     }
 }

@@ -19,7 +19,13 @@ import dev.chaik.remember.core.network.WhitelistVerdict
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import dev.chaik.remember.core.network.PublicIp
+import dev.chaik.remember.core.network.PublicIps
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -63,7 +69,27 @@ class NetworkViewModel(container: AppContainer) : ViewModel() {
     var checking by mutableStateOf(false)
         private set
 
+    /** Внешние IP; пусто — ещё не узнали или не удалось (см. [ipLoading]). */
+    var publicIp by mutableStateOf(PublicIps())
+        private set
+    var ipLoading by mutableStateOf(true)
+        private set
+
     val hasNetwork: Boolean get() = network.value.type != NetworkType.NONE
+
+    init {
+        // Сменилась сеть или включили VPN — адрес другой
+        viewModelScope.launch {
+            network.map { it.type to it.vpn }.distinctUntilChanged().collectLatest { (type, _) ->
+                publicIp = PublicIps()
+                ipLoading = type != NetworkType.NONE
+                if (type == NetworkType.NONE) return@collectLatest
+                delay(IP_SETTLE_MS)
+                publicIp = PublicIp.fetch()
+                ipLoading = false
+            }
+        }
+    }
 
     fun startSpeedTest() {
         speedJob?.cancel()
@@ -144,6 +170,9 @@ class NetworkViewModel(container: AppContainer) : ViewModel() {
     }
 
     private companion object {
+        /** Новая сеть не сразу готова: чуть ждём перед запросом адреса. */
+        const val IP_SETTLE_MS = 500L
+
         const val TAG = "Network"
     }
 }

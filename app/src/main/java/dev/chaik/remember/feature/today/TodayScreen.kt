@@ -153,6 +153,10 @@ fun TodayScreen(modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
         }
     }
 
+    // Перешли на другую вкладку — оценка закрывается замком
+    val tabChanges = container.todaySession.tabChanges
+    LaunchedEffect(tabChanges) { if (tabChanges > 0) viewModel.day.lockRating() }
+
     // Новый день мог наступить, пока приложение открыто; смену времени в Профиле тоже подхватываем сразу
     val dayStart = LocalAppSettings.current.dayStartMinutes
     LaunchedEffect(dayStart) {

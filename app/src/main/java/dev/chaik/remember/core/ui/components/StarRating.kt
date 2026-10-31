@@ -69,6 +69,8 @@ fun StarRating(
     allowHalf: Boolean = true,
     secret: Boolean = false,
     starSize: Dp = 28.dp,
+    /** false — оценку видно, но нажатия и свайпы её не меняют. */
+    enabled: Boolean = true,
 ) {
     val haptics = LocalHapticFeedback.current
     val max = stars * 2
@@ -110,7 +112,8 @@ fun StarRating(
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(StarSpacing),
-        modifier = modifier.pointerInput(stars, allowHalf, starSize) {
+        modifier = modifier.pointerInput(stars, allowHalf, starSize, enabled) {
+            if (!enabled) return@pointerInput
             val cell = (starSize + StarSpacing).toPx()
             val star = starSize.toPx()
 

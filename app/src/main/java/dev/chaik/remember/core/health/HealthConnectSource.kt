@@ -41,6 +41,9 @@ class HealthConnectSource(private val context: Context) {
 
     private val client by lazy { HealthConnectClient.getOrCreate(context) }
 
+    /** Отозвать у приложения все доступы Health Connect. */
+    suspend fun revokeAllPermissions() = client.permissionController.revokeAllPermissions()
+
     suspend fun hasPermissions(): Boolean = client.permissionController.getGrantedPermissions().containsAll(permissions)
 
     /** Разрешение читать, пока приложение закрыто, — для уведомления о цели по шагам. */

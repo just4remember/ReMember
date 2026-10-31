@@ -24,7 +24,11 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.SignalCellularAlt
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +65,7 @@ import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.network.NetworkStatus
 import dev.chaik.remember.core.network.NetworkType
+import dev.chaik.remember.core.network.PublicIps
 import dev.chaik.remember.core.network.SiteResult
 import dev.chaik.remember.core.network.SpeedPhase
 import dev.chaik.remember.core.network.WhitelistVerdict
@@ -113,6 +118,7 @@ fun NetworkScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
                 .padding(horizontal = 16.dp),
         ) {
             NetworkCard(network)
+            IpCard(viewModel.publicIp, viewModel.ipLoading)
 
             SettingsGroupTitle(stringResource(R.string.network_speed))
             SettingsCard {
@@ -458,6 +464,55 @@ private fun AddSiteDialog(onAdd: (String) -> Boolean, onDismiss: () -> Unit) {
 }
 
 private enum class ServerChoice { CLOUDFLARE, SELECTEL, CUSTOM }
+
+/** Внешние IPv4 и IPv6: размыты, пока не нажать; повторное нажатие размывает снова. */
+@Composable
+private fun IpCard(ips: PublicIps, loading: Boolean) {
+    var visible by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+    SettingsCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !ips.isEmpty) { visible = !visible }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (ips.isEmpty) {
+                    Text(stringResource(R.string.network_ip), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    Text(
+                        text = if (loading) "…" else stringResource(R.string.network_ip_unknown),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                ips.v4?.let { IpLine("IPv4", it, visible) }
+                ips.v6?.let { IpLine("IPv6", it, visible) }
+            }
+            if (!ips.isEmpty) {
+                Icon(
+                    imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = stringResource(if (visible) R.string.network_ip_hide else R.string.network_ip_show),
+                    tint = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IpLine(label: String, ip: String, visible: Boolean) {
+    Column {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = ip,
+            // IPv6 длинный: поменьше шрифт, чтобы по возможности влез в строку
+            style = if (':' in ip) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
+            modifier = if (visible) Modifier else Modifier.blur(10.dp, BlurredEdgeTreatment.Unbounded),
+        )
+    }
+}
 
 /** Сервер замера: Cloudflare, Selectel или свой — файл для скачивания и, по желанию, адрес для отдачи. */
 @Composable

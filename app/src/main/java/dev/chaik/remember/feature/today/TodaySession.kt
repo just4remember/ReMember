@@ -1,6 +1,7 @@
 package dev.chaik.remember.feature.today
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.time.LocalTime
@@ -20,6 +21,17 @@ class TodaySession(
     private val dayStartMinutes: () -> Int = { 0 },
 ) {
     var mode by mutableStateOf(openingMode())
+
+    /**
+     * Сколько раз сменилась вкладка островка. Вкладки держатся в памяти, и экран «Сегодня»
+     * об уходе с него иначе не узнаёт (нужно, чтобы закрыть оценку замком).
+     */
+    var tabChanges by mutableIntStateOf(0)
+        private set
+
+    fun onTabChanged() {
+        tabChanges++
+    }
 
     private var leftAt = 0L
 
