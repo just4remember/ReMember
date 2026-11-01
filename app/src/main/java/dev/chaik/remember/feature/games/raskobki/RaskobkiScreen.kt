@@ -6,18 +6,22 @@ import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -33,7 +38,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,12 +50,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -60,6 +70,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +87,10 @@ import dev.chaik.remember.core.raskobki.RaskobkiState
 import dev.chaik.remember.core.raskobki.RaskobkiZone
 import dev.chaik.remember.core.raskobki.raskobkiStreak
 import dev.chaik.remember.core.raskobki.raskobkiToday
+import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.ui.components.ScreenScaffold
+import dev.chaik.remember.core.ui.components.StreakFlame
+import dev.chaik.remember.core.ui.components.streakColor
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
@@ -86,7 +100,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlin.math.abs
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -96,6 +112,7 @@ data object RaskobkiRoute : NavKey
 private val CellShape = RoundedCornerShape(10.dp)
 private val CellSpacing = 4.dp
 private const val WEEKS_IN_GRID = 6
+private val SWIPE_THRESHOLD = 48.dp
 
 /** Сайт игры: выпуски, которых нет в приложении, имя и аватар. */
 internal fun openRaskobkiSite(context: Context, path: String = "") {
@@ -140,14 +157,24 @@ fun RaskobkiScreen(
     val repository = LocalContext.current.appContainer.raskobki
     val progress by repository.progress.collectAsState()
     val account by repository.account.collectAsState()
+    val ready by repository.ready.collectAsState()
     var calendar by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val today by produceState(raskobkiToday()) {
         while (true) {
             value = raskobkiToday()
             delay(1_000)
         }
     }
-    val load by produceState<RaskobkiLoad?>(null, today) { value = repository.puzzle(today) }
+    val days = ChronoUnit.DAYS.between(RaskobkiStart, today).toInt() + 1
+    val pager = rememberPagerState(initialPage = days - 1) { days }
+    val haptics = LocalHapticFeedback.current
+    val gameHaptics = LocalAppSettings.current.gameHaptics
+    LaunchedEffect(pager, gameHaptics) {
+        snapshotFlow { pager.currentPage }.drop(1).collect {
+            if (gameHaptics) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+        }
+    }
     val streak = remember(progress, today) { raskobkiStreak(progress, today) }
     // Обновляемся и при открытии экрана, и при возврате в приложение, например с сайта
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
@@ -175,33 +202,41 @@ fun RaskobkiScreen(
         },
     ) { padding ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = 16.dp, vertical = 4.dp),
         ) {
-            Text(
-                stringResource(R.string.raskobki_home_title),
-                fontWeight = FontWeight.Bold,
-                fontSize = 30.sp,
-            )
+            Text(stringResource(R.string.raskobki_home_title), fontWeight = FontWeight.Bold, fontSize = 24.sp)
             Text(
                 stringResource(R.string.raskobki_home_lead),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodySmall,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                StreakCard(streak.size, Modifier.weight(1f))
-                CountdownCard(Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                StreakCard(streak.size, ready, Modifier.weight(1f).fillMaxHeight())
+                CountdownCard(Modifier.weight(1f).fillMaxHeight())
             }
-            OutlinedButton(onClick = { calendar = true }, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Outlined.CalendarMonth, null, Modifier.size(18.dp))
-                Spacer(Modifier.size(8.dp))
-                Text(stringResource(R.string.raskobki_calendar))
-            }
-            DayCard(today, load, progress[today], onOpen = { onOpenDay(today) })
+            DaySwitcher(
+                pager = pager,
+                onBack = { scope.launch { pager.animateScrollToPage(pager.currentPage - 1) } },
+                onForward = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
+                onCalendar = { calendar = true },
+            )
+            // Двигается только дата, карточка стоит и обновляется, когда день выбран
+            val day = RaskobkiStart.plusDays(pager.settledPage.toLong())
+            DayCard(
+                day = day,
+                state = progress[day],
+                ready = ready,
+                modifier = Modifier.weight(1f),
+                onOpen = { onOpenDay(day) },
+                onSwipe = { step ->
+                    val target = pager.currentPage + step
+                    if (target in 0 until days) scope.launch { pager.animateScrollToPage(target) }
+                },
+            )
         }
     }
     if (calendar) {
@@ -211,6 +246,7 @@ fun RaskobkiScreen(
             streak = streak,
             onPick = {
                 calendar = false
+                scope.launch { pager.scrollToPage(ChronoUnit.DAYS.between(RaskobkiStart, it).toInt()) }
                 onOpenDay(it)
             },
             onDismiss = { calendar = false },
@@ -222,7 +258,7 @@ fun RaskobkiScreen(
 private fun RaskobkiCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = modifier,
         content = content,
     )
@@ -234,22 +270,23 @@ internal fun RaskobkiKicker(text: String, modifier: Modifier = Modifier) {
         text.uppercase(),
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
-        fontSize = 11.sp,
-        letterSpacing = 1.2.sp,
+        fontSize = 10.sp,
+        letterSpacing = 1.sp,
         modifier = modifier,
     )
 }
 
 @Composable
-private fun StreakCard(days: Int, modifier: Modifier = Modifier) {
+private fun StreakCard(days: Int, ready: Boolean, modifier: Modifier = Modifier) {
     RaskobkiCard(modifier) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             RaskobkiKicker(stringResource(R.string.raskobki_streak))
-            Text(
-                "🔥 " + pluralStringResource(R.plurals.raskobki_days, days, days),
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 20.sp,
-            )
+            if (ready) {
+                StreakFlame(days, suffix = pluralStringResource(R.plurals.raskobki_days_word, days))
+            } else {
+                Text("—", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(vertical = 4.dp))
+            }
+            CardHint(stringResource(R.string.raskobki_streak_hint))
         }
     }
 }
@@ -270,34 +307,114 @@ private fun CountdownCard(modifier: Modifier = Modifier) {
             Text(
                 "%02d:%02d:%02d".format(left / 3600, left % 3600 / 60, left % 60),
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
+                fontSize = 16.sp,
+                modifier = Modifier.padding(vertical = 4.dp),
             )
+            CardHint(stringResource(R.string.raskobki_next_layer_hint))
+        }
+    }
+}
+
+/** Мелкая подпись карточки, как на сайте. */
+@Composable
+private fun CardHint(text: String) {
+    Text(
+        text,
+        fontSize = 10.sp,
+        lineHeight = 13.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 2,
+        minLines = 2,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+/** Стрелки стоят на месте, свайпом листается сама дата; нажатие на дату открывает календарь. */
+@Composable
+private fun DaySwitcher(pager: PagerState, onBack: () -> Unit, onForward: () -> Unit, onCalendar: () -> Unit) {
+    RaskobkiCard(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack, enabled = pager.currentPage > 0) {
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, stringResource(R.string.raskobki_previous_day))
+            }
+            HorizontalPager(state = pager, key = { it }, modifier = Modifier.weight(1f)) { page ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClickLabel = stringResource(R.string.raskobki_calendar), onClick = onCalendar)
+                        .padding(vertical = 10.dp),
+                ) {
+                    Icon(Icons.Outlined.CalendarMonth, null, Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        RaskobkiStart.plusDays(page.toLong()).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault())),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+            IconButton(onClick = onForward, enabled = pager.currentPage < pager.pageCount - 1) {
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, stringResource(R.string.raskobki_next_day))
+            }
         }
     }
 }
 
 @Composable
-private fun DayCard(day: LocalDate, load: RaskobkiLoad?, state: RaskobkiState?, onOpen: () -> Unit) {
+private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modifier: Modifier, onOpen: () -> Unit, onSwipe: (Int) -> Unit) {
+    val repository = LocalContext.current.appContainer.raskobki
+    val load by produceState<RaskobkiLoad?>(null, day) { value = repository.puzzle(day) }
     val puzzle = (load as? RaskobkiLoad.Ready)?.puzzle
-    RaskobkiCard(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable(onClick = onOpen)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            RaskobkiKicker(day.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("ru"))))
+    val colors = MaterialTheme.colorScheme
+    val threshold = with(LocalDensity.current) { SWIPE_THRESHOLD.toPx() }
+    val swipe by rememberUpdatedState(onSwipe)
+    RaskobkiCard(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            // Сама карточка не едет, но свайп по ней тоже меняет день
+            .pointerInput(Unit) {
+                var dragged = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { dragged = 0f },
+                    onDragEnd = {
+                        if (abs(dragged) > threshold) swipe(if (dragged < 0) 1 else -1)
+                    },
+                ) { change, amount ->
+                    change.consume()
+                    dragged += amount
+                }
+            }
+            .clickable(enabled = ready, onClick = onOpen),
+    ) {
+        // Кнопка всегда внизу карточки: длинный текст прокручивается над ней
+        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            ) {
             Text(
-                stringResource(if (state?.c == true) R.string.raskobki_found else R.string.raskobki_waiting),
+                when {
+                    !ready -> "—"
+                    state?.c == true -> stringResource(R.string.raskobki_found)
+                    else -> stringResource(R.string.raskobki_waiting)
+                },
                 fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+                fontSize = 18.sp,
             )
             puzzle?.cardText?.takeIf { it.isNotBlank() }?.let {
-                Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
             if (puzzle != null) {
-                Text(
-                    "${puzzle.era} · ${puzzle.region}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PuzzleLabel(stringResource(R.string.raskobki_era), puzzle.era, Modifier.weight(1f))
+                    PuzzleLabel(stringResource(R.string.raskobki_region), puzzle.region, Modifier.weight(1f))
+                }
             }
-            Button(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+            }
+            Button(onClick = onOpen, enabled = ready, modifier = Modifier.fillMaxWidth()) {
                 val label = when {
                     state?.c == true -> R.string.raskobki_show_result
                     state?.s.isNullOrEmpty() -> R.string.raskobki_start
@@ -308,6 +425,14 @@ private fun DayCard(day: LocalDate, load: RaskobkiLoad?, state: RaskobkiState?, 
                 Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.size(18.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun PuzzleLabel(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        RaskobkiKicker(label)
+        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -402,7 +527,7 @@ private fun MonthCells(
             Row(horizontalArrangement = Arrangement.spacedBy(CellSpacing)) {
                 week.forEach { day ->
                     if (day == null) Spacer(Modifier.size(cell))
-                    else CalendarCell(day, today, progress[day], totals[day], day in streak, onPick, Modifier.size(cell))
+                    else CalendarCell(day, today, progress[day], totals[day], day in streak, streak.size, onPick, Modifier.size(cell))
                 }
             }
         }
@@ -417,6 +542,7 @@ private fun CalendarCell(
     state: RaskobkiState?,
     total: Int?,
     inStreak: Boolean,
+    streakDays: Int,
     onPick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -424,7 +550,7 @@ private fun CalendarCell(
     val open = day in RaskobkiStart..today
     val done = state?.c == true
     val marker = when {
-        inStreak -> "🔥"
+        inStreak -> null
         done -> RaskobkiGrade.of(state!!.score).roman
         !state?.s.isNullOrEmpty() && total != null -> "${state.s.size}/$total"
         else -> null
@@ -453,7 +579,9 @@ private fun CalendarCell(
                     else -> colors.onSurface
                 },
             )
-            if (marker != null) {
+            if (inStreak) {
+                Icon(Icons.Filled.LocalFireDepartment, null, tint = streakColor(streakDays) ?: colors.primary, modifier = Modifier.size(16.dp))
+            } else if (marker != null) {
                 Text(marker, fontSize = 9.sp, lineHeight = 10.sp, color = colors.primary)
             }
         }

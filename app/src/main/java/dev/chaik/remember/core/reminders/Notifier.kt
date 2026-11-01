@@ -27,6 +27,7 @@ enum class NotificationType(val id: String, @param:StringRes val title: Int) {
     SUMMARY("summary", R.string.channel_summary),
     WORKOUT("workout", R.string.channel_workout),
     HEALTH("health", R.string.channel_health),
+    GAMES("games", R.string.channel_games),
 }
 
 /** Постоянные номера уведомлений: новое такое же заменяет прежнее, а приложение может их убрать. */
@@ -37,6 +38,7 @@ object NotificationIds {
     const val TEST = 4
     const val STEPS = 5
     const val HEALTH_GOALS = 6
+    const val RASKOBKI = 7
 }
 
 /** Готовое к показу уведомление. */
@@ -148,7 +150,7 @@ class Notifier(private val context: Context) {
     )
 
     /**
-     * Вошли в приложение — напоминания о записи дня и сна и поздравления «Здоровья» больше не нужны
+     * Вошли в приложение — напоминания о записи дня и сна, о Ра[скобках] и поздравления «Здоровья» больше не нужны
      * в шторке. Сводка о планах на день остаётся.
      */
     fun clearOnAppOpen() {
@@ -157,6 +159,7 @@ class Notifier(private val context: Context) {
         notifications.cancel(NotificationIds.SLEEP)
         notifications.cancel(NotificationIds.STEPS)
         notifications.cancel(NotificationIds.HEALTH_GOALS)
+        notifications.cancel(NotificationIds.RASKOBKI)
     }
 
     fun post(message: Message, sound: SoundMode) {

@@ -7,6 +7,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -154,6 +155,21 @@ fun raskobkiStreak(completed: Map<LocalDate, RaskobkiState>, today: LocalDate): 
         }
     }
 }
+
+/** Результат аккаунта важнее незаконченного прогресса, законченный прогресс подробнее результата. */
+fun mergeWithResults(results: Map<LocalDate, RaskobkiState>, local: Map<LocalDate, RaskobkiState>): Map<LocalDate, RaskobkiState> =
+    results + local.filter { (day, state) -> state.c || day !in results }
+
+/** Сохранённые состояния из записей вида «префикс + дата»; битые записи пропускаются. */
+fun parseSavedStates(entries: Map<String, *>, prefix: String): Map<LocalDate, RaskobkiState> =
+    entries.entries.mapNotNull { (key, value) ->
+        if (!key.startsWith(prefix) || value !is String) return@mapNotNull null
+        runCatching {
+            LocalDate.parse(key.removePrefix(prefix)) to SavedStateJson.decodeFromString(RaskobkiState.serializer(), value)
+        }.getOrNull()
+    }.toMap()
+
+private val SavedStateJson = Json { ignoreUnknownKeys = true }
 
 /** Средний счёт и личный рекорд по решённым выпускам, как в профиле на сайте. */
 data class RaskobkiStats(val average: Int, val best: Int)

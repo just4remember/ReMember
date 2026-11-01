@@ -69,6 +69,7 @@ import dev.chaik.remember.app.ui.IslandHeight
 import dev.chaik.remember.core.security.AppLock
 import dev.chaik.remember.core.ui.LocalIslandPadding
 import dev.chaik.remember.core.ui.LocalTabVisible
+import dev.chaik.remember.feature.games.raskobki.RaskobkiRoute
 import dev.chaik.remember.core.ui.components.SwipeBackHost
 import dev.chaik.remember.core.ui.theme.ReMemberTheme
 import kotlinx.coroutines.flow.drop
@@ -187,6 +188,7 @@ private fun MainScaffold() {
             is OpenTarget.Workout -> Destination.Gym
             OpenTarget.Health -> Destination.Health
             OpenTarget.Time -> Destination.Time
+            OpenTarget.Raskobki -> Destination.Games
         }
         // Раздел выключен в «Страницах» — туда не попасть и по уведомлению
         if (settings.isDisabled(section)) {
@@ -202,6 +204,7 @@ private fun MainScaffold() {
         when (target) {
             is OpenTarget.Task -> stack.add(TaskEditorRoute(target.taskId))
             is OpenTarget.Workout -> stack.add(WorkoutRoute(target.workoutId, target.finish))
+            OpenTarget.Raskobki -> stack.add(RaskobkiRoute)
             // Достаточно открыть сам раздел
             OpenTarget.Health, OpenTarget.Time -> Unit
             // День, сон и дату календаря выставит сам экран и обнулит запрос

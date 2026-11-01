@@ -12,6 +12,8 @@ import dev.chaik.remember.core.data.TaskRepository
 import dev.chaik.remember.core.data.WorkoutRepository
 import dev.chaik.remember.core.model.Event
 import dev.chaik.remember.core.model.Task
+import dev.chaik.remember.core.raskobki.RaskobkiRepository
+import dev.chaik.remember.core.raskobki.raskobkiToday
 import dev.chaik.remember.feature.calendar.eventsOn
 import dev.chaik.remember.feature.calendar.formatDay
 import kotlinx.coroutines.flow.first
@@ -38,6 +40,7 @@ class ReminderScheduler(
     private val events: EventRepository,
     private val tasks: TaskRepository,
     private val workouts: WorkoutRepository,
+    private val raskobki: RaskobkiRepository,
 ) {
     private val alarms = context.getSystemService(AlarmManager::class.java)
     private val lock = Mutex()
@@ -131,6 +134,18 @@ class ReminderScheduler(
                 }
             }
             is Reminder.Summary -> if (r.date == today) summary(r.date, allEvents, allTasks, planned.silent) else null
+            is Reminder.Raskobki -> if (r.date != today || raskobki.progress.value[raskobkiToday()]?.c == true) {
+                null
+            } else {
+                Message(
+                    id = NotificationIds.RASKOBKI,
+                    type = NotificationType.GAMES,
+                    title = context.getString(R.string.notify_raskobki_title),
+                    text = context.getString(R.string.notify_raskobki_text),
+                    target = OpenTarget.Raskobki,
+                    silent = planned.silent,
+                )
+            }
             is Reminder.EventAlert -> eventMessage(r, planned.silent, today, allEvents)
             is Reminder.WorkoutRunning -> if (workouts.active()?.id != r.workoutId) {
                 null

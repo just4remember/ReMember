@@ -108,6 +108,15 @@ fun RaskobkiPlayScreen(route: RaskobkiPlayRoute, onBack: () -> Unit, modifier: M
         RaskobkiConsentScreen(metrics, onBack, modifier)
         return
     }
+    // Пока неизвестно, решён ли выпуск, игру не начинаем: таймер и события ушли бы на сервер
+    val ready by repository.ready.collectAsState()
+    LaunchedEffect(ready) {
+        if (!ready) runCatching { repository.sync() }
+    }
+    if (!ready) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        return
+    }
     var attempt by remember { mutableIntStateOf(0) }
     var load by remember { mutableStateOf<RaskobkiLoad?>(null) }
     LaunchedEffect(attempt) {
@@ -315,8 +324,6 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
                         accent = raskobkiBracketColor(),
                         locked = colors.onSurface.copy(alpha = 0.83f),
                         solved = raskobkiAnswerColor(),
-                        peekBackground = colors.primaryContainer,
-                        peekText = colors.onPrimaryContainer,
                     ) { hintNode = it },
                     fontSize = 18.sp,
                     lineHeight = 29.sp,
@@ -413,14 +420,13 @@ internal fun puzzleText(
     accent: Color,
     locked: Color,
     solved: Color,
-    peekBackground: Color,
-    peekText: Color,
     onReady: (RaskobkiNode) -> Unit,
 ): AnnotatedString {
     val bracket = SpanStyle(color = accent, fontWeight = FontWeight.Bold)
     val lockedStyle = SpanStyle(color = locked)
     val solvedStyle = SpanStyle(color = solved, fontWeight = FontWeight.Bold)
-    val peek = SpanStyle(color = peekText, background = peekBackground, fontWeight = FontWeight.ExtraBold)
+    // Первая буква в цвете скобок, на мягкой подложке
+    val peek = SpanStyle(color = accent, background = accent.copy(alpha = 0.16f), fontWeight = FontWeight.ExtraBold)
 
     fun AnnotatedString.Builder.append(items: List<RaskobkiPart>) {
         items.forEach { part ->

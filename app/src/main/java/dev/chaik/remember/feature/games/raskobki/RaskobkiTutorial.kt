@@ -100,8 +100,6 @@ internal fun RaskobkiColorPreview() {
                 accent = raskobkiBracketColor(),
                 locked = colors.onSurface.copy(alpha = 0.83f),
                 solved = raskobkiAnswerColor(),
-                peekBackground = colors.primaryContainer,
-                peekText = colors.onPrimaryContainer,
             ) {},
             fontSize = 18.sp,
             lineHeight = 28.sp,
@@ -178,8 +176,6 @@ internal fun RaskobkiTutorial(onDismiss: () -> Unit) {
                                 accent = raskobkiBracketColor(),
                                 locked = colors.onSurface.copy(alpha = 0.83f),
                                 solved = raskobkiAnswerColor(),
-                                peekBackground = colors.primaryContainer,
-                                peekText = colors.onPrimaryContainer,
                             ) { node ->
                                 // В примере подсказки бесплатны: сначала буква, потом слово целиком
                                 if (node.id in state.h) {

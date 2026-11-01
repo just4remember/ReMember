@@ -84,6 +84,7 @@ import dev.chaik.remember.core.editor.EditorToolbarHeight
 import dev.chaik.remember.core.editor.PhotoViewer
 import dev.chaik.remember.core.editor.RichEditor
 import dev.chaik.remember.core.reminders.OpenTarget
+import dev.chaik.remember.core.ui.components.StreakFlame
 import dev.chaik.remember.core.ui.components.MasterButton
 import dev.chaik.remember.core.ui.components.daySwipeModifier
 import dev.chaik.remember.core.ui.components.MasterButtonItem
@@ -317,87 +318,6 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
 }
 
 private const val DAY_CHECK_MS = 30_000L
-
-/** Цвет огонька с такого числа дней подряд. Следующая строка — следующий цвет. */
-private class StreakLevel(val fromDays: Int, val color: Color)
-
-private val StreakLevels = listOf(
-    StreakLevel(1, Color(0xFFFFC83D)), // жёлтый
-    StreakLevel(7, Color(0xFFFF8C2E)), // оранжевый
-    StreakLevel(14, Color(0xFFF0504D)), // красный
-    StreakLevel(30, Color(0xFF5CC8F5)), // голубой
-    StreakLevel(60, Color(0xFF4A86F0)), // синий
-    StreakLevel(100, Color(0xFFA25CE6)), // фиолетовый
-    StreakLevel(200, Color(0xFF3FB868)), // зелёный
-)
-
-private fun streakLevel(days: Int): StreakLevel? = StreakLevels.lastOrNull { days >= it.fromDays }
-
-/** Огонёк серии: значок и число одного цвета, цвет растёт вместе с серией. Тап — какие цвета бывают. */
-@Composable
-private fun StreakFlame(days: Int, modifier: Modifier = Modifier) {
-    var showLevels by remember { mutableStateOf(false) }
-    val description = pluralStringResource(R.plurals.today_streak, days, days)
-    val color = streakLevel(days)?.color ?: MaterialTheme.colorScheme.outline
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClickLabel = stringResource(R.string.today_streak_levels)) { showLevels = true }
-            .semantics(mergeDescendants = true) { contentDescription = description }
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-    ) {
-        Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(22.dp))
-        Text(days.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
-    }
-    if (showLevels) StreakLevelsDialog(days, description, onDismiss = { showLevels = false })
-}
-
-/** Все цвета огонька и сколько дней подряд нужно для каждого; текущий выделен. */
-@Composable
-private fun StreakLevelsDialog(days: Int, current: String, onDismiss: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val active = streakLevel(days)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.today_streak_levels)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = current,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colors.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-                StreakLevels.forEachIndexed { index, level ->
-                    val next = StreakLevels.getOrNull(index + 1)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .then(if (level === active) Modifier.background(colors.surfaceContainerHighest) else Modifier)
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                    ) {
-                        Icon(Icons.Filled.LocalFireDepartment, null, tint = level.color, modifier = Modifier.size(26.dp))
-                        Text(
-                            text = if (next != null) {
-                                stringResource(R.string.today_streak_range, level.fromDays, next.fromDays - 1)
-                            } else {
-                                stringResource(R.string.today_streak_from, level.fromDays)
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (level === active) FontWeight.Bold else null,
-                            color = level.color,
-                            modifier = Modifier.padding(start = 12.dp),
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_ok)) } },
-    )
-}
 
 /** Режим «День»: оценка, теги и запись с фото. */
 @Composable

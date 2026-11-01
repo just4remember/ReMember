@@ -13,6 +13,8 @@ data class ReminderSettings(
     val sleep: DailyReminder = DailyReminder(enabled = true, time = LocalTime.of(9, 0)),
     /** Утренняя сводка: события и задачи на сегодня. */
     val summary: DailyReminder = DailyReminder(enabled = false, time = LocalTime.of(8, 0)),
+    /** Ра[скобки]: не приходит, если выпуск дня уже решён. */
+    val raskobki: DailyReminder = DailyReminder(enabled = false, time = LocalTime.of(12, 0)),
     /** Напоминать о событиях (за сколько — в каждом событии). */
     val events: Boolean = true,
     /** Напоминать о задачах, у которых указаны срок и время. */

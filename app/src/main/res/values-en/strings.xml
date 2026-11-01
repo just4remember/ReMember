@@ -896,7 +896,7 @@
     <string name="network_server_selectel">Selectel, Russia (speedtest.selectel.ru)</string>
     <string name="network_server_selectel_hint">Measures ping and download. This server doesn\'t accept uploads</string>
     <string name="game_raskobki">Ra[skobki]</string>
-    <string name="game_raskobki_hint">Find of the day: a recursive crossword</string>
+    <string name="game_raskobki_hint">Recursive crossword</string>
     <string name="game_raskobki_error">Couldn\'t load the puzzle. Check your connection</string>
     <string name="game_raskobki_retry">Retry</string>
     <string name="raskobki_sign_in">Sign in</string>
@@ -936,11 +936,23 @@
     <string name="raskobki_home_title">Find of the day</string>
     <string name="raskobki_home_lead">Answers to clues become words in the next level of clues. Solve layer by layer until the whole event is uncovered.</string>
     <string name="raskobki_streak">Streak</string>
-    <plurals name="raskobki_days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
+    <plurals name="raskobki_days_word">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
     </plurals>
+    <string name="raskobki_streak_hint">Solve puzzles daily or your streak burns out</string>
+    <string name="raskobki_next_layer_hint">00:00 · Europe/Moscow</string>
     <string name="raskobki_next_layer">Next layer</string>
+    <string name="raskobki_previous_day">Previous day</string>
+    <string name="raskobki_next_day">Next day</string>
+    <string name="raskobki_era">Era</string>
+    <string name="raskobki_region">Region</string>
+    <string name="channel_games">Games</string>
+    <string name="reminders_group_games">Games</string>
+    <string name="reminders_raskobki">Raskobki reminder</string>
+    <string name="reminders_raskobki_hint">Won\'t come if today\'s puzzle is solved</string>
+    <string name="notify_raskobki_title">The find of the day awaits</string>
+    <string name="notify_raskobki_text">Time to solve today\'s puzzle</string>
     <string name="raskobki_calendar">Puzzle calendar</string>
     <string name="raskobki_previous_month">Previous month</string>
     <string name="raskobki_next_month">Next month</string>

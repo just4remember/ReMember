@@ -128,6 +128,7 @@ class AppContainer(context: Context) {
             eventRepository,
             taskRepository,
             workoutRepository,
+            raskobki,
         )
     }
 

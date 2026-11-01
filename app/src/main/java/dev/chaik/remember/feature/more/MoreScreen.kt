@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
@@ -95,6 +96,8 @@ fun SectionTile(
     hint: String,
     accentIndex: Int,
     onClick: () -> Unit,
+    /** Заголовок с оформлением; если задан, показывается вместо [title]. */
+    styledTitle: AnnotatedString? = null,
 ) {
     val (container, content) = MaterialTheme.colorScheme.accentFor(accentIndex)
     Card(
@@ -114,7 +117,7 @@ fun SectionTile(
             }
             Spacer(Modifier.height(14.dp))
             Text(
-                text = title,
+                text = styledTitle ?: AnnotatedString(title),
                 style = MaterialTheme.typography.titleMedium,
             )
             Spacer(Modifier.height(2.dp))

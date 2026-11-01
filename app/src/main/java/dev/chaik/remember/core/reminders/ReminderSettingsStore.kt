@@ -43,6 +43,7 @@ class ReminderSettingsStore(context: Context) {
             dayReport = readDaily("day", d.dayReport),
             sleep = readDaily("sleep", d.sleep),
             summary = readDaily("summary", d.summary),
+            raskobki = readDaily("raskobki", d.raskobki),
             events = prefs.getBoolean("events", d.events),
             tasks = prefs.getBoolean("tasks", d.tasks),
             quiet = QuietHours(
@@ -60,6 +61,7 @@ class ReminderSettingsStore(context: Context) {
         writeDaily(this, "day", s.dayReport)
         writeDaily(this, "sleep", s.sleep)
         writeDaily(this, "summary", s.summary)
+        writeDaily(this, "raskobki", s.raskobki)
         putBoolean("events", s.events)
         putBoolean("tasks", s.tasks)
         putBoolean("quiet.enabled", s.quiet.enabled)

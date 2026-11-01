@@ -19,6 +19,9 @@ sealed interface OpenTarget {
     /** Страница «Время» (будильник в шторке, идущий таймер или секундомер). */
     data object Time : OpenTarget
 
+    /** Главный экран Ра[скобок]. */
+    data object Raskobki : OpenTarget
+
     /** [finish] — сразу с формой «закончить тренировку». */
     data class Workout(val workoutId: Long, val finish: Boolean = false) : OpenTarget
 
@@ -33,6 +36,7 @@ sealed interface OpenTarget {
                 Sleep -> "sleep"
                 Health -> "health"
                 Time -> "time"
+                Raskobki -> "raskobki"
                 is Calendar -> "calendar:${target.date.toEpochDay()}"
                 is Task -> "task:${target.taskId}"
                 is Workout -> (if (target.finish) "finish:" else "workout:") + target.workoutId
@@ -48,6 +52,7 @@ sealed interface OpenTarget {
                 value == "sleep" -> Sleep
                 value == "health" -> Health
                 value == "time" -> Time
+                value == "raskobki" -> Raskobki
                 value.startsWith("calendar:") && arg != null -> Calendar(LocalDate.ofEpochDay(arg))
                 value.startsWith("task:") && arg != null -> Task(arg)
                 value.startsWith("workout:") && arg != null -> Workout(arg)

@@ -63,6 +63,7 @@ import dev.chaik.remember.core.raskobki.raskobkiStats
 import dev.chaik.remember.core.raskobki.raskobkiStreak
 import dev.chaik.remember.core.raskobki.raskobkiToday
 import dev.chaik.remember.core.ui.components.ScreenScaffold
+import dev.chaik.remember.core.ui.components.StreakFlame
 import dev.chaik.remember.feature.settings.appearance.ColorPickerDialog
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -268,9 +269,9 @@ private fun Signed(account: RaskobkiAccount, repository: RaskobkiRepository) {
             Text(account.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.raskobki_streak), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("🔥 $streak", fontWeight = FontWeight.Bold)
+        StreakFlame(streak)
     }
     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.raskobki_completed_count), color = MaterialTheme.colorScheme.onSurfaceVariant)

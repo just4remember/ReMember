@@ -61,13 +61,17 @@ class RaskobkiRepository(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var local = readProgress()
-    private var results = emptyMap<LocalDate, RaskobkiState>()
-    private val _progress = MutableStateFlow(local)
+    private var results = parseSavedStates(prefs.all, RESULT_PREFIX)
+    private val _progress = MutableStateFlow(mergeWithResults(results, local))
     private val _account = MutableStateFlow(readAccount())
+    private val _ready = MutableStateFlow(_account.value == null || prefs.getBoolean(KEY_RESULTS_SAVED, false))
 
     /** Прогресс по дням вместе с результатами аккаунта. */
     val progress: StateFlow<Map<LocalDate, RaskobkiState>> = _progress
     val account: StateFlow<RaskobkiAccount?> = _account
+
+    /** false — аккаунт есть, но его результатов ещё нет: решённый выпуск выглядел бы нерешённым. */
+    val ready: StateFlow<Boolean> = _ready
 
     private val _bracketColor = MutableStateFlow(readColor(KEY_BRACKET_COLOR))
     private val _answerColor = MutableStateFlow(readColor(KEY_ANSWER_COLOR))
@@ -154,8 +158,7 @@ class RaskobkiRepository(context: Context) {
     }
 
     private fun publish() {
-        // Результат аккаунта важнее незаконченного прогресса, законченный прогресс подробнее результата
-        _progress.value = results + local.filter { (day, state) -> state.c || day !in results }
+        _progress.value = mergeWithResults(results, local)
     }
 
     private fun pushNow(puzzle: RaskobkiPuzzle) {
@@ -223,13 +226,14 @@ class RaskobkiRepository(context: Context) {
 
     private fun strings(values: List<String>) = JsonArray(values.map(::JsonPrimitive))
 
-    private fun readProgress(): Map<LocalDate, RaskobkiState> =
-        prefs.all.entries.mapNotNull { (key, value) ->
-            if (!key.startsWith(STATE_PREFIX) || value !is String) return@mapNotNull null
-            runCatching {
-                LocalDate.parse(key.removePrefix(STATE_PREFIX)) to json.decodeFromString(RaskobkiState.serializer(), value)
-            }.getOrNull()
-        }.toMap()
+    private fun readProgress(): Map<LocalDate, RaskobkiState> = parseSavedStates(prefs.all, STATE_PREFIX)
+
+    /** Результаты аккаунта лежат на телефоне: после запуска они видны сразу, без ответа сервера. */
+    private fun saveResults(values: Map<LocalDate, RaskobkiState>) = prefs.edit {
+        prefs.all.keys.filter { it.startsWith(RESULT_PREFIX) }.forEach(::remove)
+        values.forEach { (day, state) -> putString("$RESULT_PREFIX$day", json.encodeToString(RaskobkiState.serializer(), state)) }
+        putBoolean(KEY_RESULTS_SAVED, true)
+    }
 
     // ---- Аккаунт ----
 
@@ -248,6 +252,7 @@ class RaskobkiRepository(context: Context) {
         }
         _account.value = RaskobkiAccount(signedIn.uid, email, null)
         syncedAt = 0L
+        _ready.value = false
         runCatching { sync() }
     }
 
@@ -260,8 +265,10 @@ class RaskobkiRepository(context: Context) {
         results = emptyMap()
         publish()
         _account.value = null
+        _ready.value = true
         prefs.edit {
-            prefs.all.keys.filter { it.startsWith(STATE_PREFIX) }.forEach(::remove)
+            prefs.all.keys.filter { it.startsWith(STATE_PREFIX) || it.startsWith(RESULT_PREFIX) }.forEach(::remove)
+            remove(KEY_RESULTS_SAVED)
             remove(KEY_UID)
             remove(KEY_EMAIL)
             remove(KEY_NAME)
@@ -271,9 +278,18 @@ class RaskobkiRepository(context: Context) {
 
     /** Подтянуть данные аккаунта, но не чаще раза в [SYNC_INTERVAL_MS]: каждое чтение платное. */
     suspend fun sync() = withContext(Dispatchers.IO) {
-        val account = _account.value ?: return@withContext
-        if (SystemClock.elapsedRealtime() - syncedAt < SYNC_INTERVAL_MS && syncedAt != 0L) return@withContext
-        val token = blockingToken() ?: return@withContext
+        // Даже если сервер не ответил, ждать больше нечего: показываем что есть
+        try {
+            syncNow()
+        } finally {
+            _ready.value = true
+        }
+    }
+
+    private suspend fun syncNow() {
+        val account = _account.value ?: return
+        if (SystemClock.elapsedRealtime() - syncedAt < SYNC_INTERVAL_MS && syncedAt != 0L) return
+        val token = idToken() ?: return
         val name = runCatching {
             (RaskobkiApi.document("public_profiles/${account.uid}", token)["displayName"] as? JsonPrimitive)?.contentOrNull
         }.getOrNull()
@@ -302,6 +318,7 @@ class RaskobkiRepository(context: Context) {
                 c = true,
             )
         }.toMap()
+        saveResults(results)
         publish()
         syncedAt = SystemClock.elapsedRealtime()
     }
@@ -575,6 +592,8 @@ class RaskobkiRepository(context: Context) {
         const val PREFS = "raskobki"
         const val PUZZLE_PREFIX = "puzzle_"
         const val STATE_PREFIX = "state_"
+        const val RESULT_PREFIX = "result_"
+        const val KEY_RESULTS_SAVED = "results_saved"
         const val KEY_PENDING = "pending_email"
         const val KEY_UID = "uid"
         const val KEY_EMAIL = "email"

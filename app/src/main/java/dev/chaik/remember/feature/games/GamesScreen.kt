@@ -20,6 +20,8 @@ import dev.chaik.remember.R
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.feature.games.fiveletters.FiveLettersRoute
 import dev.chaik.remember.feature.games.raskobki.RaskobkiRoute
+import dev.chaik.remember.feature.games.raskobki.raskobkiBracketColor
+import dev.chaik.remember.feature.games.raskobki.raskobkiTitle
 import dev.chaik.remember.feature.more.SectionTile
 import kotlinx.serialization.Serializable
 
@@ -57,6 +59,7 @@ fun GamesScreen(onBack: (() -> Unit)?, onOpen: (NavKey) -> Unit, modifier: Modif
                     hint = stringResource(game.hint),
                     accentIndex = AllGames.indexOf(game),
                     onClick = { onOpen(game.route) },
+                    styledTitle = if (game.route == RaskobkiRoute) raskobkiTitle(stringResource(game.title), raskobkiBracketColor()) else null,
                 )
             }
         }

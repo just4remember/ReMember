@@ -161,4 +161,29 @@ class RaskobkiModelTest {
         assertEquals(100, stats.best)
         assertEquals(RaskobkiStats(0, 0), raskobkiStats(emptyList()))
     }
+
+    @Test
+    fun `результат аккаунта сразу отмечает выпуск решённым`() {
+        val done = RaskobkiState(c = true, w = 5)
+        val merged = mergeWithResults(mapOf(day to done), mapOf(day to RaskobkiState(s = listOf("a"))))
+        assertTrue(merged.getValue(day).c)
+        assertEquals(90, merged.getValue(day).score)
+        // Законченный прогресс подробнее: в нём есть ответы
+        val local = RaskobkiState(c = true, x = mapOf("a" to "слово"))
+        assertEquals(local, mergeWithResults(mapOf(day to done), mapOf(day to local)).getValue(day))
+    }
+
+    @Test
+    fun `сохранённые результаты читаются по своему префиксу`() {
+        val saved = mapOf(
+            "result_2026-10-01" to """{"c":true,"w":1}""",
+            "state_2026-10-01" to """{"w":9}""",
+            "result_битая" to "{}",
+            "result_2026-10-02" to "не json",
+            "uid" to "x",
+        )
+        val parsed = parseSavedStates(saved, "result_")
+        assertEquals(setOf(day), parsed.keys)
+        assertEquals(RaskobkiState(c = true, w = 1), parsed[day])
+    }
 }
