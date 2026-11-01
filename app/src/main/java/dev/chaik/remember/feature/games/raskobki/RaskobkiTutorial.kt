@@ -100,7 +100,7 @@ internal fun RaskobkiColorPreview() {
                 accent = raskobkiBracketColor(),
                 locked = colors.onSurface.copy(alpha = 0.83f),
                 solved = raskobkiAnswerColor(),
-            ) {},
+            ),
             fontSize = 18.sp,
             lineHeight = 28.sp,
         )
@@ -169,26 +169,16 @@ internal fun RaskobkiTutorial(onDismiss: () -> Unit) {
                             .background(colors.surfaceContainerHighest, RoundedCornerShape(16.dp))
                             .padding(14.dp),
                     ) {
-                        Text(
-                            puzzleText(
-                                parts = DemoPuzzle.root,
-                                state = state,
-                                accent = raskobkiBracketColor(),
-                                locked = colors.onSurface.copy(alpha = 0.83f),
-                                solved = raskobkiAnswerColor(),
-                            ) { node ->
-                                // В примере подсказки бесплатны: сначала буква, потом слово целиком
-                                if (node.id in state.h) {
-                                    solve(node)
-                                } else {
-                                    state = state.copy(h = state.h + node.id)
-                                    note = R.string.raskobki_demo_peek
-                                    wrong = false
-                                }
-                            },
-                            fontSize = 18.sp,
-                            lineHeight = 28.sp,
-                        )
+                        RaskobkiPuzzleText(DemoPuzzle, state, lineHeight = 28.sp) { node ->
+                            // В примере подсказки бесплатны: сначала буква, потом слово целиком
+                            if (node.id in state.h) {
+                                solve(node)
+                            } else {
+                                state = state.copy(h = state.h + node.id)
+                                note = R.string.raskobki_demo_peek
+                                wrong = false
+                            }
+                        }
                     }
                     Text(
                         stringResource(

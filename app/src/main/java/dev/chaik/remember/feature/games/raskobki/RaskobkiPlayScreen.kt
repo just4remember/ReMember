@@ -3,6 +3,9 @@ package dev.chaik.remember.feature.games.raskobki
 import android.content.Intent
 import android.os.SystemClock
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
@@ -42,26 +46,28 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withAnnotation
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -317,17 +323,7 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
                     .background(colors.surfaceContainerLow, RoundedCornerShape(20.dp))
                     .padding(16.dp),
             ) {
-                Text(
-                    puzzleText(
-                        parts = puzzle.root,
-                        state = state,
-                        accent = raskobkiBracketColor(),
-                        locked = colors.onSurface.copy(alpha = 0.83f),
-                        solved = raskobkiAnswerColor(),
-                    ) { hintNode = it },
-                    fontSize = 18.sp,
-                    lineHeight = 29.sp,
-                )
+                RaskobkiPuzzleText(puzzle, state, lineHeight = 29.sp) { hintNode = it }
             }
             Text(
                 stringResource(R.string.raskobki_instruction),
@@ -413,14 +409,55 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
     }
 }
 
-/** Текст со скобками: доступные выделены и нажимаются, решённые заменены ответом. */
+private const val READY_TAG = "ready"
+
+/**
+ * Текст выпуска: короткое нажатие открывает помощь по доступной скобке, долгое выделяет текст.
+ * Ссылки тут не подходят: они забирают долгое нажатие и срабатывают вместо выделения.
+ */
+@Composable
+internal fun RaskobkiPuzzleText(puzzle: RaskobkiPuzzle, state: RaskobkiState, lineHeight: TextUnit, onReady: (RaskobkiNode) -> Unit) {
+    val accent = raskobkiBracketColor()
+    val solved = raskobkiAnswerColor()
+    val locked = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.83f)
+    // Таймер перерисовывает экран каждую секунду: текст не должен пересобираться, иначе слетит выделение
+    val text = remember(puzzle, state, accent, solved, locked) { puzzleText(puzzle.root, state, accent, locked, solved) }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val currentOnReady by rememberUpdatedState(onReady)
+    SelectionContainer {
+        Text(
+            text,
+            fontSize = 18.sp,
+            lineHeight = lineHeight,
+            onTextLayout = { layout = it },
+            modifier = Modifier.pointerInput(text) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) { waitForUpOrCancellation() }
+                        ?: return@awaitEachGesture
+                    val id = layout?.readyAt(text, up.position) ?: return@awaitEachGesture
+                    puzzle.nodes().firstOrNull { it.id == id }?.let { currentOnReady(it) }
+                }
+            },
+        )
+    }
+}
+
+/** Скобка под пальцем; пустое место справа от строки скобкой не считается. */
+private fun TextLayoutResult.readyAt(text: AnnotatedString, position: Offset): String? {
+    val line = getLineForVerticalPosition(position.y)
+    if (position.x < getLineLeft(line) || position.x > getLineRight(line)) return null
+    val offset = getOffsetForPosition(position)
+    return text.getStringAnnotations(READY_TAG, offset, offset).firstOrNull()?.item
+}
+
+/** Текст со скобками: доступные выделены и размечены, решённые заменены ответом. */
 internal fun puzzleText(
     parts: List<RaskobkiPart>,
     state: RaskobkiState,
     accent: Color,
     locked: Color,
     solved: Color,
-    onReady: (RaskobkiNode) -> Unit,
 ): AnnotatedString {
     val bracket = SpanStyle(color = accent, fontWeight = FontWeight.Bold)
     val lockedStyle = SpanStyle(color = locked)
@@ -434,16 +471,13 @@ internal fun puzzleText(
                 is RaskobkiText -> append(part.text)
                 is RaskobkiNode -> when {
                     part.id in state.s -> withStyle(solvedStyle) { append(state.x[part.id] ?: "…") }
-                    part.children.all { it.id in state.s } -> withLink(
-                        LinkAnnotation.Clickable(
-                            tag = part.id,
-                            styles = TextLinkStyles(bracket.copy(textDecoration = TextDecoration.None)),
-                        ) { onReady(part) },
-                    ) {
-                        append("[")
-                        if (part.id in state.h) withStyle(peek) { append(" ${part.firstLetter} ") }
-                        append(part.parts)
-                        append("]")
+                    part.children.all { it.id in state.s } -> withAnnotation(READY_TAG, part.id) {
+                        withStyle(bracket) {
+                            append("[")
+                            if (part.id in state.h) withStyle(peek) { append(" ${part.firstLetter} ") }
+                            append(part.parts)
+                            append("]")
+                        }
                     }
                     else -> withStyle(lockedStyle) {
                         withStyle(bracket) { append("[") }
