@@ -22,26 +22,39 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.HourglassBottom
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -118,16 +131,89 @@ private fun AlarmScreen(onClose: () -> Unit) {
     BackHandler {}
 
     val game = current.game
+    var writingDream by rememberSaveable { mutableStateOf(false) }
     when {
         current.ringing -> RingingContent(current, onDismiss = controller::dismiss, onSnooze = controller::snooze)
+        game != null && writingDream -> DreamNote(
+            draft = current.dreamDraft,
+            againAt = current.againAt,
+            onChange = controller::updateDream,
+            onDone = { writingDream = false },
+        )
         game != null -> Box(Modifier.fillMaxSize().safeDrawingPadding()) {
             WordGameScreen(state = game, onChange = controller::updateGame, onDone = controller::finish, mode = WordGameMode.ALARM)
             if (!game.finished) {
+                FilledTonalIconButton(
+                    onClick = {
+                        controller.postponeAgain()
+                        writingDream = true
+                    },
+                    modifier = Modifier.align(Alignment.TopStart).padding(top = 4.dp, start = 12.dp),
+                ) {
+                    Icon(Icons.Outlined.Bedtime, stringResource(R.string.alarm_dream_open))
+                }
                 AgainCountdown(current.againAt, Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 16.dp))
             }
         }
         // Звонок замолк по времени, игры ещё нет — будильник скоро повторится
         else -> RingingContent(current, onDismiss = controller::dismiss, onSnooze = null)
+    }
+}
+
+/**
+ * Записать сон посреди игры. Экран открыт без PIN, поэтому записей прошлых дней здесь нет, только
+ * черновик этого будильника. Он переживает повторный звонок и целиком дописывается к сну за сегодня,
+ * когда будильник закончится.
+ */
+@Composable
+private fun DreamNote(draft: String, againAt: Long?, onChange: (String) -> Unit, onDone: () -> Unit) {
+    // Своё состояние: иначе ввод шёл бы к полю через хранилище и мог отстать от клавиатуры
+    var text by remember { mutableStateOf(TextFieldValue(draft, TextRange(draft.length))) }
+    BackHandler(onBack = onDone)
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(16.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.sleep_dream), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            AgainCountdown(againAt, Modifier)
+        }
+        TextField(
+            value = text,
+            onValueChange = {
+                text = it
+                onChange(it.text)
+            },
+            placeholder = { Text(stringResource(R.string.sleep_dream_hint)) },
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .focusRequester(focus),
+        )
+        Button(
+            onClick = onDone,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+        ) {
+            Text(stringResource(R.string.alarm_dream_save), style = MaterialTheme.typography.titleMedium)
+        }
     }
 }
 

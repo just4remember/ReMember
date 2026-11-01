@@ -182,6 +182,9 @@ class EditorState(markdown: String = "") {
         block.edit(transform(block.value))
     }
 
+    /** Открыто окно ссылки. Его показывает редактор: панель исчезает вместе с клавиатурой. */
+    var linkDialogOpen by mutableStateOf(false)
+
     /** Поставить курсор в конец последнего текстового блока (тап по пустому месту под текстом). */
     fun focusEnd() {
         selectPhoto(null)

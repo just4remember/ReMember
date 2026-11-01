@@ -20,6 +20,8 @@ class AlarmController(
     private val scheduler: AlarmScheduler,
     private val dictionary: WordDictionary,
     private val notifications: TimeNotifications,
+    /** Будильник закончился, а посреди игры записали сон. */
+    private val onDreamWritten: (String) -> Unit,
 ) {
 
     // ---- Будильники ----
@@ -186,8 +188,19 @@ class AlarmController(
         if (game.finished) scheduler.cancel(AlarmKey.Again) else armAgain()
     }
 
+    /** Пишут сон посреди игры: черновик сохраняется, а это действие отодвигает повторный звонок. */
+    fun updateDream(text: String) {
+        store.updateSession { it.copy(dreamDraft = text) }
+        postponeAgain()
+    }
+
+    fun postponeAgain() {
+        if (store.session.value?.game != null) armAgain()
+    }
+
     /** Игра пройдена или проиграна, экран закрыт — будильник выключен. */
     fun finish() {
+        store.session.value?.dreamDraft?.trim()?.takeIf { it.isNotEmpty() }?.let(onDreamWritten)
         store.setSession(null)
         scheduler.cancel(AlarmKey.Again)
         RingService.stop(context)

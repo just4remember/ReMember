@@ -52,7 +52,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Карточка заметки: первое фото, заголовок (или первая строка), начало текста, теги, папка, дата.
+ * Карточка заметки: первое фото, заголовок, начало текста, теги, папка, дата.
  * Тап — открыть, долгое нажатие — меню: закрепить, в папку, удалить.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -70,9 +70,10 @@ fun NoteCard(
 ) {
     val haptics = LocalHapticFeedback.current
     var menuOpen by remember { mutableStateOf(false) }
-    // Превью готово заранее (в фоне, при чтении из базы); без заголовка заголовком служит первая строка
-    val title = note.title.ifBlank { note.preview.substringBefore('\n') }
-    val body = if (note.title.isBlank()) note.preview.substringAfter('\n', "") else note.preview
+    // Превью готово заранее (в фоне, при чтении из базы). Без заголовка текст остаётся обычным текстом,
+    // а жирная подпись «Без названия» — только если показать совсем нечего
+    val hasTitle = note.title.isNotBlank()
+    val textOnly = !hasTitle && note.preview.isNotBlank()
 
     Box(modifier) {
         Card(
@@ -95,11 +96,19 @@ fun NoteCard(
             Column(Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
                     Text(
-                        text = title.ifBlank { stringResource(R.string.notes_untitled) },
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (title.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
+                        text = when {
+                            hasTitle -> note.title
+                            textOnly -> note.preview
+                            else -> stringResource(R.string.notes_untitled)
+                        },
+                        style = if (textOnly) MaterialTheme.typography.bodySmall else MaterialTheme.typography.titleSmall,
+                        fontWeight = if (textOnly) null else FontWeight.Bold,
+                        color = when {
+                            hasTitle -> MaterialTheme.colorScheme.onSurface
+                            textOnly -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.outline
+                        },
+                        maxLines = if (textOnly) BODY_LINES else 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
@@ -124,9 +133,9 @@ fun NoteCard(
                         )
                     }
                 }
-                if (body.isNotBlank()) {
+                if (hasTitle && note.preview.isNotBlank()) {
                     Text(
-                        text = body,
+                        text = note.preview,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = BODY_LINES,

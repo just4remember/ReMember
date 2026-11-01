@@ -95,6 +95,11 @@
     <string name="editor_bold">Жирный</string>
     <string name="editor_italic">Курсив</string>
     <string name="editor_strike">Зачёркнутый</string>
+    <string name="editor_spoiler">Спойлер</string>
+    <string name="editor_link">Ссылка</string>
+    <string name="editor_link_text">Текст</string>
+    <string name="editor_link_url">Адрес</string>
+    <string name="editor_link_add">Вставить</string>
     <string name="editor_heading">Заголовок</string>
     <string name="editor_bullets">Список</string>
     <string name="editor_numbers">Нумерованный список</string>
@@ -802,6 +807,8 @@
     <string name="time_tab_timer">Таймер</string>
     <string name="time_tab_stopwatch">Секундомер</string>
     <string name="time_alarm">Будильник</string>
+    <string name="alarm_dream_open">Записать сон</string>
+    <string name="alarm_dream_save">Вернуться к игре</string>
     <string name="time_timer_done">Время вышло</string>
     <string name="time_ring_again">Не спим! Игра ещё не пройдена</string>
     <string name="time_open_game">Открыть игру</string>

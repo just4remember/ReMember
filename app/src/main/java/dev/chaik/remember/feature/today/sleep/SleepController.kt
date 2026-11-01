@@ -67,6 +67,13 @@ class SleepController(
     private val lock = Mutex()
     private val zone get() = ZoneId.systemDefault()
 
+    init {
+        // Иначе следующая правка на этом экране затёрла бы сон, записанный из будильника
+        scope.launch {
+            repository.dreamAdded.collect { added -> if (added == date) load(added) }
+        }
+    }
+
     suspend fun load(date: LocalDate) {
         autosaveJob?.cancel()
         flushNow()

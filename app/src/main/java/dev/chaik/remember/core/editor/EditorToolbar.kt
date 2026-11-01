@@ -14,8 +14,10 @@ import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.outlined.KeyboardHide
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.StrikethroughS
 import androidx.compose.material.icons.outlined.Title
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -24,8 +26,13 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import dev.chaik.remember.R
 
@@ -48,6 +55,7 @@ fun EditorToolbar(
             Row(
                 Modifier
                     .weight(1f)
+                    .nestedScroll(KeepScrollInside)
                     .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -65,6 +73,10 @@ fun EditorToolbar(
                 ToolButton(Icons.Outlined.StrikethroughS, R.string.editor_strike) {
                     state.format { MarkdownFormatting.toggleWrap(it, "~~") }
                 }
+                ToolButton(Icons.Outlined.VisibilityOff, R.string.editor_spoiler) {
+                    state.format { MarkdownFormatting.toggleWrap(it, "||") }
+                }
+                ToolButton(Icons.Outlined.Link, R.string.editor_link) { state.linkDialogOpen = true }
                 ToolButton(Icons.Outlined.Title, R.string.editor_heading) {
                     state.format(MarkdownFormatting::cycleHeading)
                 }
@@ -82,6 +94,15 @@ fun EditorToolbar(
             ToolButton(Icons.Outlined.KeyboardHide, R.string.editor_hide_keyboard, onHideKeyboard)
         }
     }
+}
+
+/**
+ * Докрутили панель до края — остаток не уходит наружу. Иначе его подхватывают вкладки приложения,
+ * а начало их листания убирает клавиатуру.
+ */
+private val KeepScrollInside = object : NestedScrollConnection {
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource) = available
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity) = available
 }
 
 @Composable

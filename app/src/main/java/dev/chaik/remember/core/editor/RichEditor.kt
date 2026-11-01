@@ -86,10 +86,22 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.ui.platform.LocalFocusManager
+import android.content.Intent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.chaik.remember.R
+import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.settings.LocalAppSettings
+import dev.chaik.remember.core.ui.LocalTabVisible
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -123,8 +135,10 @@ fun RichEditor(
     val style = textStyle.copy(color = colors.onSurface)
     val settings = LocalAppSettings.current
     val highlighter = remember(colors, settings.paragraphIndent, settings.paragraphGap) {
-        MarkdownHighlighter(colors.outline, colors.primary, settings.paragraphIndent, settings.paragraphGap)
+        MarkdownHighlighter(colors.outline, colors.primary, settings.paragraphIndent, settings.paragraphGap, colors.onSurface)
     }
+
+    if (state.linkDialogOpen) LinkDialog(state)
 
     // После вставки фото курсор переходит под него — но только если клавиатура уже была в работе
     LaunchedEffect(state.focusRequestKey) {
@@ -220,6 +234,41 @@ private fun TextBlockField(
     LaunchedEffect(block.value.text, undoEnabled) { shownCorrection = null }
     val underline = correctionLine(settings)
 
+    // Спойлеры и ссылки. Открытый спойлер закрывается, стоит уйти с экрана
+    val spans = remember(block.value.text) { InlineSpans.find(block.value.text) }
+    var revealed by remember(block) { mutableStateOf(emptySet<String>()) }
+    val tabVisible = LocalTabVisible.current
+    LaunchedEffect(tabVisible) { if (!tabVisible) revealed = emptySet() }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { revealed = emptySet() }
+    val selection = block.value.selection
+    val active = if (focused) {
+        spans.filter { selection.min <= it.range.last && selection.max > it.range.first }.map { it.range }
+    } else {
+        emptyList()
+    }
+    val shownHighlighter = remember(highlighter, active, revealed) { highlighter.withInline(active, revealed) }
+    val context = LocalContext.current
+
+    // Обработчик жеста живёт дольше одной перекомпозиции, а читать должен текущее состояние
+    val onTap by rememberUpdatedState { shownOffset: Int, position: Offset ->
+        val offset = mapping.transformedToOriginal(shownOffset)
+        val hits = layout?.takeIf { it.hasTextAt(position) }?.let {
+            spans.filter { span -> span.range !in active && offset in span.range.first..span.range.last + 1 }
+        }.orEmpty()
+        val spoiler = hits.filterIsInstance<SpoilerSpan>().firstOrNull()
+        val link = hits.filterIsInstance<LinkSpan>().firstOrNull()
+        when {
+            spoiler != null && spoiler.text !in revealed -> revealed = revealed + spoiler.text
+            link != null -> {
+                context.appContainer.appLock.allowExternal()
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, link.url.toUri())) }
+            }
+            spoiler != null -> revealed = revealed - spoiler.text
+            undoEnabled -> shownCorrection = corrections.firstOrNull { offset in it.start..it.end }
+        }
+        hits.isNotEmpty()
+    }
+
     SmartTextInput(onAutoCorrect = { if (undoEnabled) state.onAutoCorrect(block, it) }) {
         BasicTextField(
             value = block.value,
@@ -228,7 +277,7 @@ private fun TextBlockField(
             // Заглавные в начале предложения и пункта списка (см. SmartTextInput), исправление опечаток
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            visualTransformation = highlighter,
+            visualTransformation = shownHighlighter,
             onTextLayout = { layout = it },
             modifier = Modifier
                 .fillMaxWidth()
@@ -246,10 +295,7 @@ private fun TextBlockField(
                         drawCorrectionUnderline(result, mapping.originalToTransformed(it.start), mapping.originalToTransformed(it.end), underline)
                     }
                 }
-                .onCorrectionTap(layout = { layout }) { shownOffset ->
-                    val offset = mapping.transformedToOriginal(shownOffset)
-                    if (undoEnabled) shownCorrection = corrections.firstOrNull { offset in it.start..it.end }
-                },
+                .onTextTap(layout = { layout }) { offset, position -> onTap(offset, position) },
             decorationBox = { inner ->
                 Box {
                     if (placeholder != null && block.value.text.isEmpty()) {
@@ -283,11 +329,60 @@ private fun TextBlockField(
     }
 }
 
+/** Попал ли палец в текст, а не на пустое место правее строки или ниже последней. */
+private fun TextLayoutResult.hasTextAt(position: Offset): Boolean {
+    if (position.y > getLineBottom(lineCount - 1)) return false
+    val line = getLineForVerticalPosition(position.y)
+    return position.x >= getLineLeft(line) && position.x <= getLineRight(line)
+}
+
+/** Подпись и адрес ссылки. Выделенный текст становится подписью. */
+@Composable
+private fun LinkDialog(state: EditorState) {
+    val block = state.activeTextBlock()
+    val selected = remember(block) { block?.value?.let { it.text.substring(it.selection.min, it.selection.max) }.orEmpty() }
+    var label by remember { mutableStateOf(selected) }
+    var url by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = { state.linkDialogOpen = false },
+        title = { Text(stringResource(R.string.editor_link)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it.replace('\n', ' ') },
+                    label = { Text(stringResource(R.string.editor_link_text)) },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text(stringResource(R.string.editor_link_url)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = url.isNotBlank(),
+                onClick = {
+                    state.format { MarkdownFormatting.insertLink(it, label, url) }
+                    state.linkDialogOpen = false
+                },
+            ) { Text(stringResource(R.string.editor_link_add)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { state.linkDialogOpen = false }) { Text(stringResource(R.string.editor_close)) }
+        },
+    )
+}
+
 /**
- * Короткий тап по тексту: [onTap] получает позицию в тексте. Касание не забирает —
- * поле само ставит курсор, как обычно. Прокрутка и долгое нажатие не считаются.
+ * Короткий тап по тексту: [onTap] получает позицию в тексте и точку касания. Если он вернул true,
+ * нажатие забирается — иначе поле, как обычно, ставит курсор. Прокрутка и долгое нажатие не считаются.
  */
-private fun Modifier.onCorrectionTap(layout: () -> TextLayoutResult?, onTap: (offset: Int) -> Unit): Modifier =
+private fun Modifier.onTextTap(layout: () -> TextLayoutResult?, onTap: (offset: Int, position: Offset) -> Boolean): Modifier =
     pointerInput(Unit) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -296,7 +391,7 @@ private fun Modifier.onCorrectionTap(layout: () -> TextLayoutResult?, onTap: (of
             val long = up.uptimeMillis - down.uptimeMillis > viewConfiguration.longPressTimeoutMillis
             if (moved || long) return@awaitEachGesture
             val result = layout() ?: return@awaitEachGesture
-            onTap(result.getOffsetForPosition(up.position))
+            if (onTap(result.getOffsetForPosition(up.position), up.position)) up.consume()
         }
     }
 

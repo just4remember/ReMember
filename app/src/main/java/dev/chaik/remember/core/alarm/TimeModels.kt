@@ -95,6 +95,8 @@ data class RingSession(
     val game: WordGameState? = null,
     /** Когда будильник зазвонит снова, если в игре ничего не делать (мс с 1970). */
     val againAt: Long? = null,
+    /** Сон, записанный посреди игры. Хранится до конца будильника и тогда уходит в запись дня. */
+    val dreamDraft: String = "",
     /** Когда начался звонок (мс с 1970). */
     val startedAt: Long = 0,
 ) {

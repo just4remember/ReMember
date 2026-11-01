@@ -43,6 +43,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Все общие объекты приложения в одном месте (ручной DI).
@@ -149,7 +150,9 @@ class AppContainer(context: Context) {
     val raskobki by lazy { dev.chaik.remember.core.raskobki.RaskobkiRepository(appContext) }
     val raskobkiMetrics by lazy { dev.chaik.remember.core.raskobki.RaskobkiMetrics(appContext) }
     val alarmController by lazy {
-        AlarmController(appContext, timeStore, AlarmScheduler(appContext), wordDictionary, timeNotifications)
+        AlarmController(appContext, timeStore, AlarmScheduler(appContext), wordDictionary, timeNotifications) { dream ->
+            appScope.launch { sleepRepository.appendDream(settings.settings.value.logicalToday(), dream) }
+        }
     }
 
     /** Куда перейти по тапу на уведомление; экран, который это выполнил, обнуляет запрос. */

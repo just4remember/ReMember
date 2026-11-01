@@ -1,6 +1,7 @@
 package dev.chaik.remember.core.editor
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -39,7 +40,16 @@ class MarkdownHighlighter(
     private val indentTenths: Int = 12,
     /** Расстояние между абзацами, sp. */
     private val gapSp: Int = 18,
+    /** Цвет текста: из него сделан блюр спойлера. */
+    private val textColor: Color = markerColor,
+    /** Спойлеры и ссылки с курсором внутри: их разметка видна, чтобы править. */
+    private val active: List<IntRange> = emptyList(),
+    /** Содержимое спойлеров, открытых нажатием. */
+    private val revealed: Set<String> = emptySet(),
 ) : VisualTransformation {
+
+    fun withInline(active: List<IntRange>, revealed: Set<String>) =
+        MarkdownHighlighter(markerColor, accentColor, indentTenths, gapSp, textColor, active, revealed)
 
     private val redLine = PlainParagraph.copy(textIndent = TextIndent(firstLine = (indentTenths / 10f).em))
 
@@ -125,6 +135,32 @@ class MarkdownHighlighter(
         inline(text, Bold, SpanStyle(fontWeight = FontWeight.Bold), marker, markerLength = 2)
         inline(text, Strike, SpanStyle(textDecoration = TextDecoration.LineThrough), marker, markerLength = 2)
         inline(text, Italic, SpanStyle(fontStyle = FontStyle.Italic), marker, markerLength = 1)
+
+        // Ссылки раньше спойлеров: ссылка под спойлером тоже должна быть размыта
+        val spans = InlineSpans.find(text)
+        spans.filterIsInstance<LinkSpan>().forEach { link ->
+            addStyle(SpanStyle(color = accentColor, textDecoration = TextDecoration.Underline), link.label.first, link.label.last + 1)
+            markup(link.range, link.label, if (link.range in active) marker else HiddenMarkup)
+        }
+        spans.filterIsInstance<SpoilerSpan>().forEach { spoiler ->
+            val open = spoiler.range in active
+            if (!open) {
+                val look = if (spoiler.text in revealed) {
+                    SpanStyle(background = accentColor.copy(alpha = 0.14f))
+                } else {
+                    // Прозрачные буквы и их размытая тень. Непрозрачный цвет тень взяла бы от букв и исчезла
+                    SpanStyle(color = Color.Transparent, shadow = Shadow(textColor.copy(alpha = 0.99f), blurRadius = BLUR_RADIUS))
+                }
+                addStyle(look, spoiler.content.first, spoiler.content.last + 1)
+            }
+            markup(spoiler.range, spoiler.content, if (open) marker else HiddenMarkup)
+        }
+    }
+
+    /** Оформить всё, что в [whole] вокруг [inner]: скобки, маркеры, адрес. */
+    private fun AnnotatedString.Builder.markup(whole: IntRange, inner: IntRange, style: SpanStyle) {
+        addStyle(style, whole.first, inner.first)
+        addStyle(style, inner.last + 1, whole.last + 1)
     }
 
     private fun AnnotatedString.Builder.inline(
@@ -145,11 +181,17 @@ class MarkdownHighlighter(
     // equals/hashCode: иначе поле пересчитывает разметку при каждой перекомпозиции
     override fun equals(other: Any?) =
         other is MarkdownHighlighter && other.markerColor == markerColor && other.accentColor == accentColor &&
-            other.indentTenths == indentTenths && other.gapSp == gapSp
+            other.indentTenths == indentTenths && other.gapSp == gapSp && other.textColor == textColor &&
+            other.active == active && other.revealed == revealed
 
-    override fun hashCode() = ((31 * markerColor.hashCode() + accentColor.hashCode()) * 31 + indentTenths) * 31 + gapSp
+    override fun hashCode() =
+        listOf(markerColor, accentColor, indentTenths, gapSp, textColor, active, revealed).hashCode()
 
     private companion object {
+        /** Разметка не занимает места, но остаётся в тексте: позиции курсора не сдвигаются. */
+        val HiddenMarkup = SpanStyle(color = Color.Transparent, fontSize = 0.sp)
+        const val BLUR_RADIUS = 28f
+
         /** Шрифт зазора — крошечный, чтобы высоту задавал только [gapParagraph]. */
         val GapStyle = SpanStyle(fontSize = 0.02.em)
         /**

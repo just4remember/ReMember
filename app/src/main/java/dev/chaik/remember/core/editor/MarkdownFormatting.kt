@@ -38,6 +38,16 @@ object MarkdownFormatting {
         return TextFieldValue(newText, TextRange(start + marker.length, end + marker.length))
     }
 
+    /** Вставить ссылку вместо выделения; адрес без протокола считается https. Курсор — после ссылки. */
+    fun insertLink(value: TextFieldValue, label: String, url: String): TextFieldValue {
+        val address = url.trim().let { if (HasScheme.containsMatchIn(it)) it else "https://$it" }
+        val link = "[${label.trim().ifEmpty { url.trim() }}]($address)"
+        val text = value.text.replaceRange(value.selection.min, value.selection.max, link)
+        return TextFieldValue(text, TextRange(value.selection.min + link.length))
+    }
+
+    private val HasScheme = Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*:""")
+
     /**
      * Включить или выключить список для строк под выделением.
      * Если все строки уже такого вида — префикс снимается, иначе ставится (заменяя другой).

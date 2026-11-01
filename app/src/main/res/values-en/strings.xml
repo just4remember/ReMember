@@ -95,6 +95,11 @@
     <string name="editor_bold">Bold</string>
     <string name="editor_italic">Italic</string>
     <string name="editor_strike">Strikethrough</string>
+    <string name="editor_spoiler">Spoiler</string>
+    <string name="editor_link">Link</string>
+    <string name="editor_link_text">Text</string>
+    <string name="editor_link_url">Address</string>
+    <string name="editor_link_add">Insert</string>
     <string name="editor_heading">Heading</string>
     <string name="editor_bullets">Bulleted list</string>
     <string name="editor_numbers">Numbered list</string>
@@ -759,6 +764,8 @@
     <string name="time_tab_timer">Timer</string>
     <string name="time_tab_stopwatch">Stopwatch</string>
     <string name="time_alarm">Alarm</string>
+    <string name="alarm_dream_open">Write down a dream</string>
+    <string name="alarm_dream_save">Back to the game</string>
     <string name="time_timer_done">Time is up</string>
     <string name="time_ring_again">Wake up! The game is not finished</string>
     <string name="time_open_game">Open game</string>
