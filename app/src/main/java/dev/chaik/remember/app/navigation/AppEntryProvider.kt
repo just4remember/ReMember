@@ -16,6 +16,10 @@ import dev.chaik.remember.feature.games.GamesRoute
 import dev.chaik.remember.feature.games.GamesScreen
 import dev.chaik.remember.feature.games.fiveletters.FiveLettersRoute
 import dev.chaik.remember.feature.games.fiveletters.FiveLettersScreen
+import dev.chaik.remember.feature.games.raskobki.RaskobkiPlayRoute
+import dev.chaik.remember.feature.games.raskobki.RaskobkiPlayScreen
+import dev.chaik.remember.feature.games.raskobki.RaskobkiProfileRoute
+import dev.chaik.remember.feature.games.raskobki.RaskobkiProfileScreen
 import dev.chaik.remember.feature.games.raskobki.RaskobkiRoute
 import dev.chaik.remember.feature.games.raskobki.RaskobkiScreen
 import dev.chaik.remember.feature.gym.GymRoute
@@ -125,7 +129,15 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<AlarmEditorRoute> { AlarmEditorScreen(route = it, onBack = back) }
         entry<GamesRoute> { GamesScreen(onBack = backFor(it), onOpen = { route -> backStack.add(route) }) }
         entry<FiveLettersRoute> { FiveLettersScreen(onBack = back) }
-        entry<RaskobkiRoute> { RaskobkiScreen(onBack = back) }
+        entry<RaskobkiRoute> {
+            RaskobkiScreen(
+                onBack = back,
+                onOpenDay = { backStack.add(RaskobkiPlayRoute(it.toString())) },
+                onOpenProfile = { backStack.add(RaskobkiProfileRoute) },
+            )
+        }
+        entry<RaskobkiProfileRoute> { RaskobkiProfileScreen(onBack = back) }
+        entry<RaskobkiPlayRoute> { RaskobkiPlayScreen(route = it, onBack = back) }
         entry<SettingsRoute> { SettingsScreen(onBack = back, onOpen = { backStack.add(it) }) }
         entry<RemindersRoute> { RemindersScreen(onBack = back) }
         entry<ProfileRoute> { ProfileScreen(onBack = back) }

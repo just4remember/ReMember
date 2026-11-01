@@ -145,6 +145,8 @@ class AppContainer(context: Context) {
 
     /** Раздел «Игры»: незаконченные игры. */
     val gamesStore by lazy { GamesStore(appContext) }
+    val raskobki by lazy { dev.chaik.remember.core.raskobki.RaskobkiRepository(appContext) }
+    val raskobkiMetrics by lazy { dev.chaik.remember.core.raskobki.RaskobkiMetrics(appContext) }
     val alarmController by lazy {
         AlarmController(appContext, timeStore, AlarmScheduler(appContext), wordDictionary, timeNotifications)
     }

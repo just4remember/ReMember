@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chaik.remember.R
@@ -46,6 +47,8 @@ import dev.chaik.remember.core.ui.LocalIslandPadding
 fun ScreenScaffold(
     title: String,
     modifier: Modifier = Modifier,
+    /** Заголовок с оформлением; если задан, показывается вместо [title]. */
+    styledTitle: AnnotatedString? = null,
     onBack: (() -> Unit)? = null,
     /** Если задано — заголовок нажимается (например, чтобы выбрать дату). */
     onTitleClick: (() -> Unit)? = null,
@@ -66,7 +69,9 @@ fun ScreenScaffold(
             TopAppBar(
                 title = {
                     Box(titleModifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-                        if (onTitleClick == null) {
+                        if (styledTitle != null) {
+                            Text(styledTitle)
+                        } else if (onTitleClick == null) {
                             Text(title)
                         } else {
                             Row(
