@@ -1014,6 +1014,8 @@
     <string name="pages_disable_hint">The eye turns a section on or off. A section that is off is gone from More and can\'t be opened. Alarms and reminders keep working</string>
     <string name="pages_notes_by_edit">Recently edited first</string>
     <string name="pages_notes_by_edit_hint">An edited note moves to the top. When off, notes stay in creation order, newest first</string>
+    <string name="pages_tasks_clear_draft">Clear a new task when closing</string>
+    <string name="pages_tasks_clear_draft_hint">Closing the keyboard or tapping outside the line erases the unfinished task. When off, it waits until you come back</string>
     <string name="game_next">Next word</string>
     <string name="game_won_plain">Got it!</string>
     <string name="section_games">Games</string>

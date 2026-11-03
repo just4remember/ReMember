@@ -45,6 +45,7 @@ class AppSettingsStore(context: Context) {
             haptics = prefs.getBoolean("haptics", d.haptics),
             gameHaptics = prefs.getBoolean("game_haptics", d.gameHaptics),
             notesByEdit = prefs.getBoolean("notes_by_edit", d.notesByEdit),
+            tasksClearDraft = prefs.getBoolean("tasks_clear_draft", d.tasksClearDraft),
             disabledPages = list("disabled_pages"),
             sleepGuess = prefs.getBoolean("sleep_guess", d.sleepGuess),
             stepsGoalCheckMinutes = prefs.getInt("steps_goal_check", d.stepsGoalCheckMinutes).takeIf { it in StepsCheckOptions } ?: d.stepsGoalCheckMinutes,
@@ -79,6 +80,7 @@ class AppSettingsStore(context: Context) {
         putBoolean("haptics", s.haptics)
         putBoolean("game_haptics", s.gameHaptics)
         putBoolean("notes_by_edit", s.notesByEdit)
+        putBoolean("tasks_clear_draft", s.tasksClearDraft)
         putString("disabled_pages", s.disabledPages.joinToString(","))
         putBoolean("sleep_guess", s.sleepGuess)
         putInt("steps_goal_check", s.stepsGoalCheckMinutes)

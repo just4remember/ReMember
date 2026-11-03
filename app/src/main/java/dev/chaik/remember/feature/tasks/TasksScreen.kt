@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.R
+import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.core.ui.primaryCornerModifier
@@ -74,7 +75,13 @@ fun TasksScreen(
     var adding by remember { mutableStateOf(false) }
     var showDone by rememberSaveable { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
-    BackHandler(enabled = adding) { adding = false }
+    // Закрыли строку новой задачи: набранное стирается, только если так выбрано в «Страницах»
+    val clearDraft = LocalAppSettings.current.tasksClearDraft
+    fun closeAdding() {
+        if (clearDraft) viewModel.draft = TaskDraft()
+        adding = false
+    }
+    BackHandler(enabled = adding, onBack = ::closeAdding)
 
     ScreenScaffold(title = stringResource(R.string.tab_tasks), modifier = modifier, onBack = onBack) { padding ->
         Box(Modifier.fillMaxSize()) {
@@ -141,7 +148,7 @@ fun TasksScreen(
                     Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.3f))
-                        .clickable(interactionSource = null, indication = null) { adding = false },
+                        .clickable(interactionSource = null, indication = null, onClick = ::closeAdding),
                 )
             }
             AnimatedVisibility(
@@ -152,7 +159,12 @@ fun TasksScreen(
                     .align(Alignment.BottomCenter)
                     .imePadding(),
             ) {
-                QuickAddBar(onAdd = viewModel::add, onDismiss = { adding = false })
+                QuickAddBar(
+                    draft = viewModel.draft,
+                    onDraftChange = { viewModel.draft = it },
+                    onAdd = viewModel::add,
+                    onDismiss = ::closeAdding,
+                )
             }
         }
     }

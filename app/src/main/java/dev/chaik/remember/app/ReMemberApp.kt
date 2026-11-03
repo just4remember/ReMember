@@ -226,8 +226,10 @@ private fun MainScaffold() {
         CompositionLocalProvider(LocalIslandPadding provides islandPadding) {
             HorizontalPager(
                 state = pagerState,
-                // Во вложенной странице горизонтальный свайп отдан жесту «назад»
-                userScrollEnabled = currentStack.size == 1,
+                // Во вложенной странице горизонтальный свайп отдан жесту «назад». Пока открыта клавиатура,
+                // вкладки тоже не листаются: иначе свайп по панели форматирования, докрученной до края,
+                // уходил вкладкам, а начало их листания убирает клавиатуру
+                userScrollEnabled = currentStack.size == 1 && !WindowInsets.isImeVisible,
                 key = { tabs.getOrNull(it)?.name ?: it },
                 // Соседние вкладки держим готовыми: иначе после паузы страница строилась заново
                 // прямо во время свайпа, и первые кадры анимации подтормаживали

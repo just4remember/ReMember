@@ -1,5 +1,8 @@
 package dev.chaik.remember.feature.tasks
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.chaik.remember.core.data.TaskRepository
@@ -17,6 +20,9 @@ class TasksViewModel(private val tasks: TaskRepository) : ViewModel() {
     /** null — ещё грузится. */
     val all: StateFlow<List<Task>?> = tasks.observeAll().stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    /** Набранная, но ещё не добавленная задача: строку добавления закрыли — она не пропадает. */
+    var draft by mutableStateOf(TaskDraft())
+
     fun add(title: String, dueDate: LocalDate?, priority: TaskPriority) {
         if (title.isBlank()) return
         viewModelScope.launch { tasks.save(Task(title = title.trim(), dueDate = dueDate, priority = priority)) }
@@ -30,3 +36,10 @@ class TasksViewModel(private val tasks: TaskRepository) : ViewModel() {
         viewModelScope.launch { tasks.deleteDone() }
     }
 }
+
+/** Строка новой задачи: название, срок и приоритет. */
+data class TaskDraft(
+    val title: String = "",
+    val dueDate: LocalDate? = null,
+    val priority: TaskPriority = TaskPriority.NONE,
+)

@@ -214,6 +214,16 @@ fun PagesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 )
             }
 
+            SettingsGroupTitle(stringResource(R.string.tab_tasks))
+            SettingsCard {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.pages_tasks_clear_draft),
+                    hint = stringResource(R.string.pages_tasks_clear_draft_hint),
+                    checked = settings.tasksClearDraft,
+                    onChange = { on -> store.update { it.copy(tasksClearDraft = on) } },
+                )
+            }
+
             SettingsGroupTitle(stringResource(R.string.section_health))
             SettingsCard { StepsGoalSettings() }
 

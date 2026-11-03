@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -51,17 +53,25 @@ import java.time.LocalDate
  * Быстрое добавление над клавиатурой: название, «сегодня / завтра / дата», флажок приоритета.
  * Enter или стрелка — добавить; строка остаётся открытой для следующей задачи.
  * Клавиатуру закрыли (системное «назад») — закрывается и строка: [onDismiss].
+ * Набранное хранит экран ([draft]): так оно переживает закрытие строки.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickAddBar(
+    draft: TaskDraft,
+    onDraftChange: (TaskDraft) -> Unit,
     onAdd: (title: String, dueDate: LocalDate?, priority: TaskPriority) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var title by remember { mutableStateOf("") }
-    var dueDate by remember { mutableStateOf<LocalDate?>(null) }
-    var priority by remember { mutableStateOf(TaskPriority.NONE) }
+    val title = draft.title
+    // Своё поле с курсором: вернулись к черновику — курсор в конце, а не в начале
+    var field by remember { mutableStateOf(TextFieldValue(title, TextRange(title.length))) }
+    LaunchedEffect(title) {
+        if (title != field.text) field = TextFieldValue(title, TextRange(title.length))
+    }
+    val dueDate = draft.dueDate
+    val priority = draft.priority
     var pickingDate by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val today = LocalDate.now()
@@ -82,7 +92,7 @@ fun QuickAddBar(
     val submit = {
         if (title.isNotBlank()) {
             onAdd(title, dueDate, priority)
-            title = ""
+            onDraftChange(draft.copy(title = ""))
         }
     }
 
@@ -95,8 +105,11 @@ fun QuickAddBar(
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextField(
-                    value = title,
-                    onValueChange = { title = it },
+                    value = field,
+                    onValueChange = {
+                        field = it
+                        onDraftChange(draft.copy(title = it.text))
+                    },
                     placeholder = { Text(stringResource(R.string.tasks_quick_hint)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
@@ -123,10 +136,10 @@ fun QuickAddBar(
                     .horizontalScroll(rememberScrollState()),
             ) {
                 DayChip(stringResource(R.string.tasks_today), dueDate == today) {
-                    dueDate = if (dueDate == today) null else today
+                    onDraftChange(draft.copy(dueDate = if (dueDate == today) null else today))
                 }
                 DayChip(stringResource(R.string.tasks_tomorrow), dueDate == today.plusDays(1)) {
-                    dueDate = if (dueDate == today.plusDays(1)) null else today.plusDays(1)
+                    onDraftChange(draft.copy(dueDate = if (dueDate == today.plusDays(1)) null else today.plusDays(1)))
                 }
                 val other = dueDate != null && dueDate != today && dueDate != today.plusDays(1)
                 FilterChip(
@@ -138,7 +151,7 @@ fun QuickAddBar(
                 // Флажок приоритета — по кругу: нет → низкий → средний → высокий
                 FilterChip(
                     selected = priority != TaskPriority.NONE,
-                    onClick = { priority = TaskPriority.fromLevel((priority.level + 1) % 4) },
+                    onClick = { onDraftChange(draft.copy(priority = TaskPriority.fromLevel((priority.level + 1) % 4))) },
                     label = { Icon(Icons.Outlined.Flag, stringResource(R.string.tasks_priority), tint = priority.color(), modifier = Modifier.size(18.dp)) },
                 )
             }
@@ -149,11 +162,11 @@ fun QuickAddBar(
         DueDatePickerDialog(
             initial = dueDate,
             onPick = {
-                dueDate = it
+                onDraftChange(draft.copy(dueDate = it))
                 pickingDate = false
             },
             onClear = {
-                dueDate = null
+                onDraftChange(draft.copy(dueDate = null))
                 pickingDate = false
             },
             onDismiss = { pickingDate = false },

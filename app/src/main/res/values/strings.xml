@@ -1067,6 +1067,8 @@
     <string name="pages_disable_hint">Глаз — включить или выключить раздел. Выключенного раздела нет в «Ещё», открыть его нельзя. Будильники и напоминания при этом продолжают работать</string>
     <string name="pages_notes_by_edit">Недавно изменённые — выше</string>
     <string name="pages_notes_by_edit_hint">Изменённая заметка поднимается в начало списка. Выключено — порядок по дате создания, новые сверху</string>
+    <string name="pages_tasks_clear_draft">Стирать новую задачу при закрытии</string>
+    <string name="pages_tasks_clear_draft_hint">Если закрыть клавиатуру или нажать мимо строки, ненаписанная задача сотрётся. Выключено — она дождётся, пока вы вернётесь</string>
     <string name="game_next">Следующее слово</string>
     <string name="game_won_plain">Угадали!</string>
     <string name="section_games">Игры</string>
