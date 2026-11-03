@@ -25,6 +25,11 @@ object DarkMapStyle {
             val obj = layer.jsonObject
             val paint = obj["paint"]?.jsonObject ?: return@map layer
             var newPaint = JsonObject(paint.mapValues { (_, value) -> recolor(value) })
+            // Узор — готовая светлая картинка, перекрасить её нельзя: на тёмном она светилась бы
+            // полосками (пешеходные площади вроде Красной). Вместо узора — ровная заливка
+            (paint["fill-pattern"] as? JsonPrimitive)?.content?.let { pattern ->
+                newPaint = JsonObject(newPaint - "fill-pattern" + ("fill-color" to JsonPrimitive(PatternColors[pattern] ?: PATTERN_COLOR)))
+            }
             // Рельеф мелкого масштаба — светлая картинка; приглушаем, иначе он светился бы на тёмном
             if (obj["type"]?.jsonPrimitive?.content == "raster") {
                 newPaint = JsonObject(newPaint + ("raster-brightness-max" to JsonPrimitive(RASTER_BRIGHTNESS)))
@@ -107,6 +112,12 @@ object DarkMapStyle {
     private const val SATURATION = 0.8f
 
     private const val RASTER_BRIGHTNESS = 0.25f
+
+    /** Пешеходная площадь — чуть светлее фона, как площадь среди кварталов. */
+    private const val PATTERN_COLOR = "hsla(220, 12%, 19%, 1)"
+
+    /** Узоры, которым нужен свой цвет: болото — тёмно-зелёное, как лес. */
+    private val PatternColors = mapOf("wetland_bg_11" to "hsla(150, 25%, 20%, 1)")
 
     /** Насколько цвет должен отличаться от серого, чтобы сохранить свой оттенок. */
     private const val NEUTRAL_CHROMA = 0.08f

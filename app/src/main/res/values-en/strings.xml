@@ -445,6 +445,12 @@
     <string name="gym_kind_reps">Reps</string>
     <string name="gym_kind_time">Time</string>
     <string name="gym_kind_speed_time">Speed × time</string>
+    <string name="gym_kind_distance_time">Distance × time</string>
+    <string name="gym_kind_weight_time">Weight × time</string>
+    <string name="gym_kind_distance">Distance</string>
+    <string name="gym_set_distance">Distance, km</string>
+    <string name="gym_chart_distance">Longest distance per workout</string>
+    <string name="unit_km">km</string>
     <string name="gym_add">Add</string>
     <string name="gym_set_weight">Weight, kg</string>
     <string name="gym_set_reps">Reps</string>
@@ -637,6 +643,8 @@
         <item quantity="one">%1$d photo</item>
         <item quantity="other">%1$d photos</item>
     </plurals>
+    <string name="data_maps">Maps</string>
+    <string name="data_app">App</string>
     <string name="data_total">Total</string>
     <string name="data_gallery">All photos</string>
     <string name="data_gallery_hint">Gallery of photos from entries and notes</string>
@@ -751,6 +759,8 @@
     <string name="appearance_t9_alpha_value">%1$d%%</string>
     <string name="appearance_t9_sample">Bought milk and bread</string>
     <string name="appearance_t9_sample_word">milk</string>
+    <string name="appearance_show_markup">Show markup symbols</string>
+    <string name="appearance_show_markup_hint">Asterisks, underscores and other symbols of bold, italic, strikethrough and spoilers stay visible, faded. When off, they show only while the cursor is in the word</string>
     <string name="appearance_paragraphs">Paragraphs</string>
     <string name="appearance_paragraph_indent">First-line indent</string>
     <string name="appearance_paragraph_indent_value">%1$.1f em</string>

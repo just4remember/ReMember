@@ -77,7 +77,7 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
                     workoutId = workoutId,
                     date = first.date,
                     start = first.start,
-                    sets = sets.map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed) },
+                    sets = sets.map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed, it.distance) },
                 )
             }
         }
@@ -181,10 +181,10 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
     suspend fun setExerciseKind(exerciseId: Long, kind: ExerciseKind) = dao.setExerciseKind(exerciseId, kind.code)
 
     suspend fun addSet(workoutExerciseId: Long, set: WorkoutSet): Long = db.withTransaction {
-        dao.insertSet(WorkoutSetEntity(0, workoutExerciseId, dao.nextSetOrder(workoutExerciseId), set.weight, set.reps, set.seconds, set.speed))
+        dao.insertSet(WorkoutSetEntity(0, workoutExerciseId, dao.nextSetOrder(workoutExerciseId), set.weight, set.reps, set.seconds, set.speed, set.distance))
     }
 
-    suspend fun updateSet(set: WorkoutSet) = dao.updateSet(set.id, set.weight, set.reps, set.seconds, set.speed)
+    suspend fun updateSet(set: WorkoutSet) = dao.updateSet(set.id, set.weight, set.reps, set.seconds, set.speed, set.distance)
 
     suspend fun deleteSet(id: Long) = dao.deleteSet(id)
 
@@ -215,7 +215,7 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
                 val exerciseId = getOrCreateExercise(entry.exercise.name, entry.exercise.kind)
                 val entryId = dao.insertWorkoutExercise(WorkoutExerciseEntity(0, id, exerciseId, order))
                 entry.sets.forEachIndexed { i, set ->
-                    dao.insertSet(WorkoutSetEntity(0, entryId, i, set.weight, set.reps, set.seconds, set.speed))
+                    dao.insertSet(WorkoutSetEntity(0, entryId, i, set.weight, set.reps, set.seconds, set.speed, set.distance))
                 }
             }
         }
@@ -272,7 +272,7 @@ private fun WorkoutEntity.toModel(number: Int, rows: List<WorkoutExerciseRow>, s
             WorkoutExercise(
                 id = row.id,
                 exercise = Exercise(id = row.exerciseId, name = row.name, kind = ExerciseKind.fromCode(row.kind)),
-                sets = setsByEntry[row.id].orEmpty().map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed) },
+                sets = setsByEntry[row.id].orEmpty().map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed, it.distance) },
             )
         },
     )

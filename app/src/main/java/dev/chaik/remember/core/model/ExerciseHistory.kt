@@ -41,7 +41,7 @@ object ExerciseHistory {
         return SetHint(set, last.date, heldFor)
     }
 
-    /** Лучший результат каждой тренировки: вес, повторы, время или скорость — смотря как записывается упражнение. */
+    /** Лучший результат каждой тренировки: вес, повторы, время, скорость или дистанция — смотря как записывается упражнение. */
     fun progress(history: List<ExerciseSession>, kind: ExerciseKind): List<ProgressPoint> =
         history.mapNotNull { session ->
             session.sets.mapNotNull { it.metric(kind) }.maxOrNull()?.let { ProgressPoint(session.date, it, session.sets) }
@@ -58,6 +58,8 @@ object ExerciseHistory {
         ExerciseKind.REPS -> reps?.toDouble()
         ExerciseKind.TIME -> seconds?.toDouble()
         ExerciseKind.SPEED_TIME -> speed
+        ExerciseKind.DISTANCE_TIME, ExerciseKind.DISTANCE -> distance
+        ExerciseKind.WEIGHT_TIME -> weight
     }
 
     private val order = compareBy<ExerciseSession>({ it.date }, { it.start?.toSecondOfDay() ?: -1 }, { it.workoutId })

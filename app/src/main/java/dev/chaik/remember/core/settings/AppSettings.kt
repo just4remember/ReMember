@@ -63,6 +63,8 @@ data class AppSettings(
     val paragraphIndent: Int = 12,
     /** Расстояние между абзацами, sp (0…[GAP_MAX]). */
     val paragraphGap: Int = 18,
+    /** Символы разметки (** _ ~~ ||) видны бледными; выключено — только когда внутри курсор. */
+    val showMarkup: Boolean = true,
 )
 
 enum class Gender { UNSET, MALE, FEMALE }

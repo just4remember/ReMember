@@ -62,6 +62,9 @@ fun ExerciseKind.label(): String = stringResource(
         ExerciseKind.REPS -> R.string.gym_kind_reps
         ExerciseKind.TIME -> R.string.gym_kind_time
         ExerciseKind.SPEED_TIME -> R.string.gym_kind_speed_time
+        ExerciseKind.DISTANCE_TIME -> R.string.gym_kind_distance_time
+        ExerciseKind.WEIGHT_TIME -> R.string.gym_kind_weight_time
+        ExerciseKind.DISTANCE -> R.string.gym_kind_distance
     },
 )
 

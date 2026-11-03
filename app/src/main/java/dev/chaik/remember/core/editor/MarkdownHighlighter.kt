@@ -7,6 +7,7 @@ import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
@@ -42,14 +43,16 @@ class MarkdownHighlighter(
     private val gapSp: Int = 18,
     /** Цвет текста: из него сделан блюр спойлера. */
     private val textColor: Color = markerColor,
-    /** Спойлеры и ссылки с курсором внутри: их разметка видна, чтобы править. */
+    /** Показывать символы разметки (** _ ~~ ||) бледными; иначе их видно, только когда внутри курсор. */
+    private val showMarkers: Boolean = true,
+    /** Разметка с курсором внутри (см. [InlineSpans]): она видна, чтобы править. */
     private val active: List<IntRange> = emptyList(),
     /** Содержимое спойлеров, открытых нажатием. */
     private val revealed: Set<String> = emptySet(),
 ) : VisualTransformation {
 
     fun withInline(active: List<IntRange>, revealed: Set<String>) =
-        MarkdownHighlighter(markerColor, accentColor, indentTenths, gapSp, textColor, active, revealed)
+        MarkdownHighlighter(markerColor, accentColor, indentTenths, gapSp, textColor, showMarkers, active, revealed)
 
     private val redLine = PlainParagraph.copy(textIndent = TextIndent(firstLine = (indentTenths / 10f).em))
 
@@ -118,7 +121,17 @@ class MarkdownHighlighter(
             }
             ListPrefix.find(line)?.let { match ->
                 val from = lineStart + match.groupValues[1].length
-                addStyle(SpanStyle(color = accentColor, fontWeight = FontWeight.Bold), from, lineStart + match.value.length)
+                val prefixEnd = lineStart + match.value.length
+                // У пункта чек-листа вместо «- [ ]» редактор рисует квадратик: символы прозрачные,
+                // но место держат. С курсором внутри — снова видны, чтобы править
+                val box = match.groupValues[2].startsWith("- [") && (from until prefixEnd) !in active
+                // Моноширинный: «x» и пробел одной ширины — отметка не сдвигает текст пункта
+                val look = if (box) {
+                    SpanStyle(color = Color.Transparent, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                } else {
+                    SpanStyle(color = accentColor, fontWeight = FontWeight.Bold)
+                }
+                addStyle(look, from, prefixEnd)
                 if (match.groupValues[2].startsWith("- [x", ignoreCase = true)) {
                     // Выполненный пункт — зачёркнут
                     addStyle(
@@ -131,13 +144,23 @@ class MarkdownHighlighter(
             lineStart += line.length + 1
         }
 
-        // Внутри строк: жирный, курсив, зачёркнутый
-        inline(text, Bold, SpanStyle(fontWeight = FontWeight.Bold), marker, markerLength = 2)
-        inline(text, Strike, SpanStyle(textDecoration = TextDecoration.LineThrough), marker, markerLength = 2)
-        inline(text, Italic, SpanStyle(fontStyle = FontStyle.Italic), marker, markerLength = 1)
+        // Внутри строк: жирный, курсив, зачёркнутый — только на слова целиком (см. InlineSpans)
+        val spans = InlineSpans.find(text)
+        spans.filterIsInstance<StyleSpan>().forEach { span ->
+            val look = when (span.kind) {
+                StyleSpan.Kind.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
+                StyleSpan.Kind.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
+                StyleSpan.Kind.STRIKE -> SpanStyle(textDecoration = TextDecoration.LineThrough)
+            }
+            val start = span.range.first
+            val end = span.range.last + 1
+            addStyle(look, start, end)
+            val markers = if (showMarkers || span.range in active) marker else HiddenMarkup
+            addStyle(markers, start, start + span.marker)
+            addStyle(markers, end - span.marker, end)
+        }
 
         // Ссылки раньше спойлеров: ссылка под спойлером тоже должна быть размыта
-        val spans = InlineSpans.find(text)
         spans.filterIsInstance<LinkSpan>().forEach { link ->
             addStyle(SpanStyle(color = accentColor, textDecoration = TextDecoration.Underline), link.label.first, link.label.last + 1)
             markup(link.range, link.label, if (link.range in active) marker else HiddenMarkup)
@@ -153,7 +176,7 @@ class MarkdownHighlighter(
                 }
                 addStyle(look, spoiler.content.first, spoiler.content.last + 1)
             }
-            markup(spoiler.range, spoiler.content, if (open) marker else HiddenMarkup)
+            markup(spoiler.range, spoiler.content, if (open || showMarkers) marker else HiddenMarkup)
         }
     }
 
@@ -163,29 +186,14 @@ class MarkdownHighlighter(
         addStyle(style, inner.last + 1, whole.last + 1)
     }
 
-    private fun AnnotatedString.Builder.inline(
-        text: String,
-        pattern: Regex,
-        style: SpanStyle,
-        marker: SpanStyle,
-        markerLength: Int,
-    ) {
-        for (match in pattern.findAll(text)) {
-            val range = match.groups[1]!!.range
-            addStyle(style, range.first, range.last + 1)
-            addStyle(marker, range.first, range.first + markerLength)
-            addStyle(marker, range.last + 1 - markerLength, range.last + 1)
-        }
-    }
-
     // equals/hashCode: иначе поле пересчитывает разметку при каждой перекомпозиции
     override fun equals(other: Any?) =
         other is MarkdownHighlighter && other.markerColor == markerColor && other.accentColor == accentColor &&
-            other.indentTenths == indentTenths && other.gapSp == gapSp && other.textColor == textColor &&
+            other.indentTenths == indentTenths && other.gapSp == gapSp && other.textColor == textColor && other.showMarkers == showMarkers &&
             other.active == active && other.revealed == revealed
 
     override fun hashCode() =
-        listOf(markerColor, accentColor, indentTenths, gapSp, textColor, active, revealed).hashCode()
+        listOf(markerColor, accentColor, indentTenths, gapSp, textColor, showMarkers, active, revealed).hashCode()
 
     private companion object {
         /** Разметка не занимает места, но остаётся в тексте: позиции курсора не сдвигаются. */
@@ -204,10 +212,5 @@ class MarkdownHighlighter(
 
         /** Невидимый символ нулевой ширины в конце абзаца. */
         const val EndMark = '​'
-
-        val Bold = Regex("""(\*\*[^*\n]+\*\*)""")
-        val Strike = Regex("""(~~[^~\n]+~~)""")
-        // _курсив_ или *курсив*, но не часть **жирного**
-        val Italic = Regex("""(?<![*\w])(_[^_\n]+_|\*[^*\n]+\*)(?![*\w])""")
     }
 }

@@ -26,6 +26,7 @@ data class ExerciseSetRow(
     val reps: Int?,
     val seconds: Int?,
     val speed: Double?,
+    val distance: Double?,
 )
 
 @Dao
@@ -98,7 +99,7 @@ interface WorkoutDao {
     @Query(
         """
         SELECT w.id AS workoutId, w.date AS date, w.start_time AS start,
-            s.id AS id, s.weight AS weight, s.reps AS reps, s.seconds AS seconds, s.speed AS speed
+            s.id AS id, s.weight AS weight, s.reps AS reps, s.seconds AS seconds, s.speed AS speed, s.distance AS distance
         FROM workout_set s
         JOIN workout_exercise we ON we.id = s.workout_exercise_id
         JOIN workout w ON w.id = we.workout_id
@@ -125,8 +126,8 @@ interface WorkoutDao {
     @Insert
     suspend fun insertSet(set: WorkoutSetEntity): Long
 
-    @Query("UPDATE workout_set SET weight = :weight, reps = :reps, seconds = :seconds, speed = :speed WHERE id = :id")
-    suspend fun updateSet(id: Long, weight: Double?, reps: Int?, seconds: Int?, speed: Double?)
+    @Query("UPDATE workout_set SET weight = :weight, reps = :reps, seconds = :seconds, speed = :speed, distance = :distance WHERE id = :id")
+    suspend fun updateSet(id: Long, weight: Double?, reps: Int?, seconds: Int?, speed: Double?, distance: Double?)
 
     @Query("DELETE FROM workout_set WHERE id = :id")
     suspend fun deleteSet(id: Long)

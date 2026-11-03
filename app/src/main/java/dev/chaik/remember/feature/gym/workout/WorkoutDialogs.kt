@@ -69,6 +69,7 @@ fun SetDialog(
     var minutes by remember { mutableStateOf(selected(initial?.seconds?.let { (it / 60).toString() }.orEmpty())) }
     var seconds by remember { mutableStateOf(selected(initial?.seconds?.let { (it % 60).toString() }.orEmpty())) }
     var speed by remember { mutableStateOf(selected(initial?.speed?.let(::formatKg).orEmpty())) }
+    var distance by remember { mutableStateOf(selected(initial?.distance?.let(::formatKg).orEmpty())) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -77,11 +78,13 @@ fun SetDialog(
     val hintMinutes = hint?.seconds?.let { (it / 60).toString() }.orEmpty()
     val hintSeconds = hint?.seconds?.let { (it % 60).toString() }.orEmpty()
     val hintSpeed = hint?.speed?.let(::formatKg).orEmpty()
+    val hintDistance = hint?.distance?.let(::formatKg).orEmpty()
     val weightText = weight.text.ifEmpty { hintWeight }
     val repsText = reps.text.ifEmpty { hintReps }
     val minutesText = minutes.text.ifEmpty { hintMinutes }
     val secondsText = seconds.text.ifEmpty { hintSeconds }
     val speedText = speed.text.ifEmpty { hintSpeed }
+    val distanceText = distance.text.ifEmpty { hintDistance }
 
     val result = when (kind) {
         ExerciseKind.WEIGHT_REPS -> WorkoutSet(weight = parseKg(weightText), reps = repsText.toIntOrNull())
@@ -90,6 +93,11 @@ fun SetDialog(
         ExerciseKind.TIME -> totalSeconds(minutesText, secondsText)?.let { WorkoutSet(seconds = it) }
         ExerciseKind.SPEED_TIME -> WorkoutSet(speed = parseKg(speedText), seconds = totalSeconds(minutesText, secondsText))
             .takeIf { it.speed != null || it.seconds != null }
+        ExerciseKind.DISTANCE_TIME -> WorkoutSet(distance = parseKg(distanceText), seconds = totalSeconds(minutesText, secondsText))
+            .takeIf { it.distance != null || it.seconds != null }
+        ExerciseKind.WEIGHT_TIME -> WorkoutSet(weight = parseKg(weightText), seconds = totalSeconds(minutesText, secondsText))
+            .takeIf { it.weight != null || it.seconds != null }
+        ExerciseKind.DISTANCE -> parseKg(distanceText)?.let { WorkoutSet(distance = it) }
     }
     val save = { result?.let { onSave(it.copy(id = initial?.id ?: 0)) } }
     val done = KeyboardActions(onDone = { save() })
@@ -143,6 +151,23 @@ fun SetDialog(
                         )
                         TimeFields(minutes, seconds, hintMinutes, hintSeconds, { minutes = it }, { seconds = it }, done)
                     }
+                    ExerciseKind.DISTANCE_TIME -> {
+                        DistanceField(distance, hintDistance, { distance = it }, ImeAction.Next, KeyboardActions.Default, Modifier.focusRequester(focus))
+                        TimeFields(minutes, seconds, hintMinutes, hintSeconds, { minutes = it }, { seconds = it }, done)
+                    }
+                    ExerciseKind.WEIGHT_TIME -> {
+                        SetField(
+                            caption = stringResource(R.string.gym_set_weight),
+                            value = weight,
+                            onChange = { v -> if (v.text.length <= 6 && v.text.all { it.isDigit() || it == ',' || it == '.' }) weight = v },
+                            hint = hintWeight,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                            modifier = Modifier.fillMaxWidth(),
+                            fieldModifier = Modifier.focusRequester(focus),
+                        )
+                        TimeFields(minutes, seconds, hintMinutes, hintSeconds, { minutes = it }, { seconds = it }, done)
+                    }
+                    ExerciseKind.DISTANCE -> DistanceField(distance, hintDistance, { distance = it }, ImeAction.Done, done, Modifier.focusRequester(focus))
                 }
                 note?.invoke()
             }
@@ -160,6 +185,28 @@ fun SetDialog(
                 TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
             }
         },
+    )
+}
+
+/** Дистанция в километрах, с дробью: 0,4 или 21,1. */
+@Composable
+private fun DistanceField(
+    value: TextFieldValue,
+    hint: String,
+    onChange: (TextFieldValue) -> Unit,
+    imeAction: ImeAction,
+    keyboardActions: KeyboardActions,
+    fieldModifier: Modifier,
+) {
+    SetField(
+        caption = stringResource(R.string.gym_set_distance),
+        value = value,
+        onChange = { v -> if (v.text.length <= 6 && v.text.all { it.isDigit() || it == ',' || it == '.' }) onChange(v) },
+        hint = hint,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = imeAction),
+        keyboardActions = keyboardActions,
+        modifier = Modifier.fillMaxWidth(),
+        fieldModifier = fieldModifier,
     )
 }
 

@@ -469,6 +469,12 @@
     <string name="gym_kind_reps">Повторы</string>
     <string name="gym_kind_time">Время</string>
     <string name="gym_kind_speed_time">Скорость × время</string>
+    <string name="gym_kind_distance_time">Дистанция × время</string>
+    <string name="gym_kind_weight_time">Вес × время</string>
+    <string name="gym_kind_distance">Дистанция</string>
+    <string name="gym_set_distance">Дистанция, км</string>
+    <string name="gym_chart_distance">Самая длинная дистанция за тренировку</string>
+    <string name="unit_km">км</string>
     <string name="gym_add">Добавить</string>
     <string name="gym_set_weight">Вес, кг</string>
     <string name="gym_set_reps">Повторы</string>
@@ -671,6 +677,8 @@
         <item quantity="many">%1$d фото</item>
         <item quantity="other">%1$d фото</item>
     </plurals>
+    <string name="data_maps">Карты</string>
+    <string name="data_app">Приложение</string>
     <string name="data_total">Всего</string>
     <string name="data_gallery">Все фото</string>
     <string name="data_gallery_hint">Галерея фото из записей и заметок</string>
@@ -794,6 +802,8 @@
     <string name="appearance_t9_alpha_value">%1$d %%</string>
     <string name="appearance_t9_sample">Купил молоко и хлеб</string>
     <string name="appearance_t9_sample_word">молоко</string>
+    <string name="appearance_show_markup">Показывать символы разметки</string>
+    <string name="appearance_show_markup_hint">Звёздочки, подчёркивания и прочие символы жирного, курсива, зачёркнутого и спойлера видны бледными. Выключено — видны, только когда в слове курсор</string>
     <string name="appearance_paragraphs">Абзацы</string>
     <string name="appearance_paragraph_indent">Красная строка</string>
     <string name="appearance_paragraph_indent_value">%1$.1f em</string>

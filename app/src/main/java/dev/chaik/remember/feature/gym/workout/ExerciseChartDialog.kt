@@ -101,6 +101,8 @@ fun ExerciseChartDialog(name: String, kind: ExerciseKind, points: List<ProgressP
                                 ExerciseKind.REPS -> R.string.gym_chart_reps
                                 ExerciseKind.TIME -> R.string.gym_chart_time
                                 ExerciseKind.SPEED_TIME -> R.string.gym_chart_speed
+                                ExerciseKind.DISTANCE_TIME, ExerciseKind.DISTANCE -> R.string.gym_chart_distance
+                                ExerciseKind.WEIGHT_TIME -> R.string.gym_chart_weight
                             },
                         ),
                         style = MaterialTheme.typography.bodySmall,
@@ -158,7 +160,8 @@ fun ExerciseChartDialog(name: String, kind: ExerciseKind, points: List<ProgressP
 @Composable
 private fun SetsOfDay(sets: List<WorkoutSet>, points: List<ProgressPoint>, kind: ExerciseKind) {
     val kmh = stringResource(R.string.unit_kmh)
-    fun labels(list: List<WorkoutSet>) = list.map { it.format(kind, kmh) }
+    val km = stringResource(R.string.unit_km)
+    fun labels(list: List<WorkoutSet>) = list.map { it.format(kind, kmh, km) }
     val longest = points.maxBy { point -> labels(point.sets).sumOf { it.length + 2 } }
     Box(Modifier.fillMaxWidth()) {
         SetPills(labels(longest.sets), Modifier.alpha(0f))
@@ -187,17 +190,20 @@ private fun SetPills(labels: List<String>, modifier: Modifier = Modifier) {
     }
 }
 
-/** Подпись значения: «60 кг», «12», «1:30», «9,4 км/ч». */
+/** Подпись значения: «60 кг», «12», «1:30», «9,4 км/ч», «5 км». */
 @Composable
 private fun chartValueLabel(kind: ExerciseKind): (Double) -> String {
     val kg = stringResource(R.string.gym_chart_kg)
     val kmh = stringResource(R.string.unit_kmh)
+    val km = stringResource(R.string.unit_km)
     return { value ->
         when (kind) {
             ExerciseKind.WEIGHT_REPS -> "${formatKg(value)} $kg"
             ExerciseKind.REPS -> value.toInt().toString()
             ExerciseKind.TIME -> formatDuration(value.toInt())
             ExerciseKind.SPEED_TIME -> "${formatKg(value)} $kmh"
+            ExerciseKind.DISTANCE_TIME, ExerciseKind.DISTANCE -> "${formatKg(value)} $km"
+            ExerciseKind.WEIGHT_TIME -> "${formatKg(value)} $kg"
         }
     }
 }

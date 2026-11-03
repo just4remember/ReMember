@@ -31,7 +31,8 @@ class DarkMapStyleTest {
             {"id":"bg","type":"background","paint":{"background-color":"#f8f4f0"}},
             {"id":"road","type":"line","layout":{"line-cap":"round"},
              "paint":{"line-color":["interpolate",["linear"],["zoom"],5,"#fff",10,"#000"],"line-width":2}},
-            {"id":"relief","type":"raster","paint":{"raster-opacity":0.5}}
+            {"id":"relief","type":"raster","paint":{"raster-opacity":0.5}},
+            {"id":"square","type":"fill","paint":{"fill-pattern":"pedestrian_polygon"}}
         ]}"""
         val layers = Json.parseToJsonElement(DarkMapStyle.darken(style)).jsonObject.getValue("layers").jsonArray
         val road = layers[1].jsonObject
@@ -40,5 +41,9 @@ class DarkMapStyleTest {
         assertEquals("hsla(220, 15%, 11%, 1)", color[4].jsonPrimitive.content)
         assertEquals("round", road.getValue("layout").jsonObject.getValue("line-cap").jsonPrimitive.content)
         assertEquals("0.25", layers[2].jsonObject.getValue("paint").jsonObject.getValue("raster-brightness-max").jsonPrimitive.content)
+        // Светлый узор пешеходной площади — ровной тёмной заливкой
+        val square = layers[3].jsonObject.getValue("paint").jsonObject
+        assertEquals(null, square["fill-pattern"])
+        assertEquals("hsla(220, 12%, 19%, 1)", square.getValue("fill-color").jsonPrimitive.content)
     }
 }

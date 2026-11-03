@@ -362,7 +362,7 @@ private fun ExerciseCard(
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 12.dp)) {
             entry.sets.forEach { set ->
-                AssistChip(onClick = { onEditSet(set) }, label = { Text(set.format(entry.exercise.kind, stringResource(R.string.unit_kmh))) })
+                AssistChip(onClick = { onEditSet(set) }, label = { Text(set.format(entry.exercise.kind, stringResource(R.string.unit_kmh), stringResource(R.string.unit_km))) })
             }
             AssistChip(
                 onClick = onAddSet,
@@ -488,7 +488,7 @@ private fun Sheets(
                     {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                text = stringResource(R.string.gym_last_time, formatDay(it.date), it.set.format(sheet.entry.exercise.kind, kmh)),
+                                text = stringResource(R.string.gym_last_time, formatDay(it.date), it.set.format(sheet.entry.exercise.kind, kmh, stringResource(R.string.unit_km))),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

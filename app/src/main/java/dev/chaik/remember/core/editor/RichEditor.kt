@@ -92,6 +92,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.core.net.toUri
@@ -134,8 +142,8 @@ fun RichEditor(
     val colors = MaterialTheme.colorScheme
     val style = textStyle.copy(color = colors.onSurface)
     val settings = LocalAppSettings.current
-    val highlighter = remember(colors, settings.paragraphIndent, settings.paragraphGap) {
-        MarkdownHighlighter(colors.outline, colors.primary, settings.paragraphIndent, settings.paragraphGap, colors.onSurface)
+    val highlighter = remember(colors, settings.paragraphIndent, settings.paragraphGap, settings.showMarkup) {
+        MarkdownHighlighter(colors.outline, colors.primary, settings.paragraphIndent, settings.paragraphGap, colors.onSurface, settings.showMarkup)
     }
 
     if (state.linkDialogOpen) LinkDialog(state)
@@ -248,16 +256,21 @@ private fun TextBlockField(
     }
     val shownHighlighter = remember(highlighter, active, revealed) { highlighter.withInline(active, revealed) }
     val context = LocalContext.current
+    val boxColor = MaterialTheme.colorScheme.primary
+    val checkColor = MaterialTheme.colorScheme.onPrimary
 
     // Обработчик жеста живёт дольше одной перекомпозиции, а читать должен текущее состояние
     val onTap by rememberUpdatedState { shownOffset: Int, position: Offset ->
         val offset = mapping.transformedToOriginal(shownOffset)
+        // Нажатие забирают только спойлер, ссылка и квадратик пункта; жирное и прочее — обычный текст
         val hits = layout?.takeIf { it.hasTextAt(position) }?.let {
-            spans.filter { span -> span.range !in active && offset in span.range.first..span.range.last + 1 }
+            spans.filter { span -> span !is StyleSpan && span.range !in active && offset in span.range.first..span.range.last + 1 }
         }.orEmpty()
         val spoiler = hits.filterIsInstance<SpoilerSpan>().firstOrNull()
         val link = hits.filterIsInstance<LinkSpan>().firstOrNull()
+        val box = hits.filterIsInstance<CheckboxSpan>().firstOrNull()
         when {
+            box != null -> block.edit(block.value.copy(text = InlineSpans.toggle(block.value.text, box)))
             spoiler != null && spoiler.text !in revealed -> revealed = revealed + spoiler.text
             link != null -> {
                 context.appContainer.appLock.allowExternal()
@@ -290,6 +303,10 @@ private fun TextBlockField(
                 }
                 .drawBehind {
                     val result = layout ?: return@drawBehind
+                    // Квадратики пунктов чек-листа — на месте прозрачных «- [ ]»
+                    spans.filterIsInstance<CheckboxSpan>().filter { it.range !in active }.forEach { box ->
+                        drawCheckbox(result, mapping.originalToTransformed(box.range.first), box.checked, boxColor, checkColor)
+                    }
                     if (!undoEnabled || underline == null) return@drawBehind
                     corrections.forEach {
                         drawCorrectionUnderline(result, mapping.originalToTransformed(it.start), mapping.originalToTransformed(it.end), underline)
@@ -326,6 +343,29 @@ private fun TextBlockField(
                 }
             },
         )
+    }
+}
+
+/** Квадратик пункта: рамка, а у выполненного — заливка с галочкой. Слева, по высоте строки. */
+private fun DrawScope.drawCheckbox(layout: TextLayoutResult, start: Int, checked: Boolean, color: Color, check: Color) {
+    if (start >= layout.layoutInput.text.length) return
+    val line = layout.getLineForOffset(start)
+    val top = layout.getLineTop(line)
+    val bottom = layout.getLineBottom(line)
+    val side = (bottom - top) * 0.62f
+    val left = layout.getBoundingBox(start).left
+    val y = top + (bottom - top - side) / 2
+    val corner = CornerRadius(side * 0.22f)
+    if (checked) {
+        drawRoundRect(color, Offset(left, y), Size(side, side), corner)
+        val path = Path().apply {
+            moveTo(left + side * 0.24f, y + side * 0.52f)
+            lineTo(left + side * 0.43f, y + side * 0.70f)
+            lineTo(left + side * 0.77f, y + side * 0.32f)
+        }
+        drawPath(path, check, style = Stroke(width = side * 0.13f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    } else {
+        drawRoundRect(color, Offset(left, y), Size(side, side), corner, style = Stroke(width = side * 0.11f))
     }
 }
 

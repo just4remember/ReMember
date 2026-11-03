@@ -15,7 +15,7 @@ data class ExerciseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     @ColumnInfo(name = "name_key") val nameKey: String,
-    /** ExerciseKind.code: «WR», «R», «T». */
+    /** ExerciseKind.code: «WR», «R», «T», «ST», «DT», «WT», «D». */
     val kind: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
 )
@@ -71,6 +71,8 @@ data class WorkoutSetEntity(
     val seconds: Int?,
     /** Скорость бега, км/ч; появилась в версии 5 базы. */
     val speed: Double? = null,
+    /** Дистанция, км; появилась в версии 10 базы. */
+    val distance: Double? = null,
 )
 
 /** Шаблон тренировки: заранее заготовленный список упражнений. */

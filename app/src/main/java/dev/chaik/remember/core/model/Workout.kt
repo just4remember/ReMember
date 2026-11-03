@@ -41,12 +41,19 @@ data class Exercise(
     val kind: ExerciseKind = ExerciseKind.WEIGHT_REPS,
 )
 
-/** Как записываются подходы: «40×12», «30», «1:30» или «9,4 км/ч × 10:00» (бег). */
+/**
+ * Как записываются подходы: «40×12», «30», «1:30», «9,4 км/ч × 10:00» (бег на дорожке),
+ * «5 км × 28:00» (бег, вело), «20 × 1:00» (вес на время: удержание, вис) или «1,5 км» (плавание).
+ * Код хранится в базе — менять коды нельзя.
+ */
 enum class ExerciseKind(val code: String) {
     WEIGHT_REPS("WR"),
     REPS("R"),
     TIME("T"),
     SPEED_TIME("ST"),
+    DISTANCE_TIME("DT"),
+    WEIGHT_TIME("WT"),
+    DISTANCE("D"),
     ;
 
     companion object {
@@ -63,18 +70,25 @@ data class WorkoutSet(
     val seconds: Int? = null,
     /** Скорость, км/ч — для бега. */
     val speed: Double? = null,
+    /** Дистанция, км, можно с дробью (0,4). */
+    val distance: Double? = null,
 ) {
     /**
-     * Как подход выглядит в записи: «40 × 12», «30», «1:30», «9,4 км/ч × 10:00».
-     * [speedUnit] — подпись скорости на языке приложения (strings.xml, unit_kmh).
+     * Как подход выглядит в записи: «40 × 12», «30», «1:30», «9,4 км/ч × 10:00», «5 км × 28:00».
+     * [speedUnit] и [distanceUnit] — подписи на языке приложения (strings.xml, unit_kmh и unit_km).
      */
-    fun format(kind: ExerciseKind, speedUnit: String = "km/h"): String = when (kind) {
+    fun format(kind: ExerciseKind, speedUnit: String = "km/h", distanceUnit: String = "km"): String = when (kind) {
         ExerciseKind.WEIGHT_REPS -> "${weight?.let(::formatKg) ?: "—"} × ${reps ?: "—"}"
         ExerciseKind.REPS -> reps?.toString() ?: "—"
         ExerciseKind.TIME -> seconds?.let(::formatDuration) ?: "—"
         ExerciseKind.SPEED_TIME -> listOfNotNull(speed?.let { "${formatKg(it)} $speedUnit" }, seconds?.let(::formatDuration))
             .joinToString(" × ")
             .ifEmpty { "—" }
+        ExerciseKind.DISTANCE_TIME -> listOfNotNull(distance?.let { "${formatKg(it)} $distanceUnit" }, seconds?.let(::formatDuration))
+            .joinToString(" × ")
+            .ifEmpty { "—" }
+        ExerciseKind.WEIGHT_TIME -> "${weight?.let(::formatKg) ?: "—"} × ${seconds?.let(::formatDuration) ?: "—"}"
+        ExerciseKind.DISTANCE -> distance?.let { "${formatKg(it)} $distanceUnit" } ?: "—"
     }
 }
 

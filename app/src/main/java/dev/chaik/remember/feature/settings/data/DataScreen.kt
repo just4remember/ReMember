@@ -246,6 +246,8 @@ fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier
                     label = usage?.let { pluralStringResource(R.plurals.data_photos, it.photoCount, it.photoCount) } ?: stringResource(R.string.data_photos_title),
                     bytes = usage?.photoBytes,
                 )
+                UsageRow(stringResource(R.string.data_maps), usage?.mapBytes)
+                UsageRow(stringResource(R.string.data_app), usage?.appBytes)
                 UsageRow(stringResource(R.string.data_total), usage?.totalBytes, bold = true)
             }
             SettingsCard {

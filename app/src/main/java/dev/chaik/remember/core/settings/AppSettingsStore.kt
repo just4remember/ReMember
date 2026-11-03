@@ -56,6 +56,7 @@ class AppSettingsStore(context: Context) {
             t9LineAlpha = prefs.getInt("t9_line_alpha", d.t9LineAlpha).coerceIn(T9_ALPHA_MIN, 100),
             paragraphIndent = prefs.getInt("paragraph_indent", d.paragraphIndent).coerceIn(0, INDENT_MAX),
             paragraphGap = prefs.getInt("paragraph_gap", d.paragraphGap).coerceIn(0, GAP_MAX),
+            showMarkup = prefs.getBoolean("show_markup", d.showMarkup),
         )
     }
 
@@ -92,6 +93,7 @@ class AppSettingsStore(context: Context) {
         putInt("t9_line_alpha", s.t9LineAlpha)
         putInt("paragraph_indent", s.paragraphIndent)
         putInt("paragraph_gap", s.paragraphGap)
+        putBoolean("show_markup", s.showMarkup)
     }
 
     private fun list(key: String): List<String> =

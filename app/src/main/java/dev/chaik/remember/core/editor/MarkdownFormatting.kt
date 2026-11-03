@@ -21,12 +21,15 @@ object MarkdownFormatting {
 
     /**
      * Обернуть выделение в [marker] (`**` — жирный, `_` — курсив) или снять обёртку.
-     * Без выделения вставляет пару маркеров и ставит курсор между ними.
+     * Разметка — только на слова целиком: выделение дотягивается до краёв слов, а курсор
+     * посреди слова оборачивает всё слово. Вне слова вставляет пару маркеров и ставит курсор между ними.
      */
     fun toggleWrap(value: TextFieldValue, marker: String): TextFieldValue {
         val text = value.text
-        val start = value.selection.min
-        val end = value.selection.max
+        var start = value.selection.min
+        var end = value.selection.max
+        while (start > 0 && text[start - 1].isLetterOrDigit()) start--
+        while (end < text.length && text[end].isLetterOrDigit()) end++
         val before = text.substring(0, start)
         val after = text.substring(end)
 

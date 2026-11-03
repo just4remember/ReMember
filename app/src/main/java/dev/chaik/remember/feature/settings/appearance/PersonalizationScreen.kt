@@ -219,6 +219,14 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             }
 
             SettingsGroupTitle(stringResource(R.string.appearance_paragraphs))
+            SettingsCard {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.appearance_show_markup),
+                    hint = stringResource(R.string.appearance_show_markup_hint),
+                    checked = settings.showMarkup,
+                    onChange = { on -> store.update { it.copy(showMarkup = on) } },
+                )
+            }
             SettingsCard { ParagraphSettings() }
         }
     }

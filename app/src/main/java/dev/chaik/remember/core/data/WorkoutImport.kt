@@ -25,12 +25,15 @@ import java.time.format.DateTimeParseException
  *         { "name": "Жим лежа", "kind": "weight_reps", "sets": [ { "weight": 40, "reps": 12 } ] },
  *         { "name": "Пресс", "kind": "reps", "sets": [ { "reps": 30 } ] },
  *         { "name": "Планка", "kind": "time", "sets": [ { "time": "1:30" } ] },
- *         { "name": "Бег", "kind": "speed_time", "sets": [ { "speed": 9.4, "time": "10:00" } ] }
+ *         { "name": "Бег", "kind": "speed_time", "sets": [ { "speed": 9.4, "time": "10:00" } ] },
+ *         { "name": "Бег на улице", "kind": "distance_time", "sets": [ { "distance": 5, "time": "28:00" } ] },
+ *         { "name": "Вис на турнике", "kind": "weight_time", "sets": [ { "weight": 10, "time": "0:45" } ] },
+ *         { "name": "Плавание", "kind": "distance", "sets": [ { "distance": 1.5 } ] }
  *       ]
  *     }
  *   ]
  * }
- * Обязательны только date и name. kind можно не писать — он угадается по подходам.
+ * Обязательны только date и name. kind можно не писать — он угадается по подходам. distance — в километрах.
  * Незнакомые поля (например, номер тренировки) пропускаются: номера считаются по датам.
  */
 
@@ -52,7 +55,14 @@ private data class WorkoutJson(
 private data class ExerciseJson(val name: String, val kind: String? = null, val sets: List<SetJson> = emptyList())
 
 @Serializable
-private data class SetJson(val weight: Double? = null, val reps: Int? = null, val time: String? = null, val speed: Double? = null)
+private data class SetJson(
+    val weight: Double? = null,
+    val reps: Int? = null,
+    val time: String? = null,
+    val speed: Double? = null,
+    /** Километры. */
+    val distance: Double? = null,
+)
 
 /** Что не так с файлом импорта. Текст для человека — в strings.xml (см. GymScreen). */
 sealed interface ImportProblem {
@@ -92,7 +102,10 @@ object WorkoutImport {
                 { "name": "Жим лежа", "kind": "weight_reps", "sets": [ { "weight": 40, "reps": 12 }, { "weight": 45, "reps": 10 } ] },
                 { "name": "Пресс", "kind": "reps", "sets": [ { "reps": 30 } ] },
                 { "name": "Планка", "kind": "time", "sets": [ { "time": "1:30" } ] },
-                { "name": "Бег", "kind": "speed_time", "sets": [ { "speed": 9.4, "time": "10:00" } ] }
+                { "name": "Бег на дорожке", "kind": "speed_time", "sets": [ { "speed": 9.4, "time": "10:00" } ] },
+                { "name": "Бег на улице", "kind": "distance_time", "sets": [ { "distance": 5, "time": "28:00" } ] },
+                { "name": "Вис на турнике", "kind": "weight_time", "sets": [ { "weight": 10, "time": "0:45" } ] },
+                { "name": "Плавание", "kind": "distance", "sets": [ { "distance": 1.5 } ] }
               ]
             },
             {
@@ -154,6 +167,7 @@ object WorkoutImport {
                 reps = set.reps,
                 seconds = set.time?.let { parseDuration(it) ?: throw WorkoutImportException(ImportProblem.BadDuration(name, it)) },
                 speed = set.speed,
+                distance = set.distance,
             )
         }
         val kind = when (kind?.trim()?.lowercase()) {
@@ -162,6 +176,9 @@ object WorkoutImport {
             "reps" -> ExerciseKind.REPS
             "time" -> ExerciseKind.TIME
             "speed_time" -> ExerciseKind.SPEED_TIME
+            "distance_time" -> ExerciseKind.DISTANCE_TIME
+            "weight_time" -> ExerciseKind.WEIGHT_TIME
+            "distance" -> ExerciseKind.DISTANCE
             else -> throw WorkoutImportException(ImportProblem.BadKind(name, kind))
         }
         return WorkoutExercise(exercise = Exercise(name = name.trim(), kind = kind), sets = sets)
@@ -169,7 +186,8 @@ object WorkoutImport {
 
     private fun guessKind(sets: List<WorkoutSet>): ExerciseKind = when {
         sets.any { it.speed != null } -> ExerciseKind.SPEED_TIME
-        sets.any { it.weight != null } -> ExerciseKind.WEIGHT_REPS
+        sets.any { it.distance != null } -> if (sets.any { it.seconds != null }) ExerciseKind.DISTANCE_TIME else ExerciseKind.DISTANCE
+        sets.any { it.weight != null } -> if (sets.any { it.seconds != null } && sets.none { it.reps != null }) ExerciseKind.WEIGHT_TIME else ExerciseKind.WEIGHT_REPS
         sets.any { it.seconds != null } -> ExerciseKind.TIME
         else -> ExerciseKind.REPS
     }
