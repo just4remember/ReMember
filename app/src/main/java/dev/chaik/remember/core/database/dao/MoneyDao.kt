@@ -50,6 +50,10 @@ interface MoneyDao {
     @Update
     suspend fun updateCategory(category: MoneyCategoryEntity)
 
+    /** Все категории, и убранные тоже. */
+    @Query("SELECT * FROM money_category")
+    suspend fun allCategories(): List<MoneyCategoryEntity>
+
     // Операции
 
     @Query("SELECT * FROM money_transaction WHERE date = :date ORDER BY created_at DESC")

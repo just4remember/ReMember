@@ -63,8 +63,8 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     ) { dates, today -> DayStreak.length(dates, today) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    /** Самый ранний месяц в календаре выбора дня: год назад или раньше, если записи старше. */
-    var calendarStart by mutableStateOf(YearMonth.now().minusMonths(CALENDAR_MONTHS_BACK))
+    /** Самый ранний месяц в календаре выбора дня: январь 2000-го или раньше, если записи старше. */
+    var calendarStart by mutableStateOf(CALENDAR_START)
         private set
 
     /** Заполненные дни и их оценки — для календаря выбора дня. */
@@ -72,6 +72,10 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     val calendarMarks: StateFlow<Map<LocalDate, Int?>> = snapshotFlow { calendarStart }
         .flatMapLatest { container.dayRepository.observeMarks(it.atDay(1), currentDay) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Дни с записанным сном — луна в календаре выбора дня. */
+    val calendarSleep: StateFlow<Set<LocalDate>> = container.sleepRepository.observeDates()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Теги дней — для списка в календаре выбора дня. */
     val calendarTags: StateFlow<Map<LocalDate, List<Tag>>> = container.dayRepository.observeTags()
@@ -136,6 +140,6 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private companion object {
-        const val CALENDAR_MONTHS_BACK = 12L
+        val CALENDAR_START: YearMonth = YearMonth.of(2000, 1)
     }
 }

@@ -143,9 +143,13 @@
     <string name="sleep_bed">Bedtime</string>
     <string name="sleep_wake">Woke up</string>
     <string name="sleep_guess_apply">From phone: %1$s – %2$s</string>
+    <string name="sleep_guess_toggle">Sleep by phone: %1$d options</string>
+    <string name="sleep_guess_title">Looks like sleep, by your phone:</string>
+    <string name="sleep_guess_pick">Breaks from the phone. Tick when you slept — several merge into one sleep:</string>
+    <string name="sleep_guess_window">%1$s–%2$s · %3$dh %4$02d</string>
     <string name="sleep_guess_allow">Detect sleep time from the phone</string>
     <string name="sleep_guess_allow_hint">Needs “Usage access”: it shows when you put the phone down and picked it up in the morning. The history isn’t stored or sent anywhere</string>
-    <string name="sleep_guess_none">No break in phone use longer than 3 hours found last night</string>
+    <string name="sleep_guess_none">No break in phone use longer than an hour found last night</string>
     <string name="sleep_not_set">—:—</string>
     <string name="sleep_duration">Slept %1$d h %2$02d min</string>
     <string name="sleep_quality">Sleep quality</string>
@@ -311,8 +315,6 @@
     <string name="notify_test_text">This is how Re:Member reminders will look</string>
     <string name="notify_day_title">How was your day?</string>
     <string name="notify_day_text">Write a couple of lines about today</string>
-    <string name="notify_sleep_title">How did you sleep?</string>
-    <string name="notify_sleep_text">Note when you went to bed and woke up</string>
     <string name="notify_birthday">Birthday: %1$s</string>
     <string name="notify_turns">turns %1$s</string>
     <string name="notify_task_text">Due %1$s</string>
@@ -339,8 +341,6 @@
     <string name="reminders_group_records">Entries</string>
     <string name="reminders_day">Daily entry</string>
     <string name="reminders_day_hint">Skipped if the day is already written</string>
-    <string name="reminders_sleep">Sleep entry</string>
-    <string name="reminders_sleep_hint">Skipped if sleep is already logged</string>
     <string name="reminders_group_plans">Calendar and tasks</string>
     <string name="reminders_events">Events</string>
     <string name="reminders_events_hint">How early to remind is set in each event</string>
@@ -371,6 +371,9 @@
     <string name="gym_add_past">Add a past workout</string>
     <string name="gym_more">More</string>
     <string name="gym_import">Import from file (JSON)</string>
+    <string name="gym_import_template">Download import template</string>
+    <string name="gym_template_saved">Template saved</string>
+    <string name="gym_template_failed">Couldn’t save the template</string>
     <string name="gym_import_title">Import workouts</string>
     <string name="gym_import_reading">Reading the file…</string>
     <string name="gym_import_not_file">This isn’t a workouts file</string>
@@ -863,7 +866,6 @@
     <string name="money_categories_hint">The first %1$d are frequent: a line separates them in the picker</string>
     <string name="money_category_new">New category</string>
     <string name="money_category_edit">Category</string>
-    <string name="money_category_icon">Icon (emoji)</string>
     <string name="money_category_name">Name</string>
     <string name="money_category_taken">This category already exists</string>
     <string name="money_category_delete">Delete category?</string>
@@ -895,6 +897,7 @@
         <item quantity="other">%1$d days in a row with an entry</item>
     </plurals>
     <string name="today_calendar_list">Show as a list with tags</string>
+    <string name="today_calendar_slept">Sleep recorded</string>
     <string name="today_calendar_grid">Show as a calendar</string>
     <string name="appearance_haptics_title">Vibration</string>
     <string name="appearance_haptics">Vibration in the app</string>
@@ -958,6 +961,10 @@
     <string name="reminders_group_games">Games</string>
     <string name="reminders_raskobki">Raskobki reminder</string>
     <string name="reminders_raskobki_hint">Won\'t come if today\'s puzzle is solved</string>
+    <string name="raskobki_reminder_hint">Every day at the chosen time, unless today’s puzzle is solved. Opening the app clears the notification</string>
+    <string name="raskobki_reminder_time">Time: %1$s</string>
+    <string name="raskobki_reminder_all_off">All reminders are off in “Settings → Reminders”</string>
+    <string name="raskobki_reminder_turn_on">Turn on</string>
     <string name="notify_raskobki_title">The find of the day awaits</string>
     <string name="notify_raskobki_text">Time to solve today\'s puzzle</string>
     <string name="raskobki_calendar">Puzzle calendar</string>
@@ -1014,6 +1021,8 @@
     <string name="pages_disable_hint">The eye turns a section on or off. A section that is off is gone from More and can\'t be opened. Alarms and reminders keep working</string>
     <string name="pages_notes_by_edit">Recently edited first</string>
     <string name="pages_notes_by_edit_hint">An edited note moves to the top. When off, notes stay in creation order, newest first</string>
+    <string name="pages_notes_photos">Show photos from notes</string>
+    <string name="pages_notes_photos_hint">The first photo of a note is shown on its card in the list</string>
     <string name="pages_tasks_clear_draft">Clear a new task when closing</string>
     <string name="pages_tasks_clear_draft_hint">Closing the keyboard or tapping outside the line erases the unfinished task. When off, it waits until you come back</string>
     <string name="game_next">Next word</string>

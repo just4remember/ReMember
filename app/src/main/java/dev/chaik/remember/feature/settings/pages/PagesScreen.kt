@@ -212,6 +212,12 @@ fun PagesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     checked = settings.notesByEdit,
                     onChange = { on -> store.update { it.copy(notesByEdit = on) } },
                 )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.pages_notes_photos),
+                    hint = stringResource(R.string.pages_notes_photos_hint),
+                    checked = settings.notesShowPhotos,
+                    onChange = { on -> store.update { it.copy(notesShowPhotos = on) } },
+                )
             }
 
             SettingsGroupTitle(stringResource(R.string.tab_tasks))

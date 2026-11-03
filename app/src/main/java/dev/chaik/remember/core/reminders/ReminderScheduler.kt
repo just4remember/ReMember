@@ -7,7 +7,6 @@ import android.content.Intent
 import dev.chaik.remember.R
 import dev.chaik.remember.core.data.DayRepository
 import dev.chaik.remember.core.data.EventRepository
-import dev.chaik.remember.core.data.SleepRepository
 import dev.chaik.remember.core.data.TaskRepository
 import dev.chaik.remember.core.data.WorkoutRepository
 import dev.chaik.remember.core.model.Event
@@ -36,7 +35,6 @@ class ReminderScheduler(
     private val store: ReminderSettingsStore,
     private val notifier: Notifier,
     private val days: DayRepository,
-    private val sleep: SleepRepository,
     private val events: EventRepository,
     private val tasks: TaskRepository,
     private val workouts: WorkoutRepository,
@@ -114,21 +112,6 @@ class ReminderScheduler(
                         title = context.getString(R.string.notify_day_title),
                         text = context.getString(R.string.notify_day_text),
                         target = OpenTarget.Day,
-                        silent = planned.silent,
-                    )
-                }
-            }
-            is Reminder.Sleep -> {
-                val entry = sleep.observe(r.date).first()
-                if (r.date != today || entry != null && (entry.bedTime != null || entry.wakeTime != null || entry.quality != null)) {
-                    null
-                } else {
-                    Message(
-                        id = ID_SLEEP,
-                        type = NotificationType.DAY,
-                        title = context.getString(R.string.notify_sleep_title),
-                        text = context.getString(R.string.notify_sleep_text),
-                        target = OpenTarget.Sleep,
                         silent = planned.silent,
                     )
                 }
@@ -252,7 +235,6 @@ class ReminderScheduler(
         val GRACE: Duration = Duration.ofMinutes(30)
         const val LOOKAHEAD_DAYS = 2L
         const val ID_DAY = NotificationIds.DAY
-        const val ID_SLEEP = NotificationIds.SLEEP
         const val ID_SUMMARY = NotificationIds.SUMMARY
         const val ID_TEST = NotificationIds.TEST
     }

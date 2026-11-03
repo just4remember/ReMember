@@ -309,8 +309,11 @@ private fun TransactionRow(
         ),
     ) {
         Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(40.dp)) {
-                Box(contentAlignment = Alignment.Center) { Text(category?.icon ?: "•") }
+            // Отдельный значок остался только у категорий, сохранённых до переезда эмодзи в название
+            category?.icon?.let { icon ->
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.size(40.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Text(icon) }
+                }
             }
             Column(
                 Modifier

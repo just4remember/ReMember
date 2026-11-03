@@ -33,6 +33,12 @@ class MoneyRepository(private val db: ReMemberDatabase, private val currency: ()
                     dao.updateCategory(food.copy(name = "Продукты", icon = "🛒"))
                 }
             }
+            if (appliedVersion < 3) {
+                // Версия 3: отдельного значка больше нет — эмодзи переезжает в начало названия
+                dao.allCategories().filter { !it.icon.isNullOrBlank() }.forEach { category ->
+                    dao.updateCategory(category.copy(name = "${category.icon!!.trim()} ${category.name}", icon = null))
+                }
+            }
             DefaultCategories.forEachIndexed { index, category ->
                 val existing = dao.findCategory(category.type, category.name)
                 if (existing == null) {
@@ -105,7 +111,7 @@ class MoneyRepository(private val db: ReMemberDatabase, private val currency: ()
 }
 
 /** Версия стандартного набора категорий. Поднять, если [DefaultCategories] поменялись. */
-const val CATEGORY_DEFAULTS_VERSION = 2
+const val CATEGORY_DEFAULTS_VERSION = 3
 
 /** Сколько первых категорий расходов — «частые»: в списке выбора они отделены чертой. */
 const val FAVORITE_EXPENSE_CATEGORIES = 4
@@ -113,30 +119,30 @@ const val FAVORITE_EXPENSE_CATEGORIES = 4
 /** Стандартные категории в нужном порядке: сначала частые, «Другое» — последней. */
 private val DefaultCategories = listOf(
     // Частые
-    MoneyCategory(name = "Продукты", type = MoneyType.EXPENSE, icon = "🛒"),
-    MoneyCategory(name = "Игры", type = MoneyType.EXPENSE, icon = "🎮"),
-    MoneyCategory(name = "Одежда", type = MoneyType.EXPENSE, icon = "👕"),
-    MoneyCategory(name = "Подписки", type = MoneyType.EXPENSE, icon = "🔁"),
+    MoneyCategory(name = "🛒 Продукты", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🎮 Игры", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "👕 Одежда", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🔁 Подписки", type = MoneyType.EXPENSE),
     // Остальные
-    MoneyCategory(name = "Кафе и рестораны", type = MoneyType.EXPENSE, icon = "☕"),
-    MoneyCategory(name = "Транспорт", type = MoneyType.EXPENSE, icon = "🚌"),
-    MoneyCategory(name = "Такси", type = MoneyType.EXPENSE, icon = "🚕"),
-    MoneyCategory(name = "Кино", type = MoneyType.EXPENSE, icon = "🎬"),
-    MoneyCategory(name = "Жильё и коммуналка", type = MoneyType.EXPENSE, icon = "🏠"),
-    MoneyCategory(name = "Связь и интернет", type = MoneyType.EXPENSE, icon = "📱"),
-    MoneyCategory(name = "Здоровье и аптека", type = MoneyType.EXPENSE, icon = "💊"),
-    MoneyCategory(name = "Спорт и зал", type = MoneyType.EXPENSE, icon = "🏋️"),
-    MoneyCategory(name = "Подарки", type = MoneyType.EXPENSE, icon = "🎁"),
-    MoneyCategory(name = "Красота и уход", type = MoneyType.EXPENSE, icon = "💄"),
-    MoneyCategory(name = "Образование и книги", type = MoneyType.EXPENSE, icon = "📚"),
-    MoneyCategory(name = "Питомцы", type = MoneyType.EXPENSE, icon = "🐾"),
-    MoneyCategory(name = "Дом и быт", type = MoneyType.EXPENSE, icon = "🧹"),
-    MoneyCategory(name = "Путешествия", type = MoneyType.EXPENSE, icon = "✈️"),
-    MoneyCategory(name = "Другое", type = MoneyType.EXPENSE, icon = "📦"),
+    MoneyCategory(name = "☕ Кафе и рестораны", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🚌 Транспорт", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🚕 Такси", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🎬 Кино", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🏠 Жильё и коммуналка", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "📱 Связь и интернет", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "💊 Здоровье и аптека", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🏋️ Спорт и зал", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🎁 Подарки", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "💄 Красота и уход", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "📚 Образование и книги", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🐾 Питомцы", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "🧹 Дом и быт", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "✈️ Путешествия", type = MoneyType.EXPENSE),
+    MoneyCategory(name = "📦 Другое", type = MoneyType.EXPENSE),
     // Доходы
-    MoneyCategory(name = "Зарплата", type = MoneyType.INCOME, icon = "💼"),
-    MoneyCategory(name = "Стипендия", type = MoneyType.INCOME, icon = "🎓"),
-    MoneyCategory(name = "Перевод", type = MoneyType.INCOME, icon = "💸"),
-    MoneyCategory(name = "Кешбэк", type = MoneyType.INCOME, icon = "🪙"),
-    MoneyCategory(name = "Другое", type = MoneyType.INCOME, icon = "📦"),
+    MoneyCategory(name = "💼 Зарплата", type = MoneyType.INCOME),
+    MoneyCategory(name = "🎓 Стипендия", type = MoneyType.INCOME),
+    MoneyCategory(name = "💸 Перевод", type = MoneyType.INCOME),
+    MoneyCategory(name = "🪙 Кешбэк", type = MoneyType.INCOME),
+    MoneyCategory(name = "📦 Другое", type = MoneyType.INCOME),
 )

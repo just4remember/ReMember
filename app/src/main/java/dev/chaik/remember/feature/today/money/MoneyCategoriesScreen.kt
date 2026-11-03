@@ -121,13 +121,11 @@ fun MoneyCategoriesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                             .clickable { editing = category }
                             .padding(start = 16.dp),
                     ) {
-                        Text(category.icon.orEmpty(), style = MaterialTheme.typography.titleMedium)
+                        // Эмодзи теперь в самом названии
                         Text(
                             text = category.name,
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 12.dp),
+                            modifier = Modifier.weight(1f),
                         )
                         IconButton(enabled = index > 0, onClick = { move(index, -1) }) {
                             Icon(Icons.Outlined.KeyboardArrowUp, stringResource(R.string.gym_template_up))
@@ -164,7 +162,7 @@ fun MoneyCategoriesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** Значок (эмодзи) и название. [taken] — имена, которые уже заняты, в нижнем регистре. */
+/** Название категории; её значок, если он был, не меняется. [taken] — имена, которые уже заняты, в нижнем регистре. */
 @Composable
 private fun CategoryDialog(
     category: MoneyCategory,
@@ -173,7 +171,6 @@ private fun CategoryDialog(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var icon by remember { mutableStateOf(category.icon.orEmpty()) }
     var name by remember { mutableStateOf(category.name) }
     var confirmDelete by remember { mutableStateOf(false) }
     val clean = name.trim()
@@ -184,13 +181,6 @@ private fun CategoryDialog(
         title = { Text(stringResource(if (category.id == 0L) R.string.money_category_new else R.string.money_category_edit)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = icon,
-                    onValueChange = { if (it.length <= MAX_ICON_CHARS) icon = it },
-                    label = { Text(stringResource(R.string.money_category_icon)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -210,7 +200,7 @@ private fun CategoryDialog(
         confirmButton = {
             TextButton(
                 enabled = clean.isNotEmpty() && !duplicate,
-                onClick = { onSave(category.copy(name = clean, icon = icon.trim().ifEmpty { null })) },
+                onClick = { onSave(category.copy(name = clean)) },
             ) { Text(stringResource(R.string.gym_save)) }
         },
         dismissButton = {
@@ -235,5 +225,3 @@ private fun CategoryDialog(
     }
 }
 
-/** Эмодзи бывает из нескольких символов (флаги, кожа). */
-private const val MAX_ICON_CHARS = 16

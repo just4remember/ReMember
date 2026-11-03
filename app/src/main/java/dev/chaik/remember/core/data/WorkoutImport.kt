@@ -76,6 +76,35 @@ class WorkoutImportException(val problems: List<ImportProblem>, val more: Int = 
 object WorkoutImport {
     private val json = Json { ignoreUnknownKeys = true }
 
+    /** Образец файла: его можно скачать в «Зале», заполнить и импортировать. */
+    val TEMPLATE = """
+        {
+          "version": 1,
+          "workouts": [
+            {
+              "date": "2026-09-28",
+              "start": "17:00",
+              "end": "18:30",
+              "weightBefore": 66.5,
+              "weightAfter": null,
+              "note": "Заметка к тренировке, можно пустую",
+              "exercises": [
+                { "name": "Жим лежа", "kind": "weight_reps", "sets": [ { "weight": 40, "reps": 12 }, { "weight": 45, "reps": 10 } ] },
+                { "name": "Пресс", "kind": "reps", "sets": [ { "reps": 30 } ] },
+                { "name": "Планка", "kind": "time", "sets": [ { "time": "1:30" } ] },
+                { "name": "Бег", "kind": "speed_time", "sets": [ { "speed": 9.4, "time": "10:00" } ] }
+              ]
+            },
+            {
+              "date": "2026-09-30",
+              "exercises": [
+                { "name": "Приседания", "sets": [ { "weight": 50, "reps": 10 } ] }
+              ]
+            }
+          ]
+        }
+    """.trimIndent() + "\n"
+
     /** Тренировки из файла — по хронологии, ещё не сохранённые (id = 0, imported = true). */
     fun parse(text: String): List<Workout> {
         val file = try {

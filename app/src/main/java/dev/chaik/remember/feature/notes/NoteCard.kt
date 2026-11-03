@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.chaik.remember.R
 import dev.chaik.remember.core.model.NoteSummary
+import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.ui.components.shimmer
 import java.io.File
 import java.time.LocalDate
@@ -90,7 +91,8 @@ fun NoteCard(
                     },
                 ),
         ) {
-            note.coverPhotoId?.let { photoId ->
+            // Обложку можно выключить в «Страницах»
+            note.coverPhotoId?.takeIf { LocalAppSettings.current.notesShowPhotos }?.let { photoId ->
                 Cover(thumbnail(photoId))
             }
             Column(Modifier.padding(12.dp)) {

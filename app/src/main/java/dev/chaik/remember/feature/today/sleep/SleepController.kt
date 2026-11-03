@@ -94,29 +94,64 @@ class SleepController(
         refreshGuess()
     }
 
-    /** Пересчитать подсказку: при открытии дня и при возвращении в приложение (могли дать доступ). */
+    /**
+     * Пересчитать подсказку: при открытии дня и при возвращении в приложение (могли дать доступ).
+     * За сегодня перерывы меняются, пока телефоном пользуются, — поэтому отмеченное ищется заново
+     * по самим перерывам, а не по их номерам: сначала то, что отмечено сейчас, иначе то,
+     * что уже записано сном, и только потом — предложенное.
+     */
     fun refreshGuess() {
         val date = date ?: return
         scope.launch {
+            val before = (guess as? SleepGuessState.Found)?.let { found -> found.selected.map { found.windows[it] } }.orEmpty()
             guess = when {
                 !guessEnabled() -> SleepGuessState.Off
                 !usage.hasAccess() -> SleepGuessState.NoAccess
-                else -> usage.guessSleep(date, zone)?.let { found ->
-                    // До минуты: секунды в поле времени всё равно не видны
+                else -> usage.guessSleep(date, zone)?.takeIf { it.windows.isNotEmpty() }?.let { found ->
+                    val windows = found.windows.map { window ->
+                        SleepWindow(
+                            // До минуты: секунды в поле времени всё равно не видны
+                            bed = window.bed.atZone(zone).toLocalTime().withSecond(0).withNano(0),
+                            wake = window.wake.atZone(zone).toLocalTime().withSecond(0).withNano(0),
+                            length = Duration.between(window.bed, window.wake),
+                            bedAt = window.bed,
+                            wakeAt = window.wake,
+                        )
+                    }
+                    val kept = windows.indices.filter { i -> before.any { it.bedAt == windows[i].bedAt && it.wakeAt == windows[i].wakeAt } }
+                    val recorded = recordedSelection(date, windows)
                     SleepGuessState.Found(
-                        bed = found.bed.atZone(zone).toLocalTime().withSecond(0).withNano(0),
-                        wake = found.wake.atZone(zone).toLocalTime().withSecond(0).withNano(0),
+                        windows = windows,
+                        selected = kept.toSet().ifEmpty { recorded }.ifEmpty { found.selected },
                     )
                 } ?: SleepGuessState.NotFound
             }
         }
     }
 
-    /** Подставить найденное время в поля. */
+    /** Перерывы, из которых, похоже, и собран уже записанный сон. */
+    private fun recordedSelection(date: LocalDate, windows: List<SleepWindow>): Set<Int> {
+        val bed = bedInstant(date, bedTime, wakeTime) ?: return emptySet()
+        val wake = wakeInstant(date, wakeTime) ?: return emptySet()
+        // В поле время до минуты, а перерыв — до секунды
+        val slack = Duration.ofMinutes(1)
+        return windows.indices.filter { i ->
+            !windows[i].bedAt.isBefore(bed.minus(slack)) && !windows[i].wakeAt.isAfter(wake.plus(slack))
+        }.toSet()
+    }
+
+    /** Отметить или снять перерыв: отмеченные склеиваются в один сон. */
+    fun toggleGuess(index: Int) {
+        val found = guess as? SleepGuessState.Found ?: return
+        guess = found.copy(selected = if (index in found.selected) found.selected - index else found.selected + index)
+    }
+
+    /** Подставить в поля отмеченные перерывы: от первого отбоя до последнего подъёма. */
     fun applyGuess() {
         val found = guess as? SleepGuessState.Found ?: return
-        bedTime = found.bed
-        wakeTime = found.wake
+        val (bed, wake) = found.merged ?: return
+        bedTime = bed
+        wakeTime = wake
     }
 
     @OptIn(FlowPreview::class)
@@ -186,5 +221,13 @@ sealed interface SleepGuessState {
     /** Ночью не нашлось перерыва, похожего на сон. */
     data object NotFound : SleepGuessState
 
-    data class Found(val bed: LocalTime, val wake: LocalTime) : SleepGuessState
+    /** Перерывы по времени; [selected] — отмеченные (сначала — самый правдоподобный). */
+    data class Found(val windows: List<SleepWindow>, val selected: Set<Int>) : SleepGuessState {
+        /** Отмеченное одним сном: перерывы идут по времени, поэтому от первого до последнего. */
+        val merged: Pair<LocalTime, LocalTime>?
+            get() = if (selected.isEmpty()) null else windows[selected.min()].bed to windows[selected.max()].wake
+    }
 }
+
+/** Перерыв в использовании телефона, похожий на сон или его часть: [bed]/[wake] — для показа, [bedAt]/[wakeAt] — точно. */
+data class SleepWindow(val bed: LocalTime, val wake: LocalTime, val length: Duration, val bedAt: Instant, val wakeAt: Instant)

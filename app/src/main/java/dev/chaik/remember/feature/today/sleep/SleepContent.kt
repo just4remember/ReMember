@@ -1,9 +1,16 @@
 package dev.chaik.remember.feature.today.sleep
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.foundation.layout.PaddingValues
 import dev.chaik.remember.core.editor.RichEditor
 import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +25,7 @@ import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -158,9 +166,11 @@ fun SleepContent(controller: SleepController, modifier: Modifier = Modifier) {
 private enum class TimeField { Bed, Wake }
 
 /**
- * Подсказка под полями времени: подставить сон, найденный по истории телефона, или
- * предложить дать доступ к истории. Если время уже такое же — кнопка не нужна.
+ * Подсказка под полями времени: перерывы в использовании телефона, похожие на сон, или
+ * предложение дать доступ к истории. Отмеченные перерывы склеиваются в один сон — так
+ * подставляется и сон по частям. Если время уже такое же — кнопка не нужна.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SleepGuessRow(controller: SleepController) {
     val context = LocalContext.current
@@ -171,18 +181,51 @@ private fun SleepGuessRow(controller: SleepController) {
         onPauseOrDispose { }
     }
     when (val guess = controller.guess) {
-        is SleepGuessState.Found -> if (controller.bedTime != guess.bed || controller.wakeTime != guess.wake) {
-            FilledTonalButton(
-                onClick = controller::applyGuess,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            ) {
+        // Свёрнуто, пока не понадобится: варианты занимают много места
+        is SleepGuessState.Found -> Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            var expanded by rememberSaveable { mutableStateOf(false) }
+            TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 4.dp)) {
                 Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
                 Text(
-                    text = stringResource(R.string.sleep_guess_apply, guess.bed.format(TimeFormat), guess.wake.format(TimeFormat)),
-                    modifier = Modifier.padding(start = 8.dp),
+                    stringResource(R.string.sleep_guess_toggle, guess.windows.size),
+                    modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
                 )
+                Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null, modifier = Modifier.padding(start = 4.dp))
+            }
+            if (!expanded) return@Column
+            Text(
+                text = stringResource(if (guess.windows.size > 1) R.string.sleep_guess_pick else R.string.sleep_guess_title),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                guess.windows.forEachIndexed { index, window ->
+                    FilterChip(
+                        selected = index in guess.selected,
+                        onClick = { controller.toggleGuess(index) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    R.string.sleep_guess_window,
+                                    window.bed.format(TimeFormat),
+                                    window.wake.format(TimeFormat),
+                                    window.length.toHours().toInt(),
+                                    window.length.toMinutesPart(),
+                                ),
+                            )
+                        },
+                    )
+                }
+            }
+            val merged = guess.merged
+            if (merged != null && (controller.bedTime != merged.first || controller.wakeTime != merged.second)) {
+                FilledTonalButton(onClick = controller::applyGuess, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                    Text(
+                        text = stringResource(R.string.sleep_guess_apply, merged.first.format(TimeFormat), merged.second.format(TimeFormat)),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
         }
         SleepGuessState.NoAccess -> Column(Modifier.padding(top = 12.dp)) {

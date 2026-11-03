@@ -295,10 +295,12 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
     if (pickingDate) {
         val marks by viewModel.calendarMarks.collectAsStateWithLifecycle()
         val tags by viewModel.calendarTags.collectAsStateWithLifecycle()
+        val sleep by viewModel.calendarSleep.collectAsStateWithLifecycle()
         DayPickerPage(
             selected = viewModel.date,
             marks = marks,
             tags = tags,
+            sleepDays = sleep,
             firstMonth = viewModel.calendarStart,
             onPick = {
                 viewModel.selectDate(it)

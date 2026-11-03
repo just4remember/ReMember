@@ -45,6 +45,7 @@ class AppSettingsStore(context: Context) {
             haptics = prefs.getBoolean("haptics", d.haptics),
             gameHaptics = prefs.getBoolean("game_haptics", d.gameHaptics),
             notesByEdit = prefs.getBoolean("notes_by_edit", d.notesByEdit),
+            notesShowPhotos = prefs.getBoolean("notes_show_photos", d.notesShowPhotos),
             tasksClearDraft = prefs.getBoolean("tasks_clear_draft", d.tasksClearDraft),
             disabledPages = list("disabled_pages"),
             sleepGuess = prefs.getBoolean("sleep_guess", d.sleepGuess),
@@ -80,6 +81,7 @@ class AppSettingsStore(context: Context) {
         putBoolean("haptics", s.haptics)
         putBoolean("game_haptics", s.gameHaptics)
         putBoolean("notes_by_edit", s.notesByEdit)
+        putBoolean("notes_show_photos", s.notesShowPhotos)
         putBoolean("tasks_clear_draft", s.tasksClearDraft)
         putString("disabled_pages", s.disabledPages.joinToString(","))
         putBoolean("sleep_guess", s.sleepGuess)

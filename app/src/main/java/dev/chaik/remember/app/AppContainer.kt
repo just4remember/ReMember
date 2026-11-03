@@ -129,7 +129,6 @@ class AppContainer(context: Context) {
             reminderSettings,
             notifier,
             dayRepository,
-            sleepRepository,
             eventRepository,
             taskRepository,
             workoutRepository,

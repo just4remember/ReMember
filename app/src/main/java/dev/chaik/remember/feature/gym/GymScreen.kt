@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
@@ -79,6 +81,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.R
+import dev.chaik.remember.core.data.WorkoutImport
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.data.ImportProblem
 import dev.chaik.remember.core.data.WorkoutImportException
@@ -111,7 +114,8 @@ fun GymScreen(
     onTemplates: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val container = LocalContext.current.appContainer
+    val context = LocalContext.current
+    val container = context.appContainer
     val viewModel = viewModel { GymViewModel(container) }
     val summaries by viewModel.summaries.collectAsStateWithLifecycle()
     val active = summaries?.firstOrNull { it.active }
@@ -131,6 +135,14 @@ fun GymScreen(
     val haptics = LocalHapticFeedback.current
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.readImport(uri)
+    }
+    // Образец файла импорта: куда сохранить, выбирают в системном окне
+    val saveTemplate = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val saved = runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(WorkoutImport.TEMPLATE.toByteArray()) } ?: error("no stream")
+        }.isSuccess
+        Toast.makeText(context, if (saved) R.string.gym_template_saved else R.string.gym_template_failed, Toast.LENGTH_SHORT).show()
     }
 
     var menu by remember { mutableStateOf(false) }
@@ -181,6 +193,15 @@ fun GymScreen(
                             // Samsung показывает .json как «любой файл» — разрешаем всё, проверим при чтении
                             container.appLock.allowExternal()
                             pickFile.launch(arrayOf("application/json", "text/*", "*/*"))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gym_import_template)) },
+                        leadingIcon = { Icon(Icons.Outlined.FileDownload, null) },
+                        onClick = {
+                            menu = false
+                            container.appLock.allowExternal()
+                            saveTemplate.launch("remember-workouts-template.json")
                         },
                     )
                     DropdownMenuItem(

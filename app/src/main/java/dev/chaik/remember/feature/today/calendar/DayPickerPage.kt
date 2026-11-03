@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -75,6 +76,7 @@ private val RowShape = RoundedCornerShape(16.dp)
  *
  * @param marks дни с записью → оценка в половинках (null — без оценки)
  * @param tags дни с тегами → их теги
+ * @param sleepDays дни с записанным сном — у них луна
  * @param firstMonth самый ранний месяц в ленте
  */
 @Composable
@@ -85,6 +87,7 @@ fun DayPickerPage(
     firstMonth: YearMonth,
     onPick: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
+    sleepDays: Set<LocalDate> = emptySet(),
 ) {
     val store = LocalContext.current.appContainer.settings
     val asList = LocalAppSettings.current.dayPickerList
@@ -119,6 +122,7 @@ fun DayPickerPage(
                 firstMonth = firstMonth,
                 marks = marks,
                 tags = tags,
+                sleepDays = sleepDays,
                 onPick = {
                     haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                     onPick(it)
@@ -144,6 +148,7 @@ fun DayPickerPage(
                     today = today,
                     selected = selected,
                     marks = marks,
+                    sleepDays = sleepDays,
                     onPick = {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         onPick(it)
@@ -165,6 +170,7 @@ private fun DayList(
     today: LocalDate,
     firstMonth: YearMonth,
     marks: Map<LocalDate, Int?>,
+    sleepDays: Set<LocalDate>,
     tags: Map<LocalDate, List<Tag>>,
     onPick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
@@ -198,7 +204,7 @@ private fun DayList(
                 )
             }
             items(days, key = { it.toString() }) { date ->
-                DayRow(date, marks[date], tags[date].orEmpty(), date == selected, onClick = { onPick(date) })
+                DayRow(date, marks[date], tags[date].orEmpty(), date in sleepDays, date == selected, onClick = { onPick(date) })
             }
         }
     }
@@ -206,7 +212,7 @@ private fun DayList(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DayRow(date: LocalDate, rating: Int?, tags: List<Tag>, isSelected: Boolean, onClick: () -> Unit) {
+private fun DayRow(date: LocalDate, rating: Int?, tags: List<Tag>, slept: Boolean, isSelected: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val accent = rating?.let(::ratingColor)
     val title = remember(date) {
@@ -224,6 +230,14 @@ private fun DayRow(date: LocalDate, rating: Int?, tags: List<Tag>, isSelected: B
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            if (slept) {
+                Icon(
+                    Icons.Outlined.Bedtime,
+                    contentDescription = stringResource(R.string.today_calendar_slept),
+                    tint = colors.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp).size(16.dp),
+                )
+            }
             if (rating != null && accent != null) {
                 Icon(Icons.Filled.Star, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
                 Text(
@@ -280,6 +294,7 @@ private fun MonthGrid(
     today: LocalDate,
     selected: LocalDate,
     marks: Map<LocalDate, Int?>,
+    sleepDays: Set<LocalDate>,
     onPick: (LocalDate) -> Unit,
 ) {
     val title = remember(month) {
@@ -306,6 +321,7 @@ private fun MonthGrid(
                             date = date,
                             hasEntry = marks.containsKey(date),
                             rating = marks[date],
+                            slept = date in sleepDays,
                             isToday = date == today,
                             isSelected = date == selected,
                             enabled = !date.isAfter(today),
@@ -325,6 +341,7 @@ private fun DayCell(
     date: LocalDate,
     hasEntry: Boolean,
     rating: Int?,
+    slept: Boolean,
     isToday: Boolean,
     isSelected: Boolean,
     enabled: Boolean,
@@ -365,6 +382,17 @@ private fun DayCell(
             if (rating != null && accent != null) {
                 RatingLabel(rating, accent)
             }
+        }
+        if (slept) {
+            Icon(
+                Icons.Outlined.Bedtime,
+                contentDescription = stringResource(R.string.today_calendar_slept),
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 3.dp, end = 3.dp)
+                    .size(10.dp),
+            )
         }
     }
 }

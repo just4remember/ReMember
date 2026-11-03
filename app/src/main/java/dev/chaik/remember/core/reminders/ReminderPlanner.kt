@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 /** Что напомнить. Само содержание (и нужно ли вообще) уточняется в момент показа. */
 sealed interface Reminder {
     data class DayReport(val date: LocalDate) : Reminder
-    data class Sleep(val date: LocalDate) : Reminder
     data class Summary(val date: LocalDate) : Reminder
     data class Raskobki(val date: LocalDate) : Reminder
     data class EventAlert(val eventId: Long, val occurrence: LocalDateTime) : Reminder
@@ -46,7 +45,6 @@ object ReminderPlanner {
         val days = generateSequence(firstDay) { it.plusDays(1) }.takeWhile { !it.isAfter(to.toLocalDate()) }.toList()
         for (day in days) {
             if (settings.dayReport.firesOn(day.dayOfWeek)) raw += day.atTime(settings.dayReport.time) to Reminder.DayReport(day)
-            if (settings.sleep.firesOn(day.dayOfWeek)) raw += day.atTime(settings.sleep.time) to Reminder.Sleep(day)
             if (settings.summary.firesOn(day.dayOfWeek)) raw += day.atTime(settings.summary.time) to Reminder.Summary(day)
             if (settings.raskobki.firesOn(day.dayOfWeek)) raw += day.atTime(settings.raskobki.time) to Reminder.Raskobki(day)
         }

@@ -41,7 +41,6 @@ class ReminderSettingsStore(context: Context) {
         return ReminderSettings(
             enabled = prefs.getBoolean("enabled", d.enabled),
             dayReport = readDaily("day", d.dayReport),
-            sleep = readDaily("sleep", d.sleep),
             summary = readDaily("summary", d.summary),
             raskobki = readDaily("raskobki", d.raskobki),
             events = prefs.getBoolean("events", d.events),
@@ -59,7 +58,6 @@ class ReminderSettingsStore(context: Context) {
     private fun write(s: ReminderSettings) = prefs.edit {
         putBoolean("enabled", s.enabled)
         writeDaily(this, "day", s.dayReport)
-        writeDaily(this, "sleep", s.sleep)
         writeDaily(this, "summary", s.summary)
         writeDaily(this, "raskobki", s.raskobki)
         putBoolean("events", s.events)

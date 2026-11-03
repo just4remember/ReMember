@@ -10,7 +10,6 @@ class RaskobkiReminderTest {
     private val day = LocalDate.of(2026, 11, 2)
     private val quietOthers = ReminderSettings(
         dayReport = DailyReminder(false, LocalTime.NOON),
-        sleep = DailyReminder(false, LocalTime.NOON),
     )
 
     private fun plan(settings: ReminderSettings) =

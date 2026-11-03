@@ -53,7 +53,6 @@ class WorkoutTest {
         val day = LocalDate.of(2026, 10, 23)
         val settings = ReminderSettings(
             dayReport = DailyReminder(false, LocalTime.of(21, 0)),
-            sleep = DailyReminder(false, LocalTime.of(9, 0)),
             events = false,
             tasks = false,
         )

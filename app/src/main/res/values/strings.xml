@@ -143,9 +143,13 @@
     <string name="sleep_bed">Лёг</string>
     <string name="sleep_wake">Встал</string>
     <string name="sleep_guess_apply">По телефону: %1$s – %2$s</string>
+    <string name="sleep_guess_toggle">Сон по телефону: вариантов — %1$d</string>
+    <string name="sleep_guess_title">По телефону похоже на сон:</string>
+    <string name="sleep_guess_pick">Перерывы в телефоне. Отметьте, когда спали, — несколько склеятся в один сон:</string>
+    <string name="sleep_guess_window">%1$s–%2$s · %3$d ч %4$02d</string>
     <string name="sleep_guess_allow">Определять время сна по телефону</string>
     <string name="sleep_guess_allow_hint">Нужен «Доступ к истории использования»: по нему видно, когда вы отложили телефон и когда взяли утром. История не сохраняется и никуда не отправляется</string>
-    <string name="sleep_guess_none">Ночью не нашлось перерыва в использовании телефона дольше 3 часов</string>
+    <string name="sleep_guess_none">Ночью не нашлось перерыва в использовании телефона дольше часа</string>
     <string name="sleep_not_set">—:—</string>
     <string name="sleep_duration">Спал %1$d ч %2$02d мин</string>
     <string name="sleep_quality">Качество сна</string>
@@ -321,8 +325,6 @@
     <string name="notify_test_text">Так будут выглядеть напоминания Re:Member</string>
     <string name="notify_day_title">Как прошёл день?</string>
     <string name="notify_day_text">Запишите пару строк о сегодняшнем дне</string>
-    <string name="notify_sleep_title">Как спалось?</string>
-    <string name="notify_sleep_text">Запишите, во сколько легли и проснулись</string>
     <string name="notify_birthday">День рождения: %1$s</string>
     <string name="notify_turns">исполняется %1$s</string>
     <string name="notify_task_text">Срок — %1$s</string>
@@ -353,8 +355,6 @@
     <string name="reminders_group_records">Записи</string>
     <string name="reminders_day">Отчёт за день</string>
     <string name="reminders_day_hint">Не придёт, если день уже записан</string>
-    <string name="reminders_sleep">Запись сна</string>
-    <string name="reminders_sleep_hint">Не придёт, если сон уже записан</string>
     <string name="reminders_group_plans">Календарь и задачи</string>
     <string name="reminders_events">События</string>
     <string name="reminders_events_hint">За сколько предупредить — в каждом событии</string>
@@ -385,6 +385,9 @@
     <string name="gym_add_past">Добавить прошлую тренировку</string>
     <string name="gym_more">Ещё</string>
     <string name="gym_import">Импорт из файла (JSON)</string>
+    <string name="gym_import_template">Скачать шаблон для импорта</string>
+    <string name="gym_template_saved">Шаблон сохранён</string>
+    <string name="gym_template_failed">Не удалось сохранить шаблон</string>
     <string name="gym_import_title">Импорт тренировок</string>
     <string name="gym_import_reading">Читаю файл…</string>
     <string name="gym_import_not_file">Это не файл тренировок</string>
@@ -912,7 +915,6 @@
     <string name="money_categories_hint">Первые %1$d — частые: в списке выбора они отделены чертой</string>
     <string name="money_category_new">Новая категория</string>
     <string name="money_category_edit">Категория</string>
-    <string name="money_category_icon">Значок (эмодзи)</string>
     <string name="money_category_name">Название</string>
     <string name="money_category_taken">Такая категория уже есть</string>
     <string name="money_category_delete">Удалить категорию?</string>
@@ -946,6 +948,7 @@
         <item quantity="other">%1$d дня подряд с записью</item>
     </plurals>
     <string name="today_calendar_list">Показать списком с тегами</string>
+    <string name="today_calendar_slept">Сон записан</string>
     <string name="today_calendar_grid">Показать календарём</string>
     <string name="appearance_haptics_title">Вибрация</string>
     <string name="appearance_haptics">Вибрация в приложении</string>
@@ -1011,6 +1014,10 @@
     <string name="reminders_group_games">Игры</string>
     <string name="reminders_raskobki">Напоминание о раскобках</string>
     <string name="reminders_raskobki_hint">Не придёт, если выпуск дня уже решён</string>
+    <string name="raskobki_reminder_hint">Каждый день в выбранное время, если выпуск ещё не решён. При входе в приложение уведомление убирается само</string>
+    <string name="raskobki_reminder_time">Время: %1$s</string>
+    <string name="raskobki_reminder_all_off">Все напоминания выключены в «Настройки → Напоминания»</string>
+    <string name="raskobki_reminder_turn_on">Включить</string>
     <string name="notify_raskobki_title">Находка дня ждёт</string>
     <string name="notify_raskobki_text">Пора решить сегодняшние раскобки</string>
     <string name="raskobki_calendar">Календарь выпусков</string>
@@ -1067,6 +1074,8 @@
     <string name="pages_disable_hint">Глаз — включить или выключить раздел. Выключенного раздела нет в «Ещё», открыть его нельзя. Будильники и напоминания при этом продолжают работать</string>
     <string name="pages_notes_by_edit">Недавно изменённые — выше</string>
     <string name="pages_notes_by_edit_hint">Изменённая заметка поднимается в начало списка. Выключено — порядок по дате создания, новые сверху</string>
+    <string name="pages_notes_photos">Показывать фото из заметок</string>
+    <string name="pages_notes_photos_hint">Первое фото заметки — обложкой на её карточке в списке</string>
     <string name="pages_tasks_clear_draft">Стирать новую задачу при закрытии</string>
     <string name="pages_tasks_clear_draft_hint">Если закрыть клавиатуру или нажать мимо строки, ненаписанная задача сотрётся. Выключено — она дождётся, пока вы вернётесь</string>
     <string name="game_next">Следующее слово</string>

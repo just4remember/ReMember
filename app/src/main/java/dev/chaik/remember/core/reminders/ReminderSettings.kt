@@ -9,8 +9,6 @@ data class ReminderSettings(
     val enabled: Boolean = true,
     /** Вечером: записать, как прошёл день. Не приходит, если запись за сегодня уже есть. */
     val dayReport: DailyReminder = DailyReminder(enabled = true, time = LocalTime.of(21, 0)),
-    /** Утром: записать сон. Не приходит, если сон за сегодня уже записан. */
-    val sleep: DailyReminder = DailyReminder(enabled = true, time = LocalTime.of(9, 0)),
     /** Утренняя сводка: события и задачи на сегодня. */
     val summary: DailyReminder = DailyReminder(enabled = false, time = LocalTime.of(8, 0)),
     /** Ра[скобки]: не приходит, если выпуск дня уже решён. */

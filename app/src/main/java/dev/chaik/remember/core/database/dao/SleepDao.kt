@@ -15,6 +15,10 @@ interface SleepDao {
     @Query("SELECT * FROM sleep_entry WHERE date BETWEEN :from AND :to ORDER BY date DESC")
     fun observeRange(from: LocalDate, to: LocalDate): Flow<List<SleepEntryEntity>>
 
+    /** Дни, за которые записан сон: пустых записей в таблице не бывает. */
+    @Query("SELECT date FROM sleep_entry")
+    fun observeDates(): Flow<List<LocalDate>>
+
     @Upsert
     suspend fun upsert(entry: SleepEntryEntity)
 

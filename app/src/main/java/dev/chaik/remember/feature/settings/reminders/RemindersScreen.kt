@@ -72,10 +72,10 @@ import kotlinx.serialization.Serializable
 data object RemindersRoute : NavKey
 
 /** Какое время сейчас выбирается в диалоге. */
-private enum class TimeField { Day, Sleep, Summary, Raskobki, QuietStart, QuietEnd }
+private enum class TimeField { Day, Summary, Raskobki, QuietStart, QuietEnd }
 
 /**
- * Настройки напоминаний: отчёт за день, сон, события, задачи, утренняя сводка,
+ * Настройки напоминаний: отчёт за день, события, задачи, утренняя сводка,
  * тихие часы и звук. Меняется сразу — расписание пересчитывается само.
  */
 @Composable
@@ -132,13 +132,6 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         reminder = settings.dayReport,
                         onChange = { r -> store.update { it.copy(dayReport = r) } },
                         onPickTime = { picking = TimeField.Day },
-                    )
-                    DailyCard(
-                        title = stringResource(R.string.reminders_sleep),
-                        hint = stringResource(R.string.reminders_sleep_hint),
-                        reminder = settings.sleep,
-                        onChange = { r -> store.update { it.copy(sleep = r) } },
-                        onPickTime = { picking = TimeField.Sleep },
                     )
 
                     SettingsGroupTitle(stringResource(R.string.reminders_group_plans))
@@ -241,7 +234,6 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     picking?.let { field ->
         val initial = when (field) {
             TimeField.Day -> settings.dayReport.time
-            TimeField.Sleep -> settings.sleep.time
             TimeField.Summary -> settings.summary.time
             TimeField.Raskobki -> settings.raskobki.time
             TimeField.QuietStart -> settings.quiet.start
@@ -253,7 +245,6 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 store.update {
                     when (field) {
                         TimeField.Day -> it.copy(dayReport = it.dayReport.copy(time = time))
-                        TimeField.Sleep -> it.copy(sleep = it.sleep.copy(time = time))
                         TimeField.Summary -> it.copy(summary = it.summary.copy(time = time))
                         TimeField.Raskobki -> it.copy(raskobki = it.raskobki.copy(time = time))
                         TimeField.QuietStart -> it.copy(quiet = it.quiet.copy(start = time))

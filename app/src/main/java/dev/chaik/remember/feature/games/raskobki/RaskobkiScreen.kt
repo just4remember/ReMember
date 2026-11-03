@@ -73,12 +73,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.R
+import dev.chaik.remember.core.reminders.NotificationIds
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.raskobki.RaskobkiGrade
 import dev.chaik.remember.core.raskobki.RaskobkiLoad
@@ -154,7 +156,10 @@ fun RaskobkiScreen(
     onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val repository = LocalContext.current.appContainer.raskobki
+    val context = LocalContext.current
+    val repository = context.appContainer.raskobki
+    // Напоминание могло прийти, пока приложение уже было открыто: зашли в игру — оно не нужно
+    LaunchedEffect(Unit) { NotificationManagerCompat.from(context).cancel(NotificationIds.RASKOBKI) }
     val progress by repository.progress.collectAsState()
     val account by repository.account.collectAsState()
     val ready by repository.ready.collectAsState()

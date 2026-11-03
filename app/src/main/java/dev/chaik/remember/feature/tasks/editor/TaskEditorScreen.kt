@@ -4,12 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -214,16 +214,27 @@ private fun PrioritySection(viewModel: TaskEditorViewModel) {
                     selected = viewModel.priority == priority,
                     onClick = { viewModel.priority = priority },
                     shape = SegmentedButtonDefaults.itemShape(i, TaskPriority.entries.size),
-                    icon = {
-                        // requiredSize: слот иконки растягивает по высоте — кружок становился овалом
-                        Box(
-                            Modifier
-                                .requiredSize(10.dp)
-                                .clip(CircleShape)
-                                .background(priority.color()),
-                        )
+                    // Поля по краям поменьше: иначе «Средний» и «Высокий» не влезали целиком
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                    // Кружок — в подписи, а не в слоте значка: тот держит ширину под галочку
+                    // и отодвигал текст далеко от кружка
+                    icon = {},
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(priority.color()),
+                            )
+                            Text(
+                                priority.label(),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
                     },
-                    label = { Text(priority.label(), style = MaterialTheme.typography.labelSmall, maxLines = 1) },
                 )
             }
         }

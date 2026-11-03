@@ -99,6 +99,8 @@ fun RaskobkiProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             ColorSetting(R.string.raskobki_answer_color, raskobkiAnswerColor(), repository.answerColor.collectAsState().value != null, repository::setAnswerColor)
             RaskobkiColorPreview()
             HorizontalDivider()
+            RaskobkiReminderSection()
+            HorizontalDivider()
             val metrics = LocalContext.current.appContainer.raskobkiMetrics
             val consent by metrics.consent.collectAsState()
             var terms by rememberSaveable { mutableStateOf(false) }

@@ -19,7 +19,6 @@ class ReminderPlannerTest {
     /** Только то, что включено явно, — чтобы проверки не мешали друг другу. */
     private val nothing = ReminderSettings(
         dayReport = DailyReminder(false, LocalTime.of(21, 0)),
-        sleep = DailyReminder(false, LocalTime.of(9, 0)),
         summary = DailyReminder(false, LocalTime.of(8, 0)),
         events = false,
         tasks = false,
@@ -32,14 +31,14 @@ class ReminderPlannerTest {
     fun `ежедневные — в своё время и только в выбранные дни`() {
         val settings = nothing.copy(
             dayReport = DailyReminder(true, LocalTime.of(21, 0), days = setOf(DayOfWeek.FRIDAY)),
-            sleep = DailyReminder(true, LocalTime.of(9, 0)),
+            summary = DailyReminder(true, LocalTime.of(9, 0)),
         )
         val result = plan(settings, at(today, 0), at(today.plusDays(1), 23, 59))
         assertEquals(
             listOf(
-                at(today, 9) to Reminder.Sleep(today),
+                at(today, 9) to Reminder.Summary(today),
                 at(today, 21) to Reminder.DayReport(today),
-                at(today.plusDays(1), 9) to Reminder.Sleep(today.plusDays(1)),
+                at(today.plusDays(1), 9) to Reminder.Summary(today.plusDays(1)),
             ),
             result.map { it.at to it.reminder },
         )
@@ -47,14 +46,14 @@ class ReminderPlannerTest {
 
     @Test
     fun `промежуток не включает начало, но включает конец`() {
-        val settings = nothing.copy(sleep = DailyReminder(true, LocalTime.of(9, 0)))
+        val settings = nothing.copy(summary = DailyReminder(true, LocalTime.of(9, 0)))
         assertTrue(plan(settings, at(today, 9), at(today, 10)).isEmpty())
         assertEquals(1, plan(settings, at(today, 8), at(today, 9)).size)
     }
 
     @Test
     fun `общий выключатель глушит всё`() {
-        val settings = nothing.copy(enabled = false, sleep = DailyReminder(true, LocalTime.of(9, 0)))
+        val settings = nothing.copy(enabled = false, summary = DailyReminder(true, LocalTime.of(9, 0)))
         assertTrue(plan(settings, at(today, 0), at(today, 23)).isEmpty())
     }
 

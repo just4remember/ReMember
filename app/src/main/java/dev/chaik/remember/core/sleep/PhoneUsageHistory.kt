@@ -34,10 +34,10 @@ class PhoneUsageHistory(private val context: Context) {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /** Сон, который закончился утром [date]; null — не нашли или нет доступа. */
-    suspend fun guessSleep(date: LocalDate, zone: ZoneId = ZoneId.systemDefault()): SleepGuess? = withContext(Dispatchers.IO) {
+    suspend fun guessSleep(date: LocalDate, zone: ZoneId = ZoneId.systemDefault()): SleepOptions? = withContext(Dispatchers.IO) {
         if (!hasAccess()) return@withContext null
         val (from, to) = SleepGuesser.window(date, zone)
-        SleepGuesser.guess(events(from, minOf(to, Instant.now())), date, zone)
+        SleepGuesser.options(events(from, minOf(to, Instant.now())), date, zone)
     }
 
     private fun events(from: Instant, to: Instant): List<PhoneEvent> {
