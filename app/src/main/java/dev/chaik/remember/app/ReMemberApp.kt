@@ -71,6 +71,7 @@ import dev.chaik.remember.core.ui.LocalIslandPadding
 import dev.chaik.remember.core.ui.LocalTabVisible
 import dev.chaik.remember.feature.games.raskobki.RaskobkiRoute
 import dev.chaik.remember.core.ui.components.SwipeBackHost
+import dev.chaik.remember.feature.map.MapRoute
 import dev.chaik.remember.core.ui.theme.ReMemberTheme
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
@@ -239,9 +240,10 @@ private fun MainScaffold() {
             }
         }
 
-        // Пока открыта клавиатура, островок прячется, чтобы не мешать вводу
+        // Пока открыта клавиатура, островок прячется, чтобы не мешать вводу. На карте его место
+        // занимает её собственная панель
         AnimatedVisibility(
-            visible = !WindowInsets.isImeVisible,
+            visible = !WindowInsets.isImeVisible && currentStack.lastOrNull() !is MapRoute,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
@@ -270,7 +272,8 @@ private fun MainScaffold() {
 @Composable
 private fun TabContent(backStack: NavBackStack<NavKey>) {
     val leftToRight = LocalAppSettings.current.backSwipe == BackSwipe.LEFT_TO_RIGHT
-    SwipeBackHost(enabled = backStack.size > 1) {
+    // На карте горизонтальный жест двигает карту — «назад» там только стрелкой или кнопкой
+    SwipeBackHost(enabled = backStack.size > 1 && backStack.lastOrNull() !is MapRoute) {
         NavDisplay(
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },

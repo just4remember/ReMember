@@ -20,6 +20,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Только 64-битный ARM — как у телефона. Карта и шифрование базы приносят свой нативный код
+        // под каждый процессор, и без фильтра приложение весило бы в разы больше
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     buildTypes {
@@ -67,6 +71,8 @@ dependencies {
     // Шаги, калории и тренировки из Samsung Health
     implementation(libs.androidx.health.connect)
     implementation(libs.androidx.lifecycle.process)
+    // Карта мест: векторная карта и скачивание городов для офлайна
+    implementation(libs.maplibre.android)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigationevent.compose)

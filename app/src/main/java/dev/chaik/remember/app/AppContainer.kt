@@ -11,6 +11,8 @@ import dev.chaik.remember.core.wordgame.GamesStore
 import dev.chaik.remember.core.data.DayRepository
 import dev.chaik.remember.core.data.EventRepository
 import dev.chaik.remember.core.data.MoneyRepository
+import dev.chaik.remember.core.data.PlaceRepository
+import dev.chaik.remember.core.map.OfflineMaps
 import dev.chaik.remember.core.data.NoteRepository
 import dev.chaik.remember.core.data.SleepRepository
 import dev.chaik.remember.core.data.TagRepository
@@ -100,6 +102,8 @@ class AppContainer(context: Context) {
 
     val dayRepository by lazy { DayRepository(database) }
     val sleepRepository by lazy { SleepRepository(database) }
+    val placeRepository by lazy { PlaceRepository(appContext, database) }
+    val offlineMaps by lazy { OfflineMaps(appContext) }
     val moneyRepository by lazy { MoneyRepository(database) { settings.settings.value.currency } }
     val noteRepository by lazy { NoteRepository(database) }
     val tagRepository by lazy { TagRepository(database) }

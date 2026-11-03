@@ -11,7 +11,7 @@ class DestinationTest {
         val s = AppSettings()
         assertEquals(Destination.DefaultTabs + Destination.More, s.islandTabs())
         assertEquals(
-            listOf(Destination.Feed, Destination.Search, Destination.Stats, Destination.Finance, Destination.Health, Destination.Gym, Destination.Network, Destination.Time, Destination.Games, Destination.Settings),
+            listOf(Destination.Feed, Destination.Search, Destination.Stats, Destination.Finance, Destination.Health, Destination.Gym, Destination.Network, Destination.Time, Destination.Games, Destination.Places, Destination.Settings),
             s.moreTiles(),
         )
     }

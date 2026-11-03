@@ -32,6 +32,8 @@ import dev.chaik.remember.feature.gym.workout.WorkoutRoute
 import dev.chaik.remember.feature.gym.workout.WorkoutScreen
 import dev.chaik.remember.feature.health.HealthRoute
 import dev.chaik.remember.feature.health.HealthScreen
+import dev.chaik.remember.feature.map.MapRoute
+import dev.chaik.remember.feature.map.MapScreen
 import dev.chaik.remember.feature.more.MoreRoute
 import dev.chaik.remember.feature.more.MoreScreen
 import dev.chaik.remember.feature.network.NetworkRoute
@@ -128,6 +130,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<TimeRoute> { TimeScreen(onBack = backFor(it), onOpenAlarm = { id -> backStack.add(AlarmEditorRoute(id)) }) }
         entry<AlarmEditorRoute> { AlarmEditorScreen(route = it, onBack = back) }
         entry<GamesRoute> { GamesScreen(onBack = backFor(it), onOpen = { route -> backStack.add(route) }) }
+        entry<MapRoute> { MapScreen(onBack = backFor(it)) }
         entry<FiveLettersRoute> { FiveLettersScreen(onBack = back) }
         entry<RaskobkiRoute> {
             RaskobkiScreen(

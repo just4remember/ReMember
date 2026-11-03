@@ -9,6 +9,7 @@ import dev.chaik.remember.core.database.dao.EventDao
 import dev.chaik.remember.core.database.dao.MoneyDao
 import dev.chaik.remember.core.database.dao.NoteDao
 import dev.chaik.remember.core.database.dao.PhotoDao
+import dev.chaik.remember.core.database.dao.PlaceDao
 import dev.chaik.remember.core.database.dao.SleepDao
 import dev.chaik.remember.core.database.dao.TagDao
 import dev.chaik.remember.core.database.dao.TaskDao
@@ -24,6 +25,8 @@ import dev.chaik.remember.core.database.entity.NoteFolderEntity
 import dev.chaik.remember.core.database.entity.NoteTagEntity
 import dev.chaik.remember.core.database.entity.PhotoEntity
 import dev.chaik.remember.core.database.entity.PhotoRefEntity
+import dev.chaik.remember.core.database.entity.PlaceCategoryEntity
+import dev.chaik.remember.core.database.entity.PlaceEntity
 import dev.chaik.remember.core.database.entity.SleepEntryEntity
 import dev.chaik.remember.core.database.entity.SubtaskEntity
 import dev.chaik.remember.core.database.entity.TagEntity
@@ -41,7 +44,7 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
  * (`autoMigrations` — для простых случаев). Схемы лежат в app/schemas.
  */
 @Database(
-    version = 7,
+    version = 9,
     entities = [
         DayEntryEntity::class,
         SleepEntryEntity::class,
@@ -63,6 +66,8 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
         WorkoutSetEntity::class,
         WorkoutTemplateEntity::class,
         WorkoutTemplateExerciseEntity::class,
+        PlaceEntity::class,
+        PlaceCategoryEntity::class,
     ],
     autoMigrations = [
         // 2: задачи и подзадачи — только новые таблицы
@@ -77,6 +82,10 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
         AutoMigration(from = 5, to = 6),
         // 7: шаблоны тренировок — только новые таблицы
         AutoMigration(from = 6, to = 7),
+        // 8: места на карте — новая таблица
+        AutoMigration(from = 7, to = 8),
+        // 9: категории меток — новая таблица и колонка
+        AutoMigration(from = 8, to = 9),
     ],
     exportSchema = true,
 )
@@ -91,4 +100,5 @@ abstract class ReMemberDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun eventDao(): EventDao
     abstract fun workoutDao(): WorkoutDao
+    abstract fun placeDao(): PlaceDao
 }
