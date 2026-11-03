@@ -31,6 +31,7 @@ android {
             // Приложение только для себя: релиз подписываем отладочным ключом, чтобы ставить его
             // на телефон напрямую (`gradlew installRelease`) — он заметно быстрее отладочной сборки
             signingConfig = signingConfigs.getByName("debug")
+            proguardFiles("proguard-rules.pro")
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
