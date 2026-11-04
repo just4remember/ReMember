@@ -5,6 +5,7 @@ object MarkdownPreview {
     private val photoLine = Regex("""(?m)^!\[]\(photo:[^)]*\)(?: !\[]\(photo:[^)]*\))*$""")
     private val linePrefix = Regex("""(?m)^\s*(#{1,3} |- \[[ xX]] |[-*] |\d+\. )""")
     private val inlineMarkers = Regex("""\*\*|~~|(?<![\w*])[_*](?=\S)|(?<=\S)[_*](?![\w*])""")
+    private val ruleLine = Regex("""(?m)^_{3,}$""")
     private val blankLines = Regex("""\n{2,}""")
     private const val HIDDEN = "•••"
 
@@ -12,6 +13,7 @@ object MarkdownPreview {
     fun plain(markdown: String, maxChars: Int = 300): String {
         val text = markdown
             .replace(photoLine, "")
+            .replace(ruleLine, "")
             // Спрятанное не должно открыться в карточке, а у ссылки важна только подпись
             .replace(InlineSpans.Spoiler, HIDDEN)
             .replace(InlineSpans.Link, "$1")

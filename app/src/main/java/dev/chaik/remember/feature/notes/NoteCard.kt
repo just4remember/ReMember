@@ -1,7 +1,18 @@
 package dev.chaik.remember.feature.notes
 
+import androidx.compose.foundation.border
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +65,9 @@ import java.time.format.DateTimeFormatter
 
 /**
  * Карточка заметки: первое фото, заголовок, начало текста, теги, папка, дата.
- * Тап — открыть, долгое нажатие — меню: закрепить, в папку, удалить.
+ * Тап — открыть, долгое нажатие — меню: закрепить, в папку, удалить. Если, не отпуская,
+ * повести пальцем — меню закрывается и карточку можно перетащить: [onDragStart], [onDrag], [onDragEnd].
+ * [wiggle] — пока перетаскивают другую карточку, эта слегка покачивается; [target] — сюда встанет перетаскиваемая.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -68,28 +81,74 @@ fun NoteCard(
     onMove: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Начали перетаскивать: где палец на карточке. */
+    onDragStart: (Offset) -> Unit = {},
+    onDrag: (Offset) -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    wiggle: Boolean = false,
+    target: Boolean = false,
 ) {
     val haptics = LocalHapticFeedback.current
     var menuOpen by remember { mutableStateOf(false) }
+    val currentDragStart by rememberUpdatedState(onDragStart)
+    val currentDrag by rememberUpdatedState(onDrag)
+    val currentDragEnd by rememberUpdatedState(onDragEnd)
+    val angle = if (wiggle) {
+        val transition = rememberInfiniteTransition(label = "wiggle")
+        // Соседние карточки качаются не в такт — так живее
+        val phase = remember { (note.id % 2).toInt() }
+        transition.animateFloat(
+            initialValue = if (phase == 0) -WIGGLE_DEGREES else WIGGLE_DEGREES,
+            targetValue = if (phase == 0) WIGGLE_DEGREES else -WIGGLE_DEGREES,
+            animationSpec = infiniteRepeatable(tween(WIGGLE_MS), RepeatMode.Reverse),
+            label = "angle",
+        ).value
+    } else {
+        0f
+    }
     // Превью готово заранее (в фоне, при чтении из базы). Без заголовка текст остаётся обычным текстом,
     // а жирная подпись «Без названия» — только если показать совсем нечего
     val hasTitle = note.title.isNotBlank()
     val textOnly = !hasTitle && note.preview.isNotBlank()
 
-    Box(modifier) {
+    Box(modifier.graphicsLayer { rotationZ = angle }) {
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .combinedClickable(
-                    onClick = onOpen,
-                    onLongClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        menuOpen = true
-                    },
-                ),
+                .then(if (target) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(18.dp)) else Modifier)
+                .clickable(onClick = onOpen)
+                .pointerInput(note.id) {
+                    var travel = Offset.Zero
+                    var touch = Offset.Zero
+                    var dragging = false
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { at ->
+                            touch = at
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            menuOpen = true
+                            travel = Offset.Zero
+                            dragging = false
+                        },
+                        onDrag = { change, delta ->
+                            change.consume()
+                            travel += delta
+                            // Повёл пальцем — значит, переставляет, а не выбирает в меню
+                            if (!dragging && travel.getDistance() > viewConfiguration.touchSlop) {
+                                dragging = true
+                                menuOpen = false
+                                currentDragStart(touch)
+                                currentDrag(travel)
+                            } else if (dragging) {
+                                currentDrag(delta)
+                            }
+                        },
+                        onDragEnd = { if (dragging) currentDragEnd() },
+                        onDragCancel = { if (dragging) currentDragEnd() },
+                    )
+                },
         ) {
             // Обложку можно выключить в «Страницах»
             note.coverPhotoId?.takeIf { LocalAppSettings.current.notesShowPhotos }?.let { photoId ->
@@ -213,6 +272,10 @@ fun NoteCard(
         }
     }
 }
+
+/** Покачивание карточек при перестановке: угол и полупериод. */
+private const val WIGGLE_DEGREES = 0.6f
+private const val WIGGLE_MS = 260
 
 /** Сколько строк текста на карточке. */
 private const val BODY_LINES = 6

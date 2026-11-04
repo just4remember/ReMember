@@ -43,6 +43,8 @@ data class AppSettings(
     val gameHaptics: Boolean = true,
     /** Заметки: недавно изменённые — выше; выключено — по дате создания, новые сверху. */
     val notesByEdit: Boolean = true,
+    /** Порядок заметок; перестановка вручную сама включает [NotesOrder.MANUAL]. */
+    val notesOrder: NotesOrder = if (notesByEdit) NotesOrder.EDITED else NotesOrder.CREATED,
     /** Первое фото заметки — обложкой на её карточке в списке. */
     val notesShowPhotos: Boolean = true,
     /** Закрыли строку новой задачи (клавиатуру, тапом мимо) — набранное стирается. Иначе ждёт до следующего раза. */
@@ -65,6 +67,8 @@ data class AppSettings(
     val paragraphGap: Int = 18,
     /** Символы разметки (** _ ~~ ||) видны бледными; выключено — только когда внутри курсор. */
     val showMarkup: Boolean = true,
+    /** Порядок кнопок панели над клавиатурой (имена EditorTool); пусто — по умолчанию. */
+    val editorTools: List<String> = emptyList(),
 )
 
 enum class Gender { UNSET, MALE, FEMALE }
@@ -162,3 +166,6 @@ fun currencySymbol(code: String): String = Currencies.firstOrNull { it.first == 
 
 /** Настройки для экранов; кладёт их [dev.chaik.remember.core.ui.theme.ReMemberTheme]. */
 val LocalAppSettings = staticCompositionLocalOf { AppSettings() }
+
+/** Порядок заметок в списке. Закреплённые — всегда сверху. Имя хранится в настройках. */
+enum class NotesOrder { EDITED, CREATED, MANUAL }

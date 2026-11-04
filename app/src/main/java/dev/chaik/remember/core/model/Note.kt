@@ -36,4 +36,6 @@ data class NoteSummary(
     val tags: List<Tag>,
     val createdAt: Instant,
     val updatedAt: Instant,
+    /** Место в ручном порядке: меньше — выше. */
+    val sortOrder: Int = 0,
 )

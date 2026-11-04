@@ -95,6 +95,7 @@
     <string name="editor_bold">Bold</string>
     <string name="editor_italic">Italic</string>
     <string name="editor_strike">Strikethrough</string>
+    <string name="editor_rule">Divider</string>
     <string name="editor_spoiler">Spoiler</string>
     <string name="editor_link">Link</string>
     <string name="editor_link_text">Text</string>
@@ -664,6 +665,39 @@
     <string name="data_backup">Backup</string>
     <string name="data_backup_text">All entries, notes, tasks, events, workouts and photos — in one file encrypted with your password. You can restore it on this or another phone.</string>
     <string name="data_backup_hint">Keep the backup off this phone: on a computer, NAS or in the cloud. App settings aren’t included.</string>
+    <string name="server_backup">Backups to a server</string>
+    <string name="server_backup_text">The same encrypted file as an export is sent to your server with a POST request. Restore it with a regular import.</string>
+    <string name="server_backup_url">Server address</string>
+    <string name="server_backup_http">Without https the token is visible on the network. The backup itself is always encrypted with its password</string>
+    <string name="server_backup_token">Token (optional)</string>
+    <string name="server_backup_token_set">Token saved — type a new one to replace it</string>
+    <string name="server_backup_password_set">Set backup password</string>
+    <string name="server_backup_password_change">Change backup password</string>
+    <string name="server_backup_period">Every</string>
+    <string name="server_backup_days">days</string>
+    <string name="server_backup_auto">The backup goes out by itself when there is a network</string>
+    <string name="server_backup_help">How sending works</string>
+    <string name="server_help_request_title">Request</string>
+    <string name="server_help_request">The app sends a POST request exactly to the address in the “Server address” field, path and parameters included. The request body is the whole backup file, with no multipart or JSON wrapping. Content type is application/octet-stream, the length is known in advance and sent in Content-Length. Both http and https work; the app waits up to a minute for an answer.</string>
+    <string name="server_help_headers_title">Headers</string>
+    <string name="server_help_headers">X-Backup-Name — a file name to save the backup under: remember-YYYY-MM-DD_HH-MM plus the backup extension. The time is the phone’s. Don’t use the name as a path: the server should strip everything except letters, digits, dot, dash and underscore.
+
+Authorization: Bearer and the token — only if a token is set in the app. The server compares it with its own and answers 401 without saving if it doesn’t match.</string>
+    <string name="server_help_answer_title">Answer</string>
+    <string name="server_help_answer">Any 2xx code (200, 201, 204) means the backup is saved: the app records the time in “Last backup on the server”. The response body is not read. Any other code or a lost connection is an error: its text shows under the button, and a scheduled attempt is retried later.</string>
+    <string name="server_help_file_title">What is in the file</string>
+    <string name="server_help_file">The same file as a manual export: the database, its key and photos, encrypted with the backup password. The server can’t and shouldn’t read it — only store it. Restore it with a regular import in the app, using the same password. Every upload is a new full file; the server removes old ones itself if needed.</string>
+    <string name="server_help_schedule_title">When it is sent</string>
+    <string name="server_help_schedule">Manually — with “Send a backup now”. On schedule — once every given number of days, when the phone has a network; Android picks the exact time to save battery, so a backup may arrive a few hours late. If it fails, the system retries later by itself.</string>
+    <string name="server_help_safety_title">Security</string>
+    <string name="server_help_safety">The backup is always encrypted, so its contents can’t be seen even over http. But over http the token is visible on the network — use https for a server reachable from the internet. The backup password and token are stored on the phone, encrypted with a key from its chip.</string>
+    <string name="server_backup_manual">Empty or 0 — manually only</string>
+    <string name="server_backup_never">No backups on the server yet</string>
+    <string name="server_backup_last">Last backup on the server: %1$s</string>
+    <string name="server_backup_error">The last attempt failed: %1$s</string>
+    <string name="server_backup_need">A server address and a backup password are needed</string>
+    <string name="server_backup_now">Send a backup now</string>
+    <string name="server_backup_done">Backup sent</string>
     <string name="data_export">Export</string>
     <string name="data_import">Import</string>
     <string name="data_export_title">Backup password</string>
@@ -761,6 +795,8 @@
     <string name="appearance_t9_sample_word">milk</string>
     <string name="appearance_show_markup">Show markup symbols</string>
     <string name="appearance_show_markup_hint">Asterisks, underscores and other symbols of bold, italic, strikethrough and spoilers stay visible, faded. When off, they show only while the cursor is in the word</string>
+    <string name="appearance_editor_tools">Buttons above the keyboard</string>
+    <string name="appearance_editor_tools_hint">Order of formatting buttons in notes and day entries. Photo is always first</string>
     <string name="appearance_paragraphs">Paragraphs</string>
     <string name="appearance_paragraph_indent">First-line indent</string>
     <string name="appearance_paragraph_indent_value">%1$.1f em</string>
@@ -1029,6 +1065,9 @@
     <string name="pages_disable">Turn section off</string>
     <string name="pages_enable">Turn section on</string>
     <string name="pages_disable_hint">The eye turns a section on or off. A section that is off is gone from More and can\'t be opened. Alarms and reminders keep working</string>
+    <string name="pages_notes_order_edited">Recently edited first</string>
+    <string name="pages_notes_order_created">Newest first, editing keeps the order</string>
+    <string name="pages_notes_order_manual">Manually: hold a note and drag it</string>
     <string name="pages_notes_by_edit">Recently edited first</string>
     <string name="pages_notes_by_edit_hint">An edited note moves to the top. When off, notes stay in creation order, newest first</string>
     <string name="pages_notes_photos">Show photos from notes</string>

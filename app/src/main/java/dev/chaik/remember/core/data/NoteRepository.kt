@@ -46,6 +46,7 @@ class NoteRepository(private val db: ReMemberDatabase) {
                     tags = if (row.isProtected) emptyList() else tags[row.id].orEmpty(),
                     createdAt = row.createdAt,
                     updatedAt = row.updatedAt,
+                    sortOrder = row.sortOrder,
                 )
             }
         }.flowOn(Dispatchers.Default)
@@ -56,6 +57,11 @@ class NoteRepository(private val db: ReMemberDatabase) {
 
     /** Закрепить или открепить, не трогая дату изменения. */
     suspend fun setPinned(id: Long, pinned: Boolean) = noteDao.setPinned(id, pinned)
+
+    /** Ручной порядок: заметки [ids] встают одна за другой, остальные — как были. */
+    suspend fun reorder(ids: List<Long>) = db.withTransaction {
+        ids.forEachIndexed { index, id -> noteDao.setSortOrder(id, index) }
+    }
 
     /** Перенести в папку (null — без папки), не трогая дату изменения. */
     suspend fun moveToFolder(id: Long, folderId: Long?) = noteDao.setFolder(id, folderId)
@@ -72,10 +78,12 @@ class NoteRepository(private val db: ReMemberDatabase) {
     suspend fun save(note: Note): Long = db.withTransaction {
         val now = Instant.now()
         val id = if (note.id == 0L) {
-            noteDao.insert(note.toEntity(createdAt = now, updatedAt = now))
+            // Новая — первой в ручном порядке
+            val first = (noteDao.minSortOrder() ?: 0) - 1
+            noteDao.insert(note.toEntity(createdAt = now, updatedAt = now).copy(sortOrder = first))
         } else {
-            val createdAt = noteDao.get(note.id)?.createdAt ?: now
-            noteDao.update(note.toEntity(createdAt = createdAt, updatedAt = now))
+            val saved = noteDao.get(note.id)
+            noteDao.update(note.toEntity(createdAt = saved?.createdAt ?: now, updatedAt = now).copy(sortOrder = saved?.sortOrder ?: 0))
             note.id
         }
         tagDao.setNoteTags(id, note.tags.map { it.id })

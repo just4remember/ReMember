@@ -16,6 +16,9 @@ data class StyleSpan(override val range: IntRange, val kind: Kind, val marker: I
     enum class Kind { BOLD, ITALIC, STRIKE }
 }
 
+/** Горизонтальная черта: строка только из подчёркиваний, не меньше трёх. */
+data class RuleSpan(override val range: IntRange) : InlineSpan
+
 /** Пункт чек-листа: [range] — «- [ ] » в начале строки, [box] — сами скобки «[ ]». */
 data class CheckboxSpan(override val range: IntRange, val box: IntRange, val checked: Boolean) : InlineSpan
 
@@ -40,6 +43,9 @@ object InlineSpans {
     // Только с протоколом: обычный текст в скобках вроде [1](см. выше) ссылкой не станет. ![]() — это фото
     internal val Link = Regex("""(?<!!)\[([^\]\n]+)]\(([a-zA-Z][a-zA-Z0-9+.-]*:[^)\s]+)\)""")
 
+    // Ровно подчёркивания и ничего больше: «___ a» — уже не черта
+    private val Rule = Regex("""(?m)^_{3,}$""")
+
     private val Checkbox = Regex("""(?m)^(\s*)- (\[([ xX])]) """)
 
     fun find(text: String): List<InlineSpan> {
@@ -62,7 +68,8 @@ object InlineSpans {
             val start = it.range.first + it.groupValues[1].length
             CheckboxSpan(start..it.range.last, it.groups[2]!!.range, it.groupValues[3] != " ")
         }
-        return (links + spoilers + styles + boxes).toList()
+        val rules = Rule.findAll(text).map { RuleSpan(it.range) }
+        return (links + spoilers + styles + boxes + rules).toList()
     }
 
     /** Отметить пункт или снять отметку. */

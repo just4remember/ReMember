@@ -95,6 +95,7 @@
     <string name="editor_bold">Жирный</string>
     <string name="editor_italic">Курсив</string>
     <string name="editor_strike">Зачёркнутый</string>
+    <string name="editor_rule">Черта</string>
     <string name="editor_spoiler">Спойлер</string>
     <string name="editor_link">Ссылка</string>
     <string name="editor_link_text">Текст</string>
@@ -698,6 +699,39 @@
     <string name="data_backup">Резервная копия</string>
     <string name="data_backup_text">Все записи, заметки, задачи, события, тренировки и фото — одним файлом, зашифрованным вашим паролем. Из него данные можно вернуть на этот или другой телефон.</string>
     <string name="data_backup_hint">Храните копию не на этом телефоне: на компьютере, NAS или в облаке. Настройки приложения в копию не входят.</string>
+    <string name="server_backup">Копии на сервер</string>
+    <string name="server_backup_text">Тот же зашифрованный файл, что и при экспорте, уходит запросом POST на ваш сервер. Восстановить его можно обычным импортом.</string>
+    <string name="server_backup_url">Адрес сервера</string>
+    <string name="server_backup_http">Без https токен виден в сети. Сама копия зашифрована паролем в любом случае</string>
+    <string name="server_backup_token">Токен (необязательно)</string>
+    <string name="server_backup_token_set">Токен сохранён — введите новый, чтобы заменить</string>
+    <string name="server_backup_password_set">Задать пароль копии</string>
+    <string name="server_backup_password_change">Сменить пароль копии</string>
+    <string name="server_backup_period">Раз в</string>
+    <string name="server_backup_days">дн.</string>
+    <string name="server_backup_auto">Копия уйдёт сама, когда будет сеть</string>
+    <string name="server_backup_help">Как устроена отправка</string>
+    <string name="server_help_request_title">Запрос</string>
+    <string name="server_help_request">Приложение отправляет запрос POST ровно на тот адрес, что указан в поле «Адрес сервера», вместе с путём и параметрами. Тело запроса — сам файл копии целиком, без обёрток вроде multipart или JSON. Тип содержимого — application/octet-stream, длина известна заранее и передаётся в Content-Length. Подходят и http, и https; ответ ждём до минуты.</string>
+    <string name="server_help_headers_title">Заголовки</string>
+    <string name="server_help_headers">X-Backup-Name — имя файла, под которым копию удобно сохранить: remember-ГГГГ-ММ-ДД_ЧЧ-ММ и расширение копии. Время — на телефоне. Имя лучше не брать как путь: сервер должен сам убрать из него всё, кроме букв, цифр, точки, дефиса и подчёркивания.
+
+Authorization: Bearer и токен — только если в приложении задан токен. Сервер сравнивает его со своим и, если токен не тот, отвечает 401 и ничего не сохраняет.</string>
+    <string name="server_help_answer_title">Ответ</string>
+    <string name="server_help_answer">Любой код 2xx (200, 201, 204) — копия сохранена: приложение запишет время в «Последняя копия на сервере». Тело ответа не читается. Любой другой код или обрыв связи — ошибка: её текст будет виден под кнопкой, а по расписанию попытка повторится позже.</string>
+    <string name="server_help_file_title">Что в файле</string>
+    <string name="server_help_file">Тот же файл, что и при ручном экспорте: база, её ключ и фото, зашифрованные паролем копии. Сервер не может и не должен его читать — только сохранить. Восстанавливается копия обычным импортом в приложении, с тем же паролем. Каждая отправка — новый полный файл; старые копии сервер удаляет сам, если нужно.</string>
+    <string name="server_help_schedule_title">Когда отправляется</string>
+    <string name="server_help_schedule">Вручную — по кнопке «Отправить копию сейчас». По расписанию — раз в указанное число дней, когда у телефона есть сеть; точное время выбирает Android, чтобы беречь батарею, так что копия может прийти на несколько часов позже. Не дошла — система повторит её позже сама.</string>
+    <string name="server_help_safety_title">Безопасность</string>
+    <string name="server_help_safety">Копия зашифрована в любом случае, поэтому её содержимое не видно даже по http. Но по http в сети виден токен — для сервера, доступного из интернета, используйте https. Пароль копии и токен хранятся на телефоне зашифрованными ключом из его чипа.</string>
+    <string name="server_backup_manual">Пусто или 0 — только вручную</string>
+    <string name="server_backup_never">Копий на сервере ещё не было</string>
+    <string name="server_backup_last">Последняя копия на сервере: %1$s</string>
+    <string name="server_backup_error">Последняя попытка не удалась: %1$s</string>
+    <string name="server_backup_need">Нужны адрес сервера и пароль копии</string>
+    <string name="server_backup_now">Отправить копию сейчас</string>
+    <string name="server_backup_done">Копия отправлена</string>
     <string name="data_export">Экспорт</string>
     <string name="data_import">Импорт</string>
     <string name="data_export_title">Пароль копии</string>
@@ -804,6 +838,8 @@
     <string name="appearance_t9_sample_word">молоко</string>
     <string name="appearance_show_markup">Показывать символы разметки</string>
     <string name="appearance_show_markup_hint">Звёздочки, подчёркивания и прочие символы жирного, курсива, зачёркнутого и спойлера видны бледными. Выключено — видны, только когда в слове курсор</string>
+    <string name="appearance_editor_tools">Кнопки над клавиатурой</string>
+    <string name="appearance_editor_tools_hint">Порядок кнопок оформления в заметках и записях дня. Фото всегда первым</string>
     <string name="appearance_paragraphs">Абзацы</string>
     <string name="appearance_paragraph_indent">Красная строка</string>
     <string name="appearance_paragraph_indent_value">%1$.1f em</string>
@@ -1082,6 +1118,9 @@
     <string name="pages_disable">Выключить раздел</string>
     <string name="pages_enable">Включить раздел</string>
     <string name="pages_disable_hint">Глаз — включить или выключить раздел. Выключенного раздела нет в «Ещё», открыть его нельзя. Будильники и напоминания при этом продолжают работать</string>
+    <string name="pages_notes_order_edited">Недавно изменённые — выше</string>
+    <string name="pages_notes_order_created">Новые — выше, правка порядок не меняет</string>
+    <string name="pages_notes_order_manual">Вручную: зажмите заметку и перетащите</string>
     <string name="pages_notes_by_edit">Недавно изменённые — выше</string>
     <string name="pages_notes_by_edit_hint">Изменённая заметка поднимается в начало списка. Выключено — порядок по дате создания, новые сверху</string>
     <string name="pages_notes_photos">Показывать фото из заметок</string>

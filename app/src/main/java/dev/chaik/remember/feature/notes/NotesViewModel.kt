@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import dev.chaik.remember.core.settings.NotesOrder
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -59,10 +61,14 @@ class NotesViewModel(private val notes: NoteRepository, settings: Flow<AppSettin
     val visibleNotes: StateFlow<List<NoteSummary>?> =
         combine(
             allNotes,
-            settings.map { it.notesByEdit }.distinctUntilChanged(),
+            settings.map { it.notesOrder }.distinctUntilChanged(),
             snapshotFlow { folderFilter to tagFilter },
-        ) { list, byEdit, (folder, tags) ->
-            val ordered = if (byEdit) list else list.sortedWith(compareByDescending<NoteSummary> { it.pinned }.thenByDescending { it.createdAt })
+        ) { list, order, (folder, tags) ->
+            val ordered = when (order) {
+                NotesOrder.EDITED -> list
+                NotesOrder.CREATED -> list.sortedWith(compareByDescending<NoteSummary> { it.pinned }.thenByDescending { it.createdAt })
+                NotesOrder.MANUAL -> list.sortedWith(compareByDescending<NoteSummary> { it.pinned }.thenBy { it.sortOrder }.thenByDescending { it.createdAt })
+            }
             ordered.filter { note ->
                 val folderOk = when (folder) {
                     FolderFilter.All -> true
@@ -110,6 +116,18 @@ class NotesViewModel(private val notes: NoteRepository, settings: Flow<AppSettin
     }
 
     // Заметки
+
+    /**
+     * Заметки перетащили: [ids] — новый порядок показанных. Скрытые фильтром идут следом
+     * в своём прежнем ручном порядке. Включить ручной порядок — дело экрана (настройки).
+     */
+    fun reorder(ids: List<Long>) {
+        viewModelScope.launch {
+            val shown = ids.toSet()
+            val rest = allNotes.first().filterNot { it.id in shown }.sortedBy { it.sortOrder }.map { it.id }
+            notes.reorder(ids + rest)
+        }
+    }
 
     fun togglePinned(note: NoteSummary) {
         viewModelScope.launch { notes.setPinned(note.id, !note.pinned) }

@@ -257,6 +257,7 @@ private fun TextBlockField(
     val shownHighlighter = remember(highlighter, active, revealed) { highlighter.withInline(active, revealed) }
     val context = LocalContext.current
     val boxColor = MaterialTheme.colorScheme.primary
+    val ruleColor = MaterialTheme.colorScheme.outlineVariant
     val checkColor = MaterialTheme.colorScheme.onPrimary
 
     // Обработчик жеста живёт дольше одной перекомпозиции, а читать должен текущее состояние
@@ -304,6 +305,9 @@ private fun TextBlockField(
                 .drawBehind {
                     val result = layout ?: return@drawBehind
                     // Квадратики пунктов чек-листа — на месте прозрачных «- [ ]»
+                    spans.filterIsInstance<RuleSpan>().filter { it.range !in active }.forEach { rule ->
+                        drawRule(result, mapping.originalToTransformed(rule.range.first), ruleColor)
+                    }
                     spans.filterIsInstance<CheckboxSpan>().filter { it.range !in active }.forEach { box ->
                         drawCheckbox(result, mapping.originalToTransformed(box.range.first), box.checked, boxColor, checkColor)
                     }
@@ -344,6 +348,14 @@ private fun TextBlockField(
             },
         )
     }
+}
+
+/** Горизонтальная черта во всю ширину поля, посередине строки. */
+private fun DrawScope.drawRule(layout: TextLayoutResult, start: Int, color: Color) {
+    if (start >= layout.layoutInput.text.length) return
+    val line = layout.getLineForOffset(start)
+    val y = (layout.getLineTop(line) + layout.getLineBottom(line)) / 2
+    drawLine(color, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.5.dp.toPx(), cap = StrokeCap.Round)
 }
 
 /** Квадратик пункта: рамка, а у выполненного — заливка с галочкой. Слева, по высоте строки. */

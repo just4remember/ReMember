@@ -41,6 +41,18 @@ object MarkdownFormatting {
         return TextFieldValue(newText, TextRange(start + marker.length, end + marker.length))
     }
 
+    /** Черта отдельной строкой после строки с курсором; курсор — на новую строку под ней. */
+    fun insertRule(value: TextFieldValue): TextFieldValue {
+        val text = value.text
+        val start = text.lastIndexOf('\n', value.selection.min - 1) + 1
+        val end = text.indexOf('\n', value.selection.max).let { if (it < 0) text.length else it }
+        // Пустая строка сама становится чертой, иначе черта — новой строкой под текущей
+        val (at, insert) = if (text.substring(start, end).isBlank()) start to "___" else end to "\n___"
+        val rest = text.substring(if (at == start) end else at)
+        val newText = text.substring(0, at) + insert + "\n" + rest.removePrefix("\n")
+        return TextFieldValue(newText, TextRange(at + insert.length + 1))
+    }
+
     /** Вставить ссылку вместо выделения; адрес без протокола считается https. Курсор — после ссылки. */
     fun insertLink(value: TextFieldValue, label: String, url: String): TextFieldValue {
         val address = url.trim().let { if (HasScheme.containsMatchIn(it)) it else "https://$it" }

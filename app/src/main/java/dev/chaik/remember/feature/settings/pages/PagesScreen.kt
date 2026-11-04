@@ -21,6 +21,8 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.ui.text.style.TextDecoration
+import dev.chaik.remember.feature.settings.SettingsRadioRow
+import dev.chaik.remember.core.settings.NotesOrder
 import dev.chaik.remember.app.navigation.isDisabled
 import dev.chaik.remember.app.navigation.moreOrderAll
 import androidx.compose.material3.AlertDialog
@@ -206,12 +208,16 @@ fun PagesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             SettingsGroupTitle(stringResource(R.string.tab_notes))
             SettingsCard {
-                SettingsSwitchRow(
-                    title = stringResource(R.string.pages_notes_by_edit),
-                    hint = stringResource(R.string.pages_notes_by_edit_hint),
-                    checked = settings.notesByEdit,
-                    onChange = { on -> store.update { it.copy(notesByEdit = on) } },
-                )
+                // Порядок заметок; «Вручную» включается и сам, когда заметки перетаскивают
+                listOf(
+                    NotesOrder.EDITED to R.string.pages_notes_order_edited,
+                    NotesOrder.CREATED to R.string.pages_notes_order_created,
+                    NotesOrder.MANUAL to R.string.pages_notes_order_manual,
+                ).forEach { (order, label) ->
+                    SettingsRadioRow(stringResource(label), selected = settings.notesOrder == order) {
+                        store.update { it.copy(notesOrder = order) }
+                    }
+                }
                 SettingsSwitchRow(
                     title = stringResource(R.string.pages_notes_photos),
                     hint = stringResource(R.string.pages_notes_photos_hint),

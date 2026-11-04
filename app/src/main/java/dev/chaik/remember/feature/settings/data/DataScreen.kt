@@ -1,5 +1,21 @@
 package dev.chaik.remember.feature.settings.data
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.layout.navigationBarsPadding
+import dev.chaik.remember.core.ui.components.FullScreenPage
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import dev.chaik.remember.feature.settings.SettingsRadioRow
+import dev.chaik.remember.core.backup.ServerBackup
+import androidx.compose.material.icons.outlined.CloudUpload
 import kotlinx.coroutines.launch
 import dev.chaik.remember.core.health.HealthAvailability
 import androidx.core.net.toUri
@@ -216,6 +232,7 @@ private fun PerformanceTile(icon: ImageVector, label: String, value: String, hin
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -229,13 +246,22 @@ fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier
     }
     val openFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> importSource = uri }
 
+    // «Назад» прячет клавиатуру — вместе с ней уходит и курсор; тап мимо поля — тоже
+    val focusManager = LocalFocusManager.current
+    val keyboard = WindowInsets.isImeVisible
+    LaunchedEffect(keyboard) { if (!keyboard) focusManager.clearFocus() }
+
     ScreenScaffold(title = stringResource(R.string.settings_data), modifier = modifier, onBack = onBack) { padding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxSize()
+                .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
+                // С клавиатурой список сжимается над ней — поле с курсором подкручивается и не прячется
+                .padding(top = padding.calculateTopPadding())
+                .then(if (keyboard) Modifier.imePadding() else Modifier.padding(bottom = padding.calculateBottomPadding()))
                 .verticalScroll(rememberScrollState())
-                .padding(top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 24.dp)
+                .padding(top = 8.dp, bottom = 24.dp)
                 .padding(horizontal = 16.dp),
         ) {
             SettingsGroupTitle(stringResource(R.string.data_storage))
@@ -311,6 +337,9 @@ fun DataScreen(onBack: () -> Unit, onOpenGallery: () -> Unit, modifier: Modifier
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp),
             )
+
+            SettingsGroupTitle(stringResource(R.string.server_backup))
+            SettingsCard { ServerBackupCard() }
         }
     }
 
@@ -484,4 +513,190 @@ private fun restartApp(context: Context) {
     val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
     context.startActivity(Intent.makeRestartActivityTask(launch.component))
     Runtime.getRuntime().exit(0)
+}
+
+/**
+ * Копии на свой сервер: адрес, токен, пароль копии, расписание, ручная отправка и когда
+ * последняя копия дошла до сервера.
+ */
+@Composable
+private fun ServerBackupCard() {
+    val container = LocalContext.current.appContainer
+    val server = container.serverBackup
+    val settings by server.settings.collectAsStateWithLifecycle()
+    val running by server.running.collectAsStateWithLifecycle()
+    var url by remember { mutableStateOf(settings.url) }
+    var token by remember { mutableStateOf("") }
+    var askPassword by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<Boolean?>(null) }
+    var help by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.server_backup_text),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = { help = true }) {
+                Icon(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.server_backup_help))
+            }
+        }
+        OutlinedTextField(
+            value = url,
+            onValueChange = {
+                url = it.trim()
+                server.setUrl(url)
+            },
+            label = { Text(stringResource(R.string.server_backup_url)) },
+            placeholder = { Text("http://192.168.1.10:8080/backup") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
+            supportingText = if (url.startsWith("http://")) {
+                { Text(stringResource(R.string.server_backup_http)) }
+            } else {
+                null
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = token,
+            onValueChange = { token = it.trim() },
+            label = {
+                Text(stringResource(if (settings.hasToken) R.string.server_backup_token_set else R.string.server_backup_token))
+            },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+            trailingIcon = {
+                if (token.isNotEmpty()) {
+                    TextButton(onClick = {
+                        server.setToken(token)
+                        token = ""
+                    }) { Text(stringResource(R.string.gym_save)) }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedButton(onClick = { askPassword = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (settings.hasPassword) R.string.server_backup_password_change else R.string.server_backup_password_set))
+        }
+
+        // Раз в сколько дней; пусто или 0 — только вручную
+        var days by remember { mutableStateOf(settings.intervalDays.takeIf { it > 0 }?.toString().orEmpty()) }
+        OutlinedTextField(
+            value = days,
+            onValueChange = { text ->
+                val digits = text.filter(Char::isDigit).take(2)
+                // Больше месяца — не копия, а архив: ограничиваем
+                val value = digits.toIntOrNull()?.coerceAtMost(ServerBackup.MAX_DAYS)
+                days = value?.toString() ?: digits
+                server.setInterval(value ?: 0)
+            },
+            label = { Text(stringResource(R.string.server_backup_period)) },
+            suffix = { Text(stringResource(R.string.server_backup_days)) },
+            // Без адреса и пароля про расписание говорить рано — об этом подсказка ниже
+            supportingText = when {
+                settings.intervalDays <= 0 -> ({ Text(stringResource(R.string.server_backup_manual)) })
+                settings.configured -> ({ Text(stringResource(R.string.server_backup_auto)) })
+                else -> null
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        val last = settings.lastSuccess
+        Text(
+            if (last == null) {
+                stringResource(R.string.server_backup_never)
+            } else {
+                stringResource(
+                    R.string.server_backup_last,
+                    last.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)),
+                )
+            },
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        settings.lastError?.let { error ->
+            Text(
+                stringResource(R.string.server_backup_error, error),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        if (!settings.configured) {
+            Text(
+                stringResource(R.string.server_backup_need),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Button(
+            enabled = settings.configured && !running,
+            onClick = {
+                result = null
+                // В фоне приложения: копия дойдёт, даже если страницу закрыли
+                container.appScope.launch { result = server.upload() }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (running) {
+                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(Icons.Outlined.CloudUpload, null, Modifier.size(18.dp))
+            }
+            Text(stringResource(R.string.server_backup_now), modifier = Modifier.padding(start = 8.dp))
+        }
+        if (result == true) {
+            Text(stringResource(R.string.server_backup_done), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+
+    if (help) ServerBackupHelp(onDismiss = { help = false })
+    if (askPassword) {
+        PasswordDialog(
+            title = stringResource(R.string.data_export_title),
+            confirm = true,
+            onDone = { password ->
+                askPassword = false
+                server.setPassword(password)
+                password.fill(' ')
+                server.schedule()
+            },
+            onDismiss = { askPassword = false },
+        )
+    }
+}
+
+/** Как устроен запрос копии — чтобы свой сервер можно было написать, не читая код приложения. */
+@Composable
+private fun ServerBackupHelp(onDismiss: () -> Unit) {
+    FullScreenPage(title = stringResource(R.string.server_backup_help), onDismiss = onDismiss) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        ) {
+            listOf(
+                R.string.server_help_request_title to R.string.server_help_request,
+                R.string.server_help_headers_title to R.string.server_help_headers,
+                R.string.server_help_answer_title to R.string.server_help_answer,
+                R.string.server_help_file_title to R.string.server_help_file,
+                R.string.server_help_schedule_title to R.string.server_help_schedule,
+                R.string.server_help_safety_title to R.string.server_help_safety,
+            ).forEach { (title, text) ->
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
 }

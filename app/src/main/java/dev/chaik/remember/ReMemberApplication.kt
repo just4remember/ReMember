@@ -67,6 +67,10 @@ class ReMemberApplication : Application() {
                 .onFailure { Log.w(TAG, "Не удалось открыть базу", it) }
         }
         container.appScope.launch {
+            // Сверить расписание копий на сервер с настройками
+            runCatching { container.serverBackup.schedule() }
+        }
+        container.appScope.launch {
             // Стандартные категории трат: создать при первом запуске, обновить при смене набора
             val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
             runCatching {

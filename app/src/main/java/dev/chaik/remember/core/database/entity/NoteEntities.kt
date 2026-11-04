@@ -39,4 +39,6 @@ data class NoteEntity(
     @ColumnInfo(name = "is_protected", defaultValue = "0") val isProtected: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
+    /** Место в ручном порядке: меньше — выше. Новая заметка встаёт первой. */
+    @ColumnInfo(name = "sort_order", defaultValue = "0") val sortOrder: Int = 0,
 )

@@ -27,7 +27,8 @@ interface NoteDao {
             CASE WHEN instr(text, '](photo:') > 0
                 THEN substr(text, instr(text, '](photo:') + 8, 36)
             END AS coverPhotoId,
-            folder_id AS folderId, pinned, is_protected AS isProtected, created_at AS createdAt, updated_at AS updatedAt
+            folder_id AS folderId, pinned, is_protected AS isProtected, created_at AS createdAt, updated_at AS updatedAt,
+            sort_order AS sortOrder
         FROM note
         ORDER BY pinned DESC, updated_at DESC
         """,
@@ -48,6 +49,12 @@ interface NoteDao {
 
     @Update
     suspend fun update(note: NoteEntity)
+
+    @Query("SELECT MIN(sort_order) FROM note")
+    suspend fun minSortOrder(): Int?
+
+    @Query("UPDATE note SET sort_order = :order WHERE id = :id")
+    suspend fun setSortOrder(id: Long, order: Int)
 
     @Query("DELETE FROM note WHERE id = :id")
     suspend fun delete(id: Long)
@@ -89,4 +96,5 @@ data class NoteSummaryRow(
     val isProtected: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,
+    val sortOrder: Int,
 )

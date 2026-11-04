@@ -45,6 +45,9 @@ class AppSettingsStore(context: Context) {
             haptics = prefs.getBoolean("haptics", d.haptics),
             gameHaptics = prefs.getBoolean("game_haptics", d.gameHaptics),
             notesByEdit = prefs.getBoolean("notes_by_edit", d.notesByEdit),
+            // Раньше был только переключатель «по изменению» — из него и берём, пока порядок не выбран
+            notesOrder = prefs.getString("notes_order", null)?.let { name -> NotesOrder.entries.firstOrNull { it.name == name } }
+                ?: if (prefs.getBoolean("notes_by_edit", d.notesByEdit)) NotesOrder.EDITED else NotesOrder.CREATED,
             notesShowPhotos = prefs.getBoolean("notes_show_photos", d.notesShowPhotos),
             tasksClearDraft = prefs.getBoolean("tasks_clear_draft", d.tasksClearDraft),
             disabledPages = list("disabled_pages"),
@@ -57,6 +60,7 @@ class AppSettingsStore(context: Context) {
             paragraphIndent = prefs.getInt("paragraph_indent", d.paragraphIndent).coerceIn(0, INDENT_MAX),
             paragraphGap = prefs.getInt("paragraph_gap", d.paragraphGap).coerceIn(0, GAP_MAX),
             showMarkup = prefs.getBoolean("show_markup", d.showMarkup),
+            editorTools = list("editor_tools"),
         )
     }
 
@@ -82,6 +86,7 @@ class AppSettingsStore(context: Context) {
         putBoolean("haptics", s.haptics)
         putBoolean("game_haptics", s.gameHaptics)
         putBoolean("notes_by_edit", s.notesByEdit)
+        putString("notes_order", s.notesOrder.name)
         putBoolean("notes_show_photos", s.notesShowPhotos)
         putBoolean("tasks_clear_draft", s.tasksClearDraft)
         putString("disabled_pages", s.disabledPages.joinToString(","))
@@ -94,6 +99,7 @@ class AppSettingsStore(context: Context) {
         putInt("paragraph_indent", s.paragraphIndent)
         putInt("paragraph_gap", s.paragraphGap)
         putBoolean("show_markup", s.showMarkup)
+        putString("editor_tools", s.editorTools.joinToString(","))
     }
 
     private fun list(key: String): List<String> =

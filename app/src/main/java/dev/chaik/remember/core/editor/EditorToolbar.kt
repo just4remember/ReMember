@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListNumbered
+import androidx.compose.material.icons.outlined.HorizontalRule
 import androidx.compose.material.icons.outlined.KeyboardHide
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.StrikethroughS
@@ -34,9 +35,29 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import dev.chaik.remember.R
+import dev.chaik.remember.core.settings.LocalAppSettings
 
 val EditorToolbarHeight = 52.dp
+
+/** Кнопка оформления на панели. Имя константы хранится в настройках — переименовывать нельзя. */
+enum class EditorTool(val icon: ImageVector, @param:StringRes val label: Int, val apply: (EditorState) -> Unit) {
+    Bold(Icons.Outlined.FormatBold, R.string.editor_bold, { it.format { v -> MarkdownFormatting.toggleWrap(v, "**") } }),
+    Italic(Icons.Outlined.FormatItalic, R.string.editor_italic, { it.format { v -> MarkdownFormatting.toggleWrap(v, "_") } }),
+    Strike(Icons.Outlined.StrikethroughS, R.string.editor_strike, { it.format { v -> MarkdownFormatting.toggleWrap(v, "~~") } }),
+    Spoiler(Icons.Outlined.VisibilityOff, R.string.editor_spoiler, { it.format { v -> MarkdownFormatting.toggleWrap(v, "||") } }),
+    Link(Icons.Outlined.Link, R.string.editor_link, { it.linkDialogOpen = true }),
+    Heading(Icons.Outlined.Title, R.string.editor_heading, { it.format(MarkdownFormatting::cycleHeading) }),
+    Bullets(Icons.AutoMirrored.Outlined.FormatListBulleted, R.string.editor_bullets, { it.format { v -> MarkdownFormatting.toggleLineStyle(v, LineStyle.Bullet) } }),
+    Numbers(Icons.Outlined.FormatListNumbered, R.string.editor_numbers, { it.format { v -> MarkdownFormatting.toggleLineStyle(v, LineStyle.Numbered) } }),
+    Checklist(Icons.Outlined.Checklist, R.string.editor_checklist, { it.format { v -> MarkdownFormatting.toggleLineStyle(v, LineStyle.Checkbox) } }),
+    Rule(Icons.Outlined.HorizontalRule, R.string.editor_rule, { it.format(MarkdownFormatting::insertRule) }),
+}
+
+/** Кнопки в сохранённом порядке; новые (появившиеся позже) — в конец. */
+fun editorTools(saved: List<String>): List<EditorTool> =
+    (saved.mapNotNull { name -> EditorTool.entries.firstOrNull { it.name == name } } + EditorTool.entries).distinct()
 
 /** Панель над клавиатурой: оформление текста, фото и «спрятать клавиатуру». */
 @Composable
@@ -64,30 +85,9 @@ fun EditorToolbar(
                     ToolButton(Icons.Outlined.AddPhotoAlternate, R.string.editor_add_photo, onAddPhoto)
                     VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
                 }
-                ToolButton(Icons.Outlined.FormatBold, R.string.editor_bold) {
-                    state.format { MarkdownFormatting.toggleWrap(it, "**") }
-                }
-                ToolButton(Icons.Outlined.FormatItalic, R.string.editor_italic) {
-                    state.format { MarkdownFormatting.toggleWrap(it, "_") }
-                }
-                ToolButton(Icons.Outlined.StrikethroughS, R.string.editor_strike) {
-                    state.format { MarkdownFormatting.toggleWrap(it, "~~") }
-                }
-                ToolButton(Icons.Outlined.VisibilityOff, R.string.editor_spoiler) {
-                    state.format { MarkdownFormatting.toggleWrap(it, "||") }
-                }
-                ToolButton(Icons.Outlined.Link, R.string.editor_link) { state.linkDialogOpen = true }
-                ToolButton(Icons.Outlined.Title, R.string.editor_heading) {
-                    state.format(MarkdownFormatting::cycleHeading)
-                }
-                ToolButton(Icons.AutoMirrored.Outlined.FormatListBulleted, R.string.editor_bullets) {
-                    state.format { MarkdownFormatting.toggleLineStyle(it, LineStyle.Bullet) }
-                }
-                ToolButton(Icons.Outlined.FormatListNumbered, R.string.editor_numbers) {
-                    state.format { MarkdownFormatting.toggleLineStyle(it, LineStyle.Numbered) }
-                }
-                ToolButton(Icons.Outlined.Checklist, R.string.editor_checklist) {
-                    state.format { MarkdownFormatting.toggleLineStyle(it, LineStyle.Checkbox) }
+                // Порядок кнопок — из «Персонализации»
+                editorTools(LocalAppSettings.current.editorTools).forEach { tool ->
+                    ToolButton(tool.icon, tool.label) { tool.apply(state) }
                 }
             }
             VerticalDivider(Modifier.height(24.dp))

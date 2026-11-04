@@ -1,5 +1,10 @@
 package dev.chaik.remember.feature.settings.appearance
 
+import dev.chaik.remember.core.editor.editorTools
+import dev.chaik.remember.core.editor.EditorTool
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -218,6 +223,9 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 if (settings.t9Undo) T9LineSettings()
             }
 
+            SettingsGroupTitle(stringResource(R.string.appearance_editor_tools))
+            SettingsCard { EditorToolsOrder() }
+
             SettingsGroupTitle(stringResource(R.string.appearance_paragraphs))
             SettingsCard {
                 SettingsSwitchRow(
@@ -399,6 +407,38 @@ private fun AccentSwatch(accent: AccentColor, selected: Boolean, onClick: () -> 
         when {
             selected -> Icon(Icons.Outlined.Check, null, tint = Color.White, modifier = Modifier.size(22.dp))
             color == null -> Icon(Icons.Outlined.Wallpaper, null, tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** Порядок кнопок панели над клавиатурой: стрелками вверх и вниз. */
+@Composable
+private fun EditorToolsOrder() {
+    val store = LocalContext.current.appContainer.settings
+    val tools = editorTools(LocalAppSettings.current.editorTools)
+    fun move(index: Int, by: Int) {
+        val list = tools.toMutableList()
+        list.add(index + by, list.removeAt(index))
+        store.update { it.copy(editorTools = list.map(EditorTool::name)) }
+    }
+    Column {
+        Text(
+            stringResource(R.string.appearance_editor_tools_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+        )
+        tools.forEachIndexed { index, tool ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                Icon(tool.icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(tool.label), modifier = Modifier.weight(1f).padding(start = 16.dp))
+                IconButton(enabled = index > 0, onClick = { move(index, -1) }) {
+                    Icon(Icons.Outlined.KeyboardArrowUp, stringResource(R.string.gym_template_up))
+                }
+                IconButton(enabled = index < tools.lastIndex, onClick = { move(index, 1) }) {
+                    Icon(Icons.Outlined.KeyboardArrowDown, stringResource(R.string.gym_template_down))
+                }
+            }
         }
     }
 }

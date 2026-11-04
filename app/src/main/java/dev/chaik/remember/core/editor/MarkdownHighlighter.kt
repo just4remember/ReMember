@@ -146,6 +146,10 @@ class MarkdownHighlighter(
 
         // Внутри строк: жирный, курсив, зачёркнутый — только на слова целиком (см. InlineSpans)
         val spans = InlineSpans.find(text)
+        // Черту рисует редактор поверх строки; сами подчёркивания прячем, пока курсор не в них
+        spans.filterIsInstance<RuleSpan>().filter { it.range !in active }.forEach { rule ->
+            addStyle(SpanStyle(color = Color.Transparent), rule.range.first, rule.range.last + 1)
+        }
         spans.filterIsInstance<StyleSpan>().forEach { span ->
             val look = when (span.kind) {
                 StyleSpan.Kind.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)

@@ -1,5 +1,15 @@
 package dev.chaik.remember.feature.notes
 
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.gestures.scrollBy
+import dev.chaik.remember.core.settings.NotesOrder
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -114,6 +124,10 @@ fun NotesScreen(
                         onOpen = onOpen,
                         onTogglePin = viewModel::togglePinned,
                         onMove = { moving = it },
+                        onReorder = { ids ->
+                            viewModel.reorder(ids)
+                            container.settings.update { it.copy(notesOrder = NotesOrder.MANUAL) }
+                        },
                         onDelete = { deleting = it },
                     )
                 }
@@ -160,10 +174,126 @@ private fun NotesGrid(
     onTogglePin: (NoteSummary) -> Unit,
     onMove: (NoteSummary) -> Unit,
     onDelete: (NoteSummary) -> Unit,
+    onReorder: (List<Long>) -> Unit,
 ) {
-    val (pinned, others) = notes.partition { it.pinned }
+    val gridState = rememberLazyStaggeredGridState()
+    val scope = rememberCoroutineScope()
+    val edge = with(LocalDensity.current) { AUTOSCROLL_EDGE.toPx() }
+    /*
+     * Пока карточку тащат, сетка не перестраивается: в «лесенке» перестановка двигала соседей
+     * по колонкам и заголовки, и карточка под пальцем то и дело менялась — всё прыгало.
+     * Карточка просто едет за пальцем, а та, на чьё место она встанет, обведена.
+     * Порядок меняется один раз — когда палец отпустили.
+     */
+    var dragId by remember { mutableStateOf<Long?>(null) }
+    var finger by remember { mutableStateOf(Offset.Zero) }
+    var dragTotal by remember { mutableStateOf(Offset.Zero) }
+    var scrolled by remember { mutableFloatStateOf(0f) }
+    var targetId by remember { mutableStateOf<Long?>(null) }
+    // Новый порядок держим, пока база не вернёт его же: иначе на миг мелькнул бы старый
+    var pending by remember { mutableStateOf<List<Long>?>(null) }
+    LaunchedEffect(notes) { if (pending == notes.map { it.id }) pending = null }
+    LaunchedEffect(pending) {
+        if (pending != null) {
+            delay(1_000)
+            pending = null
+        }
+    }
+    val byId = remember(notes) { notes.associateBy { it.id } }
+    val shown = pending?.mapNotNull(byId::get)?.takeIf { it.size == notes.size } ?: notes
+    val (pinned, others) = shown.partition { it.pinned }
+
+    fun key(note: NoteSummary) = if (note.pinned) "pinned-${note.id}" else "other-${note.id}"
+    fun idOf(key: Any): Long? = (key as? String)?.substringAfter('-')?.toLongOrNull()
+
+    /** Карточка того же блока под пальцем. */
+    fun hovered(dragged: NoteSummary): Long? = gridState.layoutInfo.visibleItemsInfo.firstOrNull { info ->
+        val id = idOf(info.key) ?: return@firstOrNull false
+        val other = byId[id] ?: return@firstOrNull false
+        id != dragged.id && other.pinned == dragged.pinned &&
+            finger.x in info.offset.x.toFloat()..(info.offset.x + info.size.width).toFloat() &&
+            finger.y in info.offset.y.toFloat()..(info.offset.y + info.size.height).toFloat()
+    }?.let { idOf(it.key) }
+
+    fun start(note: NoteSummary, touch: Offset) {
+        val info = gridState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == key(note) } ?: return
+        dragId = note.id
+        finger = Offset(info.offset.x.toFloat(), info.offset.y.toFloat()) + touch
+        dragTotal = Offset.Zero
+        scrolled = 0f
+        targetId = null
+    }
+
+    fun drag(note: NoteSummary, delta: Offset) {
+        if (dragId != note.id) return
+        finger += delta
+        dragTotal += delta
+        targetId = hovered(note)
+        // У края экрана — прокрутка, иначе до далёкой заметки не дотянуться
+        val height = gridState.layoutInfo.viewportSize.height
+        val step = when {
+            finger.y < edge -> -AUTOSCROLL_STEP
+            finger.y > height - edge -> AUTOSCROLL_STEP
+            else -> 0f
+        }
+        if (step != 0f) {
+            scope.launch {
+                val moved = gridState.scrollBy(step)
+                // Карточка — вместе со списком уехала бы; оставляем её под пальцем
+                scrolled += moved
+                targetId = hovered(note)
+            }
+        }
+    }
+
+    fun end(note: NoteSummary) {
+        val target = targetId
+        dragId = null
+        targetId = null
+        if (target == null) return
+        val list = shown.map { it.id }.toMutableList()
+        val to = list.indexOf(target)
+        list.remove(note.id)
+        list.add(to, note.id)
+        pending = list
+        onReorder(list)
+    }
+
+    @Composable
+    fun Card(note: NoteSummary) {
+        val isDragged = note.id == dragId
+        NoteCard(
+            note = note,
+            folderName = note.folderId?.let(folderNames::get),
+            thumbnail = thumbnail,
+            onOpen = { onOpen(note.id) },
+            onTogglePin = { onTogglePin(note) },
+            onMove = { onMove(note) },
+            onDelete = { onDelete(note) },
+            onDragStart = { touch -> start(note, touch) },
+            onDrag = { delta -> drag(note, delta) },
+            onDragEnd = { end(note) },
+            wiggle = dragId != null && !isDragged,
+            target = note.id == targetId,
+            modifier = if (isDragged) {
+                Modifier
+                    .graphicsLayer {
+                        translationX = dragTotal.x
+                        translationY = dragTotal.y + scrolled
+                        scaleX = 1.04f
+                        scaleY = 1.04f
+                        // Непрозрачная, с тенью: текст соседа под ней не просвечивает
+                        shadowElevation = 12.dp.toPx()
+                        shape = RoundedCornerShape(18.dp)
+                    }
+            } else {
+                Modifier
+            },
+        )
+    }
 
     LazyVerticalStaggeredGrid(
+        state = gridState,
         columns = StaggeredGridCells.Fixed(2),
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = bottomPadding + 88.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -177,7 +307,7 @@ private fun NotesGrid(
             // Ключи разные для блоков: при закреплении карточка не «переезжает», а появляется заново —
             // с одним ключом staggered-сетка оставляла блок «Закреплённые» пустым до перерисовки
             items(pinned, key = { "pinned-${it.id}" }) { note ->
-                NoteCard(note, note.folderId?.let(folderNames::get), thumbnail, { onOpen(note.id) }, { onTogglePin(note) }, { onMove(note) }, { onDelete(note) })
+                Box(Modifier.animateItem().zIndex(if (note.id == dragId) 1f else 0f)) { Card(note) }
             }
             if (others.isNotEmpty()) {
                 item(span = StaggeredGridItemSpan.FullLine, key = "othersHeader") {
@@ -186,10 +316,14 @@ private fun NotesGrid(
             }
         }
         items(others, key = { "other-${it.id}" }) { note ->
-            NoteCard(note, note.folderId?.let(folderNames::get), thumbnail, { onOpen(note.id) }, { onTogglePin(note) }, { onMove(note) }, { onDelete(note) })
+            Box(Modifier.animateItem().zIndex(if (note.id == dragId) 1f else 0f)) { Card(note) }
         }
     }
 }
+
+/** У края списка на такой полосе перетаскиваемая карточка прокручивает его — на столько за шаг. */
+private val AUTOSCROLL_EDGE = 72.dp
+private const val AUTOSCROLL_STEP = 24f
 
 /** Сколько ждём данных, прежде чем показать скелеты: быстрая загрузка не должна «мигать». */
 private const val SKELETON_DELAY_MS = 150L
