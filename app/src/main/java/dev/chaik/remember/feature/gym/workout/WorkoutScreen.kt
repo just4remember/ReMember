@@ -1,5 +1,27 @@
 package dev.chaik.remember.feature.gym.workout
 
+import dev.chaik.remember.core.model.ExerciseKind
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextStyle
+import dev.chaik.remember.core.gym.GymStopwatchState
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.animation.AnimatedVisibility
+import kotlinx.coroutines.delay
+import dev.chaik.remember.core.model.formatDuration
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.Timer
+import android.os.SystemClock
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -101,7 +123,8 @@ private sealed interface Sheet {
     data class Finish(val end: LocalTime, val suggested: Double?) : Sheet
     data object AddExercise : Sheet
     data object ApplyTemplates : Sheet
-    data class AddSet(val entry: WorkoutExercise) : Sheet
+    /** [seconds] — время с секундомера: подставляется в подход. */
+    data class AddSet(val entry: WorkoutExercise, val seconds: Int? = null) : Sheet
     data class EditSet(val entry: WorkoutExercise, val set: WorkoutSet) : Sheet
     data class Kind(val entry: WorkoutExercise) : Sheet
     data class Chart(val entry: WorkoutExercise) : Sheet
@@ -117,6 +140,13 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
     val container = LocalContext.current.appContainer
     val viewModel = viewModel { WorkoutViewModel(container, route.workoutId) }
     val workout by viewModel.workout.collectAsStateWithLifecycle()
+    // Секундомер подхода живёт вне страницы: ушли с неё — он в шторке, вернулись — снова здесь
+    val gymStopwatch = container.gymStopwatch
+    val stopwatch by gymStopwatch.state.collectAsStateWithLifecycle()
+    LifecycleResumeEffect(route.workoutId) {
+        gymStopwatch.setScreenOpen(route.workoutId)
+        onPauseOrDispose { gymStopwatch.setScreenOpen(null) }
+    }
     val dictionary by viewModel.exercises.collectAsStateWithLifecycle()
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -164,6 +194,22 @@ fun WorkoutScreen(route: WorkoutRoute, onBack: () -> Unit, modifier: Modifier = 
                         entry = entry,
                         highlighted = entry.exercise.id in viewModel.highlighted,
                         onAddSet = { sheet = Sheet.AddSet(entry) },
+                        stopwatch = stopwatch?.takeIf { it.entryId == entry.id },
+                        onStartStopwatch = { gymStopwatch.open(route.workoutId, entry.id, entry.exercise.name) },
+                        onPause = gymStopwatch::pause,
+                        onResume = gymStopwatch::resume,
+                        // Записали. Подход только из времени — сохраняется сразу; если нужно ещё
+                        // скорость, дистанция или вес — окно подхода с уже подставленным временем
+                        onRecord = {
+                            gymStopwatch.finish()?.let { seconds ->
+                                if (entry.exercise.kind == ExerciseKind.TIME) {
+                                    viewModel.addSet(entry.id, WorkoutSet(seconds = seconds))
+                                } else {
+                                    sheet = Sheet.AddSet(entry, seconds)
+                                }
+                            }
+                        },
+                        onCancelStopwatch = gymStopwatch::cancel,
                         onEditSet = { sheet = Sheet.EditSet(entry, it) },
                         onChangeKind = { sheet = Sheet.Kind(entry) },
                         onChart = { sheet = Sheet.Chart(entry) },
@@ -315,6 +361,13 @@ private fun ExerciseCard(
     onChangeKind: () -> Unit,
     onChart: () -> Unit,
     onRemove: () -> Unit,
+    /** Секундомер этого упражнения; null — не запущен. */
+    stopwatch: GymStopwatchState?,
+    onStartStopwatch: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onRecord: () -> Unit,
+    onCancelStopwatch: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
@@ -335,6 +388,12 @@ private fun ExerciseCard(
                 color = nameColor,
                 modifier = Modifier.weight(1f),
             )
+            // Секундомер подхода: значок запускает, сам циферблат — ниже, в карточке
+            if (entry.exercise.timed && stopwatch == null) {
+                IconButton(onClick = onStartStopwatch) {
+                    Icon(Icons.Outlined.Timer, stringResource(R.string.gym_stopwatch_start), tint = MaterialTheme.colorScheme.outline)
+                }
+            }
             IconButton(onClick = onChart) {
                 Icon(Icons.AutoMirrored.Outlined.ShowChart, stringResource(R.string.gym_chart), tint = MaterialTheme.colorScheme.outline)
             }
@@ -359,6 +418,18 @@ private fun ExerciseCard(
                     )
                 }
             }
+        }
+        AnimatedVisibility(visible = stopwatch != null) {
+            stopwatch?.let { StopwatchPanel(it, onPause, onResume, onRecord, onCancelStopwatch) }
+        }
+        // Заметка упражнения (настройки тренажёра и т. п.) — мелко, под названием
+        if (entry.exercise.note.isNotBlank()) {
+            Text(
+                entry.exercise.note,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 12.dp, bottom = 6.dp),
+            )
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 12.dp)) {
             entry.sets.forEach { set ->
@@ -481,7 +552,7 @@ private fun Sheets(
             val kmh = stringResource(R.string.unit_kmh)
             SetDialog(
                 kind = sheet.entry.exercise.kind,
-                initial = null,
+                initial = sheet.seconds?.let { WorkoutSet(seconds = it) },
                 // В прошлый раз такого подхода не было — подсказываем предыдущий из этой тренировки
                 hint = hint?.set ?: sheet.entry.sets.lastOrNull(),
                 note = hint?.let {
@@ -545,5 +616,83 @@ private fun Sheets(
             onConfirm = { viewModel.delete(onBack) },
             onDismiss = close,
         )
+    }
+}
+
+/**
+ * Циферблат секундомера в карточке: минуты и секунды крупно, сотые — мельче. Под ним большая
+ * пауза; на паузе — «Продолжить» и «Записать». Записанное время уходит в новый подход.
+ */
+@Composable
+private fun StopwatchPanel(
+    state: GymStopwatchState,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onRecord: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(state.running) {
+        // Сотые — каждый кадр, пока идёт; на паузе обновлять нечего
+        while (state.running) withFrameMillis { now = System.currentTimeMillis() }
+    }
+    val elapsed = state.elapsed(if (state.running) now else System.currentTimeMillis())
+    val minutes = elapsed / 60_000
+    val seconds = elapsed / 1000 % 60
+    val hundredths = elapsed / 10 % 100
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth().padding(end = 12.dp, top = 4.dp, bottom = 12.dp),
+    ) {
+        // Каждая цифра — в клетке ширины самой широкой цифры: иначе «1» уже «0», и время дрожит
+        Row(verticalAlignment = Alignment.Bottom) {
+            MonoDigits("%02d:%02d".format(minutes, seconds), TextStyle(fontSize = 52.sp, fontWeight = FontWeight.Light, color = colors.onSurface))
+            MonoDigits(
+                ".%02d".format(hundredths),
+                TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Light, color = colors.onSurfaceVariant),
+                Modifier.padding(bottom = 8.dp, start = 2.dp),
+            )
+        }
+        when {
+            state.running -> FilledIconButton(onClick = onPause, modifier = Modifier.size(72.dp)) {
+                Icon(Icons.Outlined.Pause, stringResource(R.string.time_pause), Modifier.size(36.dp))
+            }
+            // Ещё не запущен — только «Старт»; убрать секундомер — тем же значком, что открыл, или «Сбросить»
+            state.ready -> FilledIconButton(onClick = onResume, modifier = Modifier.size(72.dp)) {
+                Icon(Icons.Outlined.PlayArrow, stringResource(R.string.gym_stopwatch_go), Modifier.size(36.dp))
+            }
+            else -> Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalIconButton(onClick = onResume, modifier = Modifier.size(64.dp)) {
+                    Icon(Icons.Outlined.PlayArrow, stringResource(R.string.time_resume), Modifier.size(32.dp))
+                }
+                FilledIconButton(onClick = onRecord, modifier = Modifier.size(64.dp)) {
+                    Icon(Icons.Outlined.Check, stringResource(R.string.gym_stopwatch_record), Modifier.size(32.dp))
+                }
+            }
+        }
+        TextButton(onClick = onCancel) {
+            Text(stringResource(R.string.gym_stopwatch_cancel), color = colors.outline)
+        }
+    }
+}
+
+/** Текст, где каждая цифра стоит в клетке одной ширины — по самой широкой цифре шрифта. */
+@Composable
+private fun MonoDigits(text: String, style: TextStyle, modifier: Modifier = Modifier) {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val cell = remember(style, density) {
+        with(density) { ('0'..'9').maxOf { measurer.measure(it.toString(), style).size.width }.toDp() }
+    }
+    Row(modifier) {
+        text.forEach { char ->
+            if (char.isDigit()) {
+                Box(Modifier.width(cell), contentAlignment = Alignment.Center) { Text(char.toString(), style = style) }
+            } else {
+                Text(char.toString(), style = style)
+            }
+        }
     }
 }

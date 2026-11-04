@@ -18,6 +18,8 @@ data class ExerciseEntity(
     /** ExerciseKind.code: «WR», «R», «T», «ST», «DT», «WT», «D». */
     val kind: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    /** Заметка: настройки тренажёра, техника; появилась в версии 12 базы. */
+    @ColumnInfo(defaultValue = "") val note: String = "",
 )
 
 @Entity(tableName = "workout", indices = [Index("date"), Index("active")])
@@ -106,4 +108,5 @@ data class WorkoutExerciseRow(
     @ColumnInfo(name = "sort_order") val sortOrder: Int,
     val name: String,
     val kind: String,
+    val note: String = "",
 )

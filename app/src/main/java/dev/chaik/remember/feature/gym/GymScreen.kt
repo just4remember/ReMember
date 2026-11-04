@@ -112,6 +112,7 @@ fun GymScreen(
     onBack: (() -> Unit)?,
     onOpen: (workoutId: Long) -> Unit,
     onTemplates: () -> Unit,
+    onExercises: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -181,6 +182,7 @@ fun GymScreen(
                 IconButton(onClick = { selected = emptySet() }) { Icon(Icons.Outlined.Close, stringResource(R.string.gym_select_cancel)) }
                 return@ScreenScaffold
             }
+            IconButton(onClick = onExercises) { Icon(Icons.Outlined.FitnessCenter, stringResource(R.string.gym_exercises)) }
             IconButton(onClick = onTemplates) { Icon(Icons.AutoMirrored.Outlined.ListAlt, stringResource(R.string.gym_templates)) }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.gym_more)) }

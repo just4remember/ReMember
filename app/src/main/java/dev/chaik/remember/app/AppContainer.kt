@@ -64,6 +64,7 @@ class AppContainer(context: Context) {
 
     /** Экспорт и восстановление резервной копии. */
     val backupManager by lazy { BackupManager(appContext, { database }, databaseKeyManager) }
+    val gymStopwatch by lazy { dev.chaik.remember.core.gym.GymStopwatch(appContext) }
     val serverBackup by lazy { dev.chaik.remember.core.backup.ServerBackup(appContext, backupManager) }
 
     val database: ReMemberDatabase by lazy {

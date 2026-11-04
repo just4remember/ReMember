@@ -39,7 +39,14 @@ data class Exercise(
     val id: Long = 0,
     val name: String,
     val kind: ExerciseKind = ExerciseKind.WEIGHT_REPS,
-)
+    /** Заметка: настройки тренажёра, техника. Видна в карточке упражнения в тренировке. */
+    val note: String = "",
+) {
+    /** Подходы этого вида записываются со временем — к ним есть секундомер. */
+    val timed: Boolean get() = kind in TimedKinds
+}
+
+private val TimedKinds = setOf(ExerciseKind.TIME, ExerciseKind.SPEED_TIME, ExerciseKind.DISTANCE_TIME, ExerciseKind.WEIGHT_TIME)
 
 /**
  * Как записываются подходы: «40×12», «30», «1:30», «9,4 км/ч × 10:00» (бег на дорожке),

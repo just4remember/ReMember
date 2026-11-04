@@ -103,6 +103,11 @@
             android:theme="@style/Theme.ReMember"
             android:turnScreenOn="true" />
 
+        <!-- Пауза и продолжение секундомера подхода из шторки -->
+        <receiver
+            android:name=".core.gym.GymStopwatchReceiver"
+            android:exported="false" />
+
         <!-- Резервная копия на сервер по расписанию (JobScheduler) -->
         <service
             android:name=".core.backup.ServerBackupJob"

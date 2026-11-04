@@ -1,5 +1,7 @@
 package dev.chaik.remember.app.navigation
 
+import dev.chaik.remember.feature.gym.exercises.ExercisesScreen
+import dev.chaik.remember.feature.gym.exercises.ExercisesRoute
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -121,8 +123,10 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
                 onBack = backFor(it),
                 onOpen = { id -> backStack.add(WorkoutRoute(id)) },
                 onTemplates = { backStack.add(TemplatesRoute) },
+                onExercises = { backStack.add(ExercisesRoute) },
             )
         }
+        entry<ExercisesRoute> { ExercisesScreen(onBack = back) }
         entry<TemplatesRoute> { TemplatesScreen(onBack = back, onOpen = { id -> backStack.add(TemplateEditorRoute(id)) }) }
         entry<TemplateEditorRoute> { TemplateEditorScreen(route = it, onBack = back) }
         entry<WorkoutRoute> { WorkoutScreen(route = it, onBack = back) }

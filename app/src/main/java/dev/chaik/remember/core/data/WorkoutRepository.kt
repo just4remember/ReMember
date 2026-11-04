@@ -127,6 +127,15 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
         Exercise(id, name.trim(), findExercise(name)?.kind ?: kind)
     }
 
+    /** Новое упражнение в справочник. false — такое название уже есть. */
+    suspend fun createExercise(name: String, kind: ExerciseKind, note: String): Boolean = db.withTransaction {
+        val clean = name.trim()
+        val key = clean.lowercase()
+        if (clean.isEmpty() || dao.exerciseByKey(key) != null) return@withTransaction false
+        dao.insertExercise(ExerciseEntity(name = clean, nameKey = key, kind = kind.code, createdAt = Instant.now(), note = note.trim()))
+        true
+    }
+
     suspend fun findExercise(name: String): Exercise? = dao.exerciseByKey(name.trim().lowercase())?.toModel()
 
     suspend fun lastBodyWeight(): Double? = dao.lastBodyWeight()
@@ -179,6 +188,28 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
     suspend fun removeExercise(workoutExerciseId: Long) = dao.deleteWorkoutExercise(workoutExerciseId)
 
     suspend fun setExerciseKind(exerciseId: Long, kind: ExerciseKind) = dao.setExerciseKind(exerciseId, kind.code)
+
+    /**
+     * Изменить название и заметку. false — такое название уже занято другим упражнением
+     * (названия не различаются регистром), тогда ничего не меняется.
+     */
+    suspend fun updateExercise(exercise: Exercise): Boolean = db.withTransaction {
+        val name = exercise.name.trim()
+        val key = name.lowercase()
+        val taken = dao.exerciseByKey(key)
+        if (name.isEmpty() || (taken != null && taken.id != exercise.id)) return@withTransaction false
+        dao.updateExercise(exercise.id, name, key, exercise.note.trim())
+        true
+    }
+
+    suspend fun exerciseUses(exerciseId: Long): Int = dao.exerciseUses(exerciseId)
+
+    /** Удалить можно только упражнение, которого нет ни в тренировках, ни в шаблонах. */
+    suspend fun deleteExercise(exerciseId: Long): Boolean = db.withTransaction {
+        if (dao.exerciseUses(exerciseId) > 0) return@withTransaction false
+        dao.deleteExercise(exerciseId)
+        true
+    }
 
     suspend fun addSet(workoutExerciseId: Long, set: WorkoutSet): Long = db.withTransaction {
         dao.insertSet(WorkoutSetEntity(0, workoutExerciseId, dao.nextSetOrder(workoutExerciseId), set.weight, set.reps, set.seconds, set.speed, set.distance))
@@ -253,7 +284,7 @@ data class ImportPreview(
     val newExercises: List<String>,
 )
 
-private fun ExerciseEntity.toModel() = Exercise(id = id, name = name, kind = ExerciseKind.fromCode(kind))
+private fun ExerciseEntity.toModel() = Exercise(id = id, name = name, kind = ExerciseKind.fromCode(kind), note = note)
 
 private fun WorkoutEntity.toModel(number: Int, rows: List<WorkoutExerciseRow>, sets: List<WorkoutSetEntity>): Workout {
     val setsByEntry = sets.groupBy { it.workoutExerciseId }
@@ -271,7 +302,7 @@ private fun WorkoutEntity.toModel(number: Int, rows: List<WorkoutExerciseRow>, s
         exercises = rows.map { row ->
             WorkoutExercise(
                 id = row.id,
-                exercise = Exercise(id = row.exerciseId, name = row.name, kind = ExerciseKind.fromCode(row.kind)),
+                exercise = Exercise(id = row.exerciseId, name = row.name, kind = ExerciseKind.fromCode(row.kind), note = row.note),
                 sets = setsByEntry[row.id].orEmpty().map { WorkoutSet(it.id, it.weight, it.reps, it.seconds, it.speed, it.distance) },
             )
         },

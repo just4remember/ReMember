@@ -78,13 +78,13 @@ interface WorkoutDao {
     // Упражнения тренировок
 
     @Query(
-        "SELECT we.id, we.workout_id, we.exercise_id, we.sort_order, e.name, e.kind FROM workout_exercise we " +
+        "SELECT we.id, we.workout_id, we.exercise_id, we.sort_order, e.name, e.kind, e.note FROM workout_exercise we " +
             "JOIN exercise e ON e.id = we.exercise_id ORDER BY we.workout_id, we.sort_order",
     )
     fun observeAllExerciseRows(): Flow<List<WorkoutExerciseRow>>
 
     @Query(
-        "SELECT we.id, we.workout_id, we.exercise_id, we.sort_order, e.name, e.kind FROM workout_exercise we " +
+        "SELECT we.id, we.workout_id, we.exercise_id, we.sort_order, e.name, e.kind, e.note FROM workout_exercise we " +
             "JOIN exercise e ON e.id = we.exercise_id WHERE we.workout_id = :workoutId ORDER BY we.sort_order",
     )
     fun observeExerciseRows(workoutId: Long): Flow<List<WorkoutExerciseRow>>
@@ -186,4 +186,18 @@ interface WorkoutDao {
 
     @Query("UPDATE exercise SET kind = :kind WHERE id = :id")
     suspend fun setExerciseKind(id: Long, kind: String)
+
+    /** Название меняется у упражнения в справочнике — значит, и во всех тренировках и шаблонах. */
+    @Query("UPDATE exercise SET name = :name, name_key = :nameKey, note = :note WHERE id = :id")
+    suspend fun updateExercise(id: Long, name: String, nameKey: String, note: String)
+
+    /** В скольких тренировках и шаблонах встречается упражнение. */
+    @Query(
+        "SELECT (SELECT COUNT(*) FROM workout_exercise WHERE exercise_id = :id) + " +
+            "(SELECT COUNT(*) FROM workout_template_exercise WHERE exercise_id = :id)",
+    )
+    suspend fun exerciseUses(id: Long): Int
+
+    @Query("DELETE FROM exercise WHERE id = :id")
+    suspend fun deleteExercise(id: Long)
 }
