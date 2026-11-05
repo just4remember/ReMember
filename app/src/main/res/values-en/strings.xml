@@ -1223,4 +1223,25 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="stats_all">All time</string>
     <string name="stats_average">(avg)</string>
     <string name="stats_unit_h">h</string>
+    <string name="stats_days_hint">Ratings, weekdays and tags</string>
+    <string name="stats_days_rating">Rating</string>
+    <string name="stats_days_written">Days logged</string>
+    <string name="stats_days_streak">Current streak</string>
+    <string name="stats_days_streak_hint">days in a row with an entry</string>
+    <string name="stats_days_longest">Best streak</string>
+    <string name="stats_days_best">Best day</string>
+    <string name="stats_days_worst">Worst day</string>
+    <string name="stats_days_by_day">Rating by day</string>
+    <string name="stats_days_by_day_hint">Dashed - average rating</string>
+    <string name="stats_days_distribution">Rating distribution</string>
+    <string name="stats_days_distribution_hint">Days with each rating</string>
+    <string name="stats_days_weekdays">By day of week</string>
+    <string name="stats_days_tags">Tags</string>
+    <string name="stats_days_tags_frequent">Most used</string>
+    <string name="stats_days_tags_best">Best rated</string>
+    <string name="stats_days_year">Day ratings this year</string>
+    <string name="stats_days_year_avg">Average %1$s of %2$d, entries: %3$d</string>
+    <string name="stats_days_year_empty">No entries this year</string>
+    <string name="stats_days_no_entry">no entry</string>
+    <string name="stats_days_no_rating">entry without rating</string>
 </resources>

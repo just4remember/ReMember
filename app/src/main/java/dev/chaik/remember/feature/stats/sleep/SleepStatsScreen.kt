@@ -143,15 +143,18 @@ fun SleepStatsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             // Даты и плитки листаются свайпом вбок, как стрелками
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                // Свайп вбок листает даты, как на «Сегодня», и забирает жест себе — «назад» не срабатывает.
-                // Ловит по всей ширине экрана, вместе с полями по краям
-                modifier = Modifier
-                    .fullWidth(16.dp)
-                    .then(dateGesture)
-                    .padding(horizontal = 16.dp),
             ) {
-                Box(Modifier.daySwipeOffset(dateSwipe)) {
-                    PeriodDates(range, canEarlier, canLater, onEarlier = ::earlier, onLater = ::later)
+                // Свайп по строке с датами листает период и забирает жест себе («назад» не срабатывает);
+                // ловится до самых краёв экрана. По карточкам ниже свайп работает как обычно
+                Box(
+                    Modifier
+                        .fullWidth(16.dp)
+                        .then(dateGesture)
+                        .padding(horizontal = 16.dp),
+                ) {
+                    Box(Modifier.daySwipeOffset(dateSwipe)) {
+                        PeriodDates(range, canEarlier, canLater, onEarlier = ::earlier, onLater = ::later)
+                    }
                 }
                 val all = summary.all
                 if (all == null) {
@@ -261,7 +264,7 @@ fun SleepStatsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
 /** Строка плиток одной высоты — по самой высокой. */
 @Composable
-private fun TileRow(content: @Composable (Modifier) -> Unit) {
+internal fun TileRow(content: @Composable (Modifier) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
         content(Modifier.weight(1f).fillMaxHeight())
     }
@@ -269,7 +272,7 @@ private fun TileRow(content: @Composable (Modifier) -> Unit) {
 
 /** Подпись под названием графика: в одну строку; длинная — медленно ездит, не сдвигая страницу. */
 @Composable
-private fun Caption(text: String, modifier: Modifier = Modifier) {
+internal fun Caption(text: String, modifier: Modifier = Modifier) {
     SlidingText(
         text = text,
         style = MaterialTheme.typography.bodySmall,
@@ -288,10 +291,10 @@ private fun qualityLevels(): List<Color> {
 @Composable
 private fun duration(minutes: Int): String = stringResource(R.string.gym_hours_minutes, minutes / 60, minutes % 60)
 
-private val AxisDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+internal val AxisDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
 @Composable
-private fun RangeLabels(range: ClosedRange<LocalDate>) {
+internal fun RangeLabels(range: ClosedRange<LocalDate>) {
     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(start = AXIS_WIDTH.dp)) {
         Text(range.start.format(AxisDate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(range.endInclusive.format(AxisDate), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -299,7 +302,7 @@ private fun RangeLabels(range: ClosedRange<LocalDate>) {
 }
 
 /** Ширина колонки подписей слева у графиков, dp. */
-private const val AXIS_WIDTH = 40
+internal const val AXIS_WIDTH = 40
 
 /**
  * Палец над графиком выбирает ближайшую ночь: тапом или ведя, не отрывая.
@@ -360,8 +363,8 @@ private fun WindowsChart(
         fun y(minute: Int) = (minute - top) / span * size.height
         val step = if (bottom - top > 12 * 60) 240 else 120
         hourGrid(top, bottom, step, axisPx, measurer, labelStyle, colors.outlineVariant) { y(it) }
-        dashed(y(averages.bedMinute), axisPx, colors.tertiary)
-        dashed(y(averages.wakeMinute), axisPx, colors.tertiary)
+        dashed(y(averages.bedMinute), axisPx, colors.onSurfaceVariant.copy(alpha = 0.7f))
+        dashed(y(averages.wakeMinute), axisPx, colors.onSurfaceVariant.copy(alpha = 0.7f))
         bars(nights, range, axisPx, selected, colors.primary) { night -> y(night.bedMinute) to y(night.wakeMinute) }
     }
 }
@@ -398,7 +401,7 @@ private fun DurationChart(
             drawText(label, topLeft = Offset(0f, (yy - label.size.height / 2f).coerceIn(0f, size.height - label.size.height)))
             m += step
         }
-        dashed(y(SLEEP_NORM_MINUTES), axisPx, colors.tertiary)
+        dashed(y(SLEEP_NORM_MINUTES), axisPx, colors.onSurfaceVariant.copy(alpha = 0.7f))
         drawLine(colors.primary.copy(alpha = 0.45f), Offset(axisPx, y(averages.durationMinutes)), Offset(size.width, y(averages.durationMinutes)), strokeWidth = 2f)
         bars(nights, range, axisPx, selected, colors.primary) { night -> y(night.durationMinutes) to size.height }
     }
@@ -493,7 +496,7 @@ private fun WeekSplit(summary: SleepSummary) {
 
 /** «97мин»: число обычное, единица — мельче и бледнее, вплотную к числу. */
 @Composable
-private fun withUnit(value: String, unit: String): AnnotatedString = buildAnnotatedString {
+internal fun withUnit(value: String, unit: String): AnnotatedString = buildAnnotatedString {
     append(value)
     withStyle(SpanStyle(fontSize = MaterialTheme.typography.labelLarge.fontSize, color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(unit) }
 }
@@ -514,7 +517,7 @@ private fun compactDuration(minutes: Int): AnnotatedString {
 }
 
 /** Растянуть на [margin] за поля родителя с каждой стороны — чтобы жест ловился у самого края экрана. */
-private fun Modifier.fullWidth(margin: Dp): Modifier = layout { measurable, constraints ->
+internal fun Modifier.fullWidth(margin: Dp): Modifier = layout { measurable, constraints ->
     val extra = margin.roundToPx()
     val placeable = measurable.measure(
         constraints.copy(minWidth = constraints.minWidth + extra * 2, maxWidth = constraints.maxWidth + extra * 2),

@@ -1278,4 +1278,25 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="stats_all">Всё время</string>
     <string name="stats_average">(ср)</string>
     <string name="stats_unit_h">ч</string>
+    <string name="stats_days_hint">Оценки, дни недели и теги</string>
+    <string name="stats_days_rating">Оценка</string>
+    <string name="stats_days_written">Дней записано</string>
+    <string name="stats_days_streak">Серия сейчас</string>
+    <string name="stats_days_streak_hint">дней подряд с записью</string>
+    <string name="stats_days_longest">Лучшая серия</string>
+    <string name="stats_days_best">Лучший день</string>
+    <string name="stats_days_worst">Худший день</string>
+    <string name="stats_days_by_day">Оценка по дням</string>
+    <string name="stats_days_by_day_hint">Пунктир - средняя оценка</string>
+    <string name="stats_days_distribution">Как распределены оценки</string>
+    <string name="stats_days_distribution_hint">Сколько дней с каждой оценкой</string>
+    <string name="stats_days_weekdays">По дням недели</string>
+    <string name="stats_days_tags">Теги</string>
+    <string name="stats_days_tags_frequent">Чаще</string>
+    <string name="stats_days_tags_best">Лучше</string>
+    <string name="stats_days_year">Оценки дней за год</string>
+    <string name="stats_days_year_avg">В среднем %1$s из %2$d, записей: %3$d</string>
+    <string name="stats_days_year_empty">В этом году записей нет</string>
+    <string name="stats_days_no_entry">нет записи</string>
+    <string name="stats_days_no_rating">запись без оценки</string>
 </resources>

@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -81,16 +82,30 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, note: 
 
 /** То же, но значение с оформлением — например, единицы мельче чисел. */
 @Composable
-fun StatTile(label: String, value: AnnotatedString, modifier: Modifier = Modifier, note: String? = null) {
+fun StatTile(
+    label: String,
+    value: AnnotatedString,
+    modifier: Modifier = Modifier,
+    note: String? = null,
+    /** Значок перед значением — например, огонёк серии. */
+    icon: ImageVector? = null,
+    iconTint: Color = Color.Unspecified,
+    /** Тап по плитке — например, открыть этот день. */
+    onClick: (() -> Unit)? = null,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.headlineSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) Icon(icon, null, tint = iconTint, modifier = Modifier.padding(end = 4.dp).size(24.dp))
+            Text(value, style = MaterialTheme.typography.headlineSmall)
+        }
         if (note != null) {
             Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

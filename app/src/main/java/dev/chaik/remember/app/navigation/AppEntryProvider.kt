@@ -68,6 +68,8 @@ import dev.chaik.remember.feature.settings.security.SecurityScreen
 import dev.chaik.remember.feature.settings.reminders.RemindersScreen
 import dev.chaik.remember.feature.stats.StatsRoute
 import dev.chaik.remember.feature.stats.StatsScreen
+import dev.chaik.remember.feature.stats.days.DaysStatsRoute
+import dev.chaik.remember.feature.stats.days.DaysStatsScreen
 import dev.chaik.remember.feature.stats.sleep.SleepStatsRoute
 import dev.chaik.remember.feature.stats.sleep.SleepStatsScreen
 import dev.chaik.remember.feature.tasks.TasksRoute
@@ -121,6 +123,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<SearchRoute> { SearchScreen(onBack = backFor(it)) }
         entry<StatsRoute> { StatsScreen(onBack = backFor(it), onOpen = { backStack.add(it) }) }
         entry<SleepStatsRoute> { SleepStatsScreen(onBack = back) }
+        entry<DaysStatsRoute> { DaysStatsScreen(onBack = back) }
         entry<FinanceRoute> { FinanceScreen(onBack = backFor(it)) }
         entry<HealthRoute> { HealthScreen(onBack = backFor(it)) }
         entry<GymRoute> {
