@@ -57,6 +57,8 @@ import dev.chaik.remember.feature.settings.data.DataScreen
 import dev.chaik.remember.feature.settings.data.gallery.GalleryRoute
 import dev.chaik.remember.feature.settings.data.gallery.GalleryScreen
 import dev.chaik.remember.feature.settings.pages.PagesRoute
+import dev.chaik.remember.feature.settings.widgets.WidgetsRoute
+import dev.chaik.remember.feature.settings.widgets.WidgetsScreen
 import dev.chaik.remember.feature.settings.pages.PagesScreen
 import dev.chaik.remember.feature.settings.profile.ProfileRoute
 import dev.chaik.remember.feature.settings.profile.ProfileScreen
@@ -149,6 +151,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<RemindersRoute> { RemindersScreen(onBack = back) }
         entry<ProfileRoute> { ProfileScreen(onBack = back) }
         entry<PagesRoute> { PagesScreen(onBack = back) }
+        entry<WidgetsRoute> { WidgetsScreen(onBack = back) }
         entry<SecurityRoute> { SecurityScreen(onBack = back) }
         entry<DataRoute> { DataScreen(onBack = back, onOpenGallery = { backStack.add(GalleryRoute) }) }
         entry<GalleryRoute> { GalleryScreen(onBack = back, onOpenNote = { backStack.add(NoteEditorRoute(noteId = it)) }) }

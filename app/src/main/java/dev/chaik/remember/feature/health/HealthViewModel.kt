@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.health
 
+import dev.chaik.remember.core.widgets.HealthWidget
 import dev.chaik.remember.core.health.DEFAULT_WEIGHT_KG
 import android.os.RemoteException
 import android.util.Log
@@ -85,7 +86,11 @@ class HealthViewModel(private val container: AppContainer) : ViewModel() {
                 // Выбранный день — первым, чтобы большие кольца появились сразу
                 // Вес — последний из зала; без него — средний
                 val weight = container.workoutRepository.lastBodyWeight() ?: DEFAULT_WEIGHT_KG
-                missing.sortedBy { if (it == selected) 0 else 1 }.forEach { days[it] = health.day(it, weight) }
+                missing.sortedBy { if (it == selected) 0 else 1 }.forEach {
+                    days[it] = health.day(it, weight)
+                    // Сегодняшние цифры — и виджету на рабочем столе
+                    if (it == today) HealthWidget.push(container.appContext, days.getValue(it))
+                }
             } catch (e: CancellationException) {
                 // Новая загрузка заменила эту (пролистали неделю) — это не ошибка
                 throw e

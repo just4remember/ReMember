@@ -103,6 +103,43 @@
             android:theme="@style/Theme.ReMember"
             android:turnScreenOn="true" />
 
+        <!-- Виджеты на рабочий стол -->
+        <receiver
+            android:name=".core.widgets.DigitalClockWidget"
+            android:exported="false"
+            android:label="@string/widget_clock_digital">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_clock_digital_info" />
+        </receiver>
+
+        <receiver
+            android:name=".core.widgets.AnalogClockWidget"
+            android:exported="false"
+            android:label="@string/widget_clock_analog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_clock_analog_info" />
+        </receiver>
+
+        <receiver
+            android:name=".core.widgets.HealthWidget"
+            android:exported="false"
+            android:label="@string/widget_health">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_health_info" />
+        </receiver>
+
         <!-- Пауза и продолжение секундомера подхода из шторки -->
         <receiver
             android:name=".core.gym.GymStopwatchReceiver"

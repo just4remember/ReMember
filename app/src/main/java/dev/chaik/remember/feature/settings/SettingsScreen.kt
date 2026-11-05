@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -44,6 +45,7 @@ import dev.chaik.remember.feature.settings.pages.PagesRoute
 import dev.chaik.remember.feature.settings.profile.ProfileRoute
 import dev.chaik.remember.feature.settings.reminders.RemindersRoute
 import dev.chaik.remember.feature.settings.security.SecurityRoute
+import dev.chaik.remember.feature.settings.widgets.WidgetsRoute
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -56,6 +58,7 @@ private val Sections = listOf(
     Section(Icons.Outlined.Person, R.string.settings_profile, R.string.settings_profile_hint, ProfileRoute),
     Section(Icons.Outlined.Palette, R.string.settings_personalization, R.string.settings_personalization_hint, PersonalizationRoute),
     Section(Icons.Outlined.Dashboard, R.string.settings_pages, R.string.settings_pages_hint, PagesRoute),
+    Section(Icons.Outlined.Widgets, R.string.settings_widgets, R.string.settings_widgets_hint, WidgetsRoute),
     Section(Icons.Outlined.Lock, R.string.settings_security, R.string.settings_security_hint, SecurityRoute),
     Section(Icons.Outlined.Backup, R.string.settings_data, R.string.settings_data_hint, DataRoute),
     Section(Icons.Outlined.Notifications, R.string.settings_reminders, R.string.settings_reminders_hint, RemindersRoute),

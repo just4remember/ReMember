@@ -1,5 +1,9 @@
 package dev.chaik.remember
 
+import dev.chaik.remember.core.widgets.WidgetStreak
+import kotlinx.coroutines.flow.drop
+import dev.chaik.remember.core.widgets.Widgets
+import dev.chaik.remember.core.widgets.HealthWidget
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -65,6 +69,25 @@ class ReMemberApplication : Application() {
             // специально долго вычисляет ключ (~1–2 с), и после PIN запись дня появлялась с задержкой
             runCatching { container.database.openHelper.writableDatabase }
                 .onFailure { Log.w(TAG, "Не удалось открыть базу", it) }
+        }
+        container.appScope.launch {
+            // Виджеты в акценте и шрифте приложения: сменили — перерисовать
+            container.settings.settings.map { Triple(it.accent, it.customAccent, it.font) }.distinctUntilChanged()
+                .collect { Widgets.updateAll(this@ReMemberApplication) }
+        }
+        container.appScope.launch {
+            // Настройки виджетов («Настройки → Виджеты»)
+            container.widgetSettings.settings.drop(1).collect { Widgets.updateAll(this@ReMemberApplication) }
+        }
+        container.appScope.launch {
+            // Огонёк серии на часах: записали день — серия могла вырасти
+            runCatching {
+                container.dayRepository.observeWrittenDates().collect { WidgetStreak.update(this@ReMemberApplication, it) }
+            }.onFailure { Log.w(TAG, "Не удалось следить за серией для виджетов", it) }
+        }
+        container.appScope.launch {
+            // Новые цели — кольца виджета «Здоровье» считаются от них
+            container.healthGoals.goals.drop(1).collect { HealthWidget.render(this@ReMemberApplication) }
         }
         container.appScope.launch {
             // Сверить расписание копий на сервер с настройками

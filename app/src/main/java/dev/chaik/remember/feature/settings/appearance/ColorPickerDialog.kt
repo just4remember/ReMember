@@ -49,11 +49,19 @@ private const val MAX_LIGHTNESS = 0.75f
  * или код вида #5B6CF0. Сверху — образец.
  */
 @Composable
-fun ColorPickerDialog(initial: Long, onPick: (Long) -> Unit, onDismiss: () -> Unit) {
+fun ColorPickerDialog(
+    initial: Long,
+    onPick: (Long) -> Unit,
+    onDismiss: () -> Unit,
+    title: String? = null,
+    /** Пределы светлоты: для акцента — середина, для подложек виджетов можно и тёмные. */
+    minLightness: Float = MIN_LIGHTNESS,
+    maxLightness: Float = MAX_LIGHTNESS,
+) {
     val start = FloatArray(3).also { ColorUtils.colorToHSL(initial.toInt(), it) }
     var hue by remember { mutableFloatStateOf(start[0]) }
     var saturation by remember { mutableFloatStateOf(start[1]) }
-    var lightness by remember { mutableFloatStateOf(start[2].coerceIn(MIN_LIGHTNESS, MAX_LIGHTNESS)) }
+    var lightness by remember { mutableFloatStateOf(start[2].coerceIn(minLightness, maxLightness)) }
     val color = hsl(hue, saturation, lightness)
     var hex by remember { mutableStateOf(color.hex()) }
     fun syncHex() {
@@ -62,7 +70,7 @@ fun ColorPickerDialog(initial: Long, onPick: (Long) -> Unit, onDismiss: () -> Un
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.appearance_custom_color)) },
+        title = { Text(title ?: stringResource(R.string.appearance_custom_color)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Box(
@@ -89,10 +97,10 @@ fun ColorPickerDialog(initial: Long, onPick: (Long) -> Unit, onDismiss: () -> Un
                     },
                 )
                 GradientSlider(
-                    value = (lightness - MIN_LIGHTNESS) / (MAX_LIGHTNESS - MIN_LIGHTNESS),
-                    colors = listOf(hsl(hue, saturation, MIN_LIGHTNESS), hsl(hue, saturation, 0.5f), hsl(hue, saturation, MAX_LIGHTNESS)),
+                    value = (lightness - minLightness) / (maxLightness - minLightness),
+                    colors = listOf(hsl(hue, saturation, minLightness), hsl(hue, saturation, 0.5f), hsl(hue, saturation, maxLightness)),
                     onChange = {
-                        lightness = MIN_LIGHTNESS + it * (MAX_LIGHTNESS - MIN_LIGHTNESS)
+                        lightness = minLightness + it * (maxLightness - minLightness)
                         syncHex()
                     },
                 )
@@ -105,7 +113,7 @@ fun ColorPickerDialog(initial: Long, onPick: (Long) -> Unit, onDismiss: () -> Un
                             val out = FloatArray(3).also { ColorUtils.colorToHSL(parsed, it) }
                             hue = out[0]
                             saturation = out[1]
-                            lightness = out[2].coerceIn(MIN_LIGHTNESS, MAX_LIGHTNESS)
+                            lightness = out[2].coerceIn(minLightness, maxLightness)
                         }
                     },
                     label = { Text(stringResource(R.string.appearance_color_code)) },

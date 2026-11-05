@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Циферблат часов со стрелками в теме «как в системе»: ночью — тёмный -->
+<resources>
+    <color name="widget_dial_face">#F21C1F26</color>
+    <color name="widget_dial_ink">#FFFFFFFF</color>
+</resources>

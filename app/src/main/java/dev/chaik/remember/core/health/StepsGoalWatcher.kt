@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.health
 
+import dev.chaik.remember.core.widgets.HealthWidget
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -125,6 +126,7 @@ class StepsGoalWatcher(
 
             val targets = goals.goals.value
             val activity = health.day(today, bodyWeightKg())
+            HealthWidget.push(context, activity)
             val reminderSettings = reminders.settings.value
             val now = LocalTime.now()
             val allAction = StepsGoalRules.decide(

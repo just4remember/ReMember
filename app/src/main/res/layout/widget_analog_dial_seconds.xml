@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Циферблат часов со стрелками с секундной стрелкой -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/clock_face"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_dial_circle"
+        android:tint="@color/widget_dial_face" />
+
+    <ImageView
+        android:id="@+id/clock_ticks"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_dial_ticks"
+        android:tint="@color/widget_dial_ink" />
+
+    <ImageView
+        android:id="@+id/clock_major"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_dial_major" />
+
+    <AnalogClock
+        android:id="@+id/clock_analog"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:dial="@drawable/widget_dial_empty"
+        android:hand_hour="@drawable/widget_hand_hour"
+        android:hand_minute="@drawable/widget_hand_minute"
+        android:hand_second="@drawable/widget_hand_second" />
+</FrameLayout>

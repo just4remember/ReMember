@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Пустой «циферблат» для AnalogClock: задаёт только размер, рисуют картинки под ним -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp" android:height="300dp" android:viewportWidth="200" android:viewportHeight="200">
+    <path android:fillColor="#00000000" android:pathData="M0,0 L1,0 L1,1 Z" />
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Кольца для превью в списке виджетов -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp" android:height="120dp" android:viewportWidth="200" android:viewportHeight="200">
+    <path android:strokeColor="#FF30D158" android:strokeWidth="17" android:strokeLineCap="round"
+        android:pathData="M100,9 A91,91 0 1,1 9,100" />
+    <path android:strokeColor="#FF0A84FF" android:strokeWidth="17" android:strokeLineCap="round"
+        android:pathData="M100,31 A69,69 0 1,1 51.2,148.8" />
+    <path android:strokeColor="#FFBF5AF2" android:strokeWidth="17" android:strokeLineCap="round"
+        android:pathData="M100,53 A47,47 0 1,1 53,100" />
+</vector>

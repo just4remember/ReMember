@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Главные риски циферблата; цвет — акцент приложения (красится при обновлении виджета) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp" android:height="300dp" android:viewportWidth="200" android:viewportHeight="200">
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round"
+        android:pathData="M100.00,26.00 L100.00,10.00 M174.00,100.00 L190.00,100.00 M100.00,174.00 L100.00,190.00 M26.00,100.00 L10.00,100.00" />
+</vector>
