@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym.templates
 
+import dev.chaik.remember.core.ui.components.SlidingText
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -135,35 +136,6 @@ fun TemplatesScreen(onBack: () -> Unit, onOpen: (Long) -> Unit, modifier: Modifi
             }
         }
     }
-}
-
-/** Сколько текст стоит у края, прежде чем поехать обратно. */
-private const val SLIDE_PAUSE_MS = 1500L
-private const val SLIDE_MS_PER_PX = 8
-
-/** Текст в одну строку; если не влез — плавно ездит туда и обратно. */
-@Composable
-private fun SlidingText(text: String, modifier: Modifier = Modifier) {
-    val scroll = rememberScrollState()
-    val distance = scroll.maxValue
-    LaunchedEffect(distance) {
-        // До первого замера maxValue равен Int.MAX_VALUE
-        if (distance == 0 || distance == Int.MAX_VALUE) return@LaunchedEffect
-        val slide = tween<Float>(durationMillis = distance * SLIDE_MS_PER_PX, easing = LinearEasing)
-        while (true) {
-            delay(SLIDE_PAUSE_MS)
-            scroll.animateScrollTo(distance, slide)
-            delay(SLIDE_PAUSE_MS)
-            scroll.animateScrollTo(0, slide)
-        }
-    }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyLarge,
-        maxLines = 1,
-        softWrap = false,
-        modifier = modifier.horizontalScroll(scroll, enabled = false),
-    )
 }
 
 /** Шаблон: название и упражнения по порядку. Сохраняется сам, отдельной кнопки нет. */
