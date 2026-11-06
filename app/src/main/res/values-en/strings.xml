@@ -21,7 +21,7 @@
     <string name="section_search">Search</string>
     <string name="section_search_hint">Across entries, notes and spending</string>
     <string name="section_stats">Statistics</string>
-    <string name="section_stats_hint">Heatmaps by category</string>
+    <string name="section_stats_hint">Charts for sleep, days, money and gym</string>
     <string name="section_finance">Finance</string>
     <string name="section_finance_hint">Income and spending by month and year</string>
     <string name="section_health">Health</string>

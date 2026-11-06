@@ -92,8 +92,10 @@ private val EARLIEST: LocalDate = LocalDate.of(2000, 1, 1)
 /** Без отдельного разрешения Health Connect отдаёт историю только за столько дней. */
 private const val FREE_HISTORY_DAYS = 30L
 
-private val DayDate = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
-private val ShortDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val DayDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val ShortDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
 /** Что удалось прочитать из Health Connect. */
 private sealed interface HealthLoad {

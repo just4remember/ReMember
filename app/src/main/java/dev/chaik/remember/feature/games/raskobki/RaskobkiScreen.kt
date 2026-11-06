@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import dev.chaik.remember.core.ui.components.SkeletonBox
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.layout.ContentScale
 import coil3.svg.SvgDecoder
@@ -385,7 +386,13 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
     val load by produceState<RaskobkiLoad?>(null, day) { value = repository.puzzle(day) }
     val puzzle = (load as? RaskobkiLoad.Ready)?.puzzle
     // Картинка выпуска, как на карточке дня на сайте; скачивается один раз
-    val art by produceState<java.io.File?>(null, puzzle) { value = puzzle?.let { repository.cardArt(it) } }
+    var art by remember(puzzle) { mutableStateOf<java.io.File?>(null) }
+    // Пока картинка качается — заготовка; не скачалась — просто без картинки
+    var artLoading by remember(puzzle) { mutableStateOf(puzzle?.cardImage != null) }
+    LaunchedEffect(puzzle) {
+        art = puzzle?.let { repository.cardArt(it) }
+        artLoading = false
+    }
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
     val threshold = with(LocalDensity.current) { SWIPE_THRESHOLD.toPx() }
@@ -415,6 +422,17 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             ) {
+            // Выпуск ещё грузится — заготовка карточки с бегущим бликом: видно, что не зависло
+            if (ready && load == null) {
+                SkeletonBox(Modifier.fillMaxWidth(0.55f).height(22.dp))
+                SkeletonBox(Modifier.fillMaxWidth().height(14.dp))
+                SkeletonBox(Modifier.fillMaxWidth(0.8f).height(14.dp))
+                SkeletonBox(Modifier.fillMaxWidth().height(ART_HEIGHT), corner = 12.dp)
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SkeletonBox(Modifier.weight(1f).height(14.dp))
+                    SkeletonBox(Modifier.weight(1f).height(14.dp))
+                }
+            } else {
             Text(
                 when {
                     !ready -> "—"
@@ -435,12 +453,13 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxWidth().height(ART_HEIGHT),
                 )
-            }
+            } ?: if (artLoading) SkeletonBox(Modifier.fillMaxWidth().height(ART_HEIGHT), corner = 12.dp) else Unit
             if (puzzle != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     PuzzleLabel(stringResource(R.string.raskobki_era), puzzle.era, Modifier.weight(1f))
                     PuzzleLabel(stringResource(R.string.raskobki_region), puzzle.region, Modifier.weight(1f))
                 }
+            }
             }
             }
             Button(onClick = onOpen, enabled = ready, modifier = Modifier.fillMaxWidth()) {

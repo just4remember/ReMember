@@ -21,7 +21,7 @@
     <string name="section_search">Поиск</string>
     <string name="section_search_hint">По всем записям, заметкам и тратам</string>
     <string name="section_stats">Статистика</string>
-    <string name="section_stats_hint">Heatmap-ы по категориям</string>
+    <string name="section_stats_hint">Графики сна, дней, денег и зала</string>
     <string name="section_finance">Финансы</string>
     <string name="section_finance_hint">Доходы и расходы за месяц и год</string>
     <string name="section_health">Здоровье</string>

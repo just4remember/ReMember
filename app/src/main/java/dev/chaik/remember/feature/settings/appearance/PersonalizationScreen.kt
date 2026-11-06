@@ -268,15 +268,13 @@ private fun T9LineSettings() {
 
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(stringResource(R.string.appearance_t9_line), style = MaterialTheme.typography.bodyMedium)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            styles.forEachIndexed { index, (style, label) ->
-                SegmentedButton(
-                    selected = settings.t9Line == style,
-                    onClick = { store.update { it.copy(t9Line = style) } },
-                    shape = SegmentedButtonDefaults.itemShape(index, styles.size),
-                    icon = {},
-                ) { Text(stringResource(label), maxLines = 1, style = MaterialTheme.typography.labelMedium) }
-            }
+        // Выпадающий список: четыре кнопки в ряд не помещались и обрезали подписи
+        Box(Modifier.padding(top = 4.dp)) {
+            SettingsDropdown(
+                selected = settings.t9Line,
+                options = styles.map { (style, label) -> style to stringResource(label) },
+                onSelect = { style -> store.update { it.copy(t9Line = style) } },
+            )
         }
 
         if (settings.t9Line != UnderlineStyle.NONE) {

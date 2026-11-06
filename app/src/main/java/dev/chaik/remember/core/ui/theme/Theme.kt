@@ -58,7 +58,7 @@ fun ReMemberTheme(content: @Composable () -> Unit) {
         ThemeMode.ONE_DARK -> oneDarkScheme().withAccent(chosenAccent(settings))
         ThemeMode.NIGHT_OWL -> nightOwlScheme().withAccent(chosenAccent(settings))
         else -> base
-    }
+    }.accentEverywhere()
 
     // Значки строки состояния и навигации — под тему приложения, а не системы
     val activity = LocalActivity.current as? ComponentActivity
@@ -156,6 +156,23 @@ private fun ColorScheme.withAccent(accent: Color?): ColorScheme {
         surfaceTint = tones.primary,
     )
 }
+
+/**
+ * Один акцент на всё приложение. Компоненты Material красят выделение по-разному: чипсы,
+ * островок, тональные кнопки, полосы громкости — «вторичным» цветом, переключатели AM/PM —
+ * «третичным». У палитр и обоев эти цвета свои, и выбранный акцент до них не доходил.
+ * Поэтому вторичный и третичный цвета — те же, что основной.
+ */
+private fun ColorScheme.accentEverywhere(): ColorScheme = copy(
+    secondary = primary,
+    onSecondary = onPrimary,
+    secondaryContainer = primaryContainer,
+    onSecondaryContainer = onPrimaryContainer,
+    tertiary = primary,
+    onTertiary = onPrimary,
+    tertiaryContainer = primaryContainer,
+    onTertiaryContainer = onPrimaryContainer,
+)
 
 private fun ColorScheme.amoled(): ColorScheme = copy(
     background = Color.Black,

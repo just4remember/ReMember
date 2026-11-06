@@ -97,8 +97,10 @@ data object DaysStatsRoute : NavKey
 /** Раньше этой даты статистику не листаем. */
 private val EARLIEST: LocalDate = LocalDate.of(2000, 1, 1)
 
-private val DayDate = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
-private val ShortDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val DayDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val ShortDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
 /** Сортировка тегов: самые частые или с лучшей средней оценкой. */
 private enum class TagOrder { FREQUENT, BEST }

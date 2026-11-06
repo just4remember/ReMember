@@ -79,7 +79,8 @@ data object SleepStatsRoute : NavKey
 /** Раньше этой даты статистику не листаем. */
 private val EARLIEST: LocalDate = LocalDate.of(2000, 1, 1)
 
-private val NightDate = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val NightDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
 
 /**
  * Статистика сна за период: средние, окна сна по ночам, длительность, будни против выходных
@@ -291,7 +292,8 @@ private fun qualityLevels(): List<Color> {
 @Composable
 private fun duration(minutes: Int): String = stringResource(R.string.gym_hours_minutes, minutes / 60, minutes % 60)
 
-internal val AxisDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+internal val AxisDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
 @Composable
 internal fun RangeLabels(range: ClosedRange<LocalDate>) {

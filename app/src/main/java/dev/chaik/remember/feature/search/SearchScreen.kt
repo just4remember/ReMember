@@ -98,8 +98,10 @@ private const val FOCUS_DELAY_MS = 350L
 /** Сколько результатов группы видно сразу; остальные — по «Ещё». */
 private const val GROUP_PREVIEW = 3
 
-private val ShortDate = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
-private val ChipDate = DateTimeFormatter.ofPattern("d MMM yy", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val ShortDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val ChipDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM yy", Locale.getDefault())
 
 /**
  * Поиск по всему: дни, сны, заметки, задачи, события, траты, тренировки, места.

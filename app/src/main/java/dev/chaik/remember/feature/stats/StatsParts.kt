@@ -129,8 +129,10 @@ fun Modifier.onTapAnywhere(onTap: () -> Unit): Modifier {
     }
 }
 
-private val RangeDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
-private val RangeDateYear = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val RangeDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val RangeDateYear: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
 
 /** Периоды одной строкой (не влезли — листаются вбок); выбранный — в акценте приложения. */
 @Composable

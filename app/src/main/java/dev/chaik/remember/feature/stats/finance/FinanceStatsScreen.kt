@@ -102,9 +102,12 @@ private val CategoryPalette = listOf(
     0xFF5B6CF0, 0xFF26A69A, 0xFFFFB300, 0xFFEC407A, 0xFF8D6E63, 0xFF42A5F5, 0xFFAB47BC, 0xFF66BB6A, 0xFFFF7043, 0xFF78909C,
 ).map { Color(it) }
 
-private val DayDate = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
-private val ShortDate = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
-private val MonthName = DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val DayDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val ShortDate: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val MonthName: DateTimeFormatter get() = DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())
 
 /**
  * Статистика финансов: расходы, доходы, баланс, средний расход в день, сравнение с прошлым

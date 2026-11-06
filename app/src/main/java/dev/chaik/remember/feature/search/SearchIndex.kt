@@ -18,7 +18,8 @@ data class SearchLabels(
     val noCategory: String,
 )
 
-private val DayTitle = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.getDefault())
+// Каждый раз заново: после смены языка приложения даты должны быть на новом языке
+private val DayTitle: DateTimeFormatter get() = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.getDefault())
 
 /** Без ограничения длины: ищем по всему тексту, а не по превью. */
 private fun plain(markdown: String) = MarkdownPreview.plain(markdown, maxChars = Int.MAX_VALUE)
