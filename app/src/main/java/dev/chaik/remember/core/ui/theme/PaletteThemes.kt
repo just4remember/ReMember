@@ -2,6 +2,7 @@ package dev.chaik.remember.core.ui.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 /*
@@ -86,4 +87,88 @@ fun nightOwlScheme(): ColorScheme = darkColorScheme(
     onError = Color(0xFF2D0A0A),
     errorContainer = Color(0xFF4A1B1E),
     onErrorContainer = Color(0xFFFFB4B0),
+)
+
+/**
+ * В духе Solarized Light: тёплый кремовый фон, карточки цвета старой бумаги, серо-синий текст,
+ * синий акцент, бирюзовый и пурпурный — вторичные.
+ */
+fun solarizedLightScheme(): ColorScheme = lightColorScheme(
+    primary = Color(0xFF268BD2),
+    onPrimary = Color(0xFFFDF6E3),
+    primaryContainer = Color(0xFFD3E3EC),
+    onPrimaryContainer = Color(0xFF0B3E61),
+    secondary = Color(0xFF2AA198),
+    onSecondary = Color(0xFFFDF6E3),
+    secondaryContainer = Color(0xFFD2E6DC),
+    onSecondaryContainer = Color(0xFF0C4843),
+    tertiary = Color(0xFFD33682),
+    onTertiary = Color(0xFFFDF6E3),
+    tertiaryContainer = Color(0xFFF2D6D6),
+    onTertiaryContainer = Color(0xFF63143B),
+    background = Color(0xFFFDF6E3),
+    onBackground = Color(0xFF3F535A),
+    surface = Color(0xFFFDF6E3),
+    onSurface = Color(0xFF3F535A),
+    surfaceVariant = Color(0xFFEEE8D5),
+    onSurfaceVariant = Color(0xFF657B83),
+    surfaceTint = Color(0xFF268BD2),
+    surfaceContainerLowest = Color(0xFFFFFBF0),
+    surfaceContainerLow = Color(0xFFF8F1DD),
+    surfaceContainer = Color(0xFFF3ECD8),
+    surfaceContainerHigh = Color(0xFFEEE8D5),
+    surfaceContainerHighest = Color(0xFFE6DFC8),
+    surfaceDim = Color(0xFFE6DFC8),
+    surfaceBright = Color(0xFFFDF6E3),
+    inverseSurface = Color(0xFF073642),
+    inverseOnSurface = Color(0xFFEEE8D5),
+    inversePrimary = Color(0xFF8CC4EC),
+    outline = Color(0xFF93A1A1),
+    outlineVariant = Color(0xFFDDD6C1),
+    error = Color(0xFFDC322F),
+    onError = Color(0xFFFDF6E3),
+    errorContainer = Color(0xFFF6D5CC),
+    onErrorContainer = Color(0xFF6B1210),
+)
+
+/**
+ * В духе Tokyo Night Light: прохладный серо-голубой фон, тёмно-синий текст, приглушённые
+ * чернильные цвета — синий акцент, бирюзовый и сиреневый — вторичные.
+ */
+fun tokyoNightLightScheme(): ColorScheme = lightColorScheme(
+    primary = Color(0xFF34548A),
+    onPrimary = Color(0xFFF2F3F7),
+    primaryContainer = Color(0xFFC6CFE2),
+    onPrimaryContainer = Color(0xFF1A2B4A),
+    secondary = Color(0xFF166775),
+    onSecondary = Color(0xFFF2F3F7),
+    secondaryContainer = Color(0xFFC2D6DA),
+    onSecondaryContainer = Color(0xFF0A363E),
+    tertiary = Color(0xFF5A4A78),
+    onTertiary = Color(0xFFF2F3F7),
+    tertiaryContainer = Color(0xFFD3CCE0),
+    onTertiaryContainer = Color(0xFF2E2440),
+    background = Color(0xFFE6E7ED),
+    onBackground = Color(0xFF343B58),
+    surface = Color(0xFFE6E7ED),
+    onSurface = Color(0xFF343B58),
+    surfaceVariant = Color(0xFFD5D6DB),
+    onSurfaceVariant = Color(0xFF4C505E),
+    surfaceTint = Color(0xFF34548A),
+    surfaceContainerLowest = Color(0xFFF2F3F7),
+    surfaceContainerLow = Color(0xFFEDEEF3),
+    surfaceContainer = Color(0xFFDFE0E6),
+    surfaceContainerHigh = Color(0xFFD9DAE0),
+    surfaceContainerHighest = Color(0xFFD0D1D8),
+    surfaceDim = Color(0xFFD0D1D8),
+    surfaceBright = Color(0xFFF2F3F7),
+    inverseSurface = Color(0xFF343B58),
+    inverseOnSurface = Color(0xFFE6E7ED),
+    inversePrimary = Color(0xFF9AB0D8),
+    outline = Color(0xFF9699A3),
+    outlineVariant = Color(0xFFC4C5CC),
+    error = Color(0xFF8C4351),
+    onError = Color(0xFFF2F3F7),
+    errorContainer = Color(0xFFE8CCD2),
+    onErrorContainer = Color(0xFF4A1A24),
 )

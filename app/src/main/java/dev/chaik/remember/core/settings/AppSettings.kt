@@ -74,7 +74,7 @@ data class AppSettings(
 enum class Gender { UNSET, MALE, FEMALE }
 
 /**
- * Тема. ONE_DARK и NIGHT_OWL — готовые палитры со своими цветами; выбранный акцент меняет у них только основной цвет.
+ * Тема. ONE_DARK, NIGHT_OWL, SOLARIZED_LIGHT и TOKYO_NIGHT_LIGHT — готовые палитры со своими цветами; выбранный акцент меняет у них только основной цвет.
  * Имя константы хранится в настройках — переименовывать нельзя.
  */
 enum class ThemeMode {
@@ -84,10 +84,12 @@ enum class ThemeMode {
     AMOLED,
     ONE_DARK,
     NIGHT_OWL,
+    SOLARIZED_LIGHT,
+    TOKYO_NIGHT_LIGHT,
     ;
 
     /** Палитра со своими цветами: «из обоев» для неё означает родной акцент темы. */
-    val isPalette: Boolean get() = this == ONE_DARK || this == NIGHT_OWL
+    val isPalette: Boolean get() = this == ONE_DARK || this == NIGHT_OWL || this == SOLARIZED_LIGHT || this == TOKYO_NIGHT_LIGHT
 }
 
 /** Акцентный цвет: из обоев (Material You) или свой. */

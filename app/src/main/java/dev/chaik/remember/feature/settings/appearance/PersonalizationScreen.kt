@@ -102,17 +102,29 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 .padding(horizontal = 16.dp),
         ) {
             SettingsGroupTitle(stringResource(R.string.appearance_theme))
+            val lightGroup = stringResource(R.string.appearance_theme_group_light)
+            val darkGroup = stringResource(R.string.appearance_theme_group_dark)
             SettingsDropdown(
                 selected = settings.theme,
                 options = listOf(
                     ThemeMode.SYSTEM to stringResource(R.string.appearance_theme_system),
                     ThemeMode.LIGHT to stringResource(R.string.appearance_theme_light),
+                    ThemeMode.SOLARIZED_LIGHT to stringResource(R.string.appearance_theme_solarized_light),
+                    ThemeMode.TOKYO_NIGHT_LIGHT to stringResource(R.string.appearance_theme_tokyo_night_light),
                     ThemeMode.DARK to stringResource(R.string.appearance_theme_dark),
                     ThemeMode.AMOLED to stringResource(R.string.appearance_theme_amoled),
                     ThemeMode.ONE_DARK to stringResource(R.string.appearance_theme_one_dark),
                     ThemeMode.NIGHT_OWL to stringResource(R.string.appearance_theme_night_owl),
                 ),
                 onSelect = { mode -> store.update { it.copy(theme = mode) } },
+                // «Как в системе» сверху без группы, дальше — светлые и тёмные
+                groupTitle = { mode ->
+                    when (mode) {
+                        ThemeMode.LIGHT -> lightGroup
+                        ThemeMode.DARK -> darkGroup
+                        else -> null
+                    }
+                },
             )
 
             SettingsGroupTitle(stringResource(R.string.appearance_accent))

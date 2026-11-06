@@ -823,6 +823,8 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="appearance_theme_amoled">AMOLED</string>
     <string name="appearance_theme_one_dark" translatable="false">One Dark</string>
     <string name="appearance_theme_night_owl" translatable="false">Night Owl</string>
+    <string name="appearance_theme_solarized_light" translatable="false">Solarized Light</string>
+    <string name="appearance_theme_tokyo_night_light" translatable="false">Tokyo Night Light</string>
     <string name="appearance_accent">Акцентный цвет</string>
     <string name="appearance_accent_wallpaper_hint">Из обоев — Android сам подбирает цвета по обоям телефона (Material You) и меняет их вместе с обоями. Палитру можно выбрать в настройках обоев Samsung: «Палитра цветов».</string>
     <string name="appearance_accent_palette_hint">Первый кружок у этой темы — её родной акцент; остальные меняют основной цвет, а фон и карточки остаются от темы.</string>
@@ -1429,4 +1431,6 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="widget_language_system">Как в телефоне</string>
     <string name="widget_language_ru">Русский</string>
     <string name="widget_language_en">English</string>
+    <string name="appearance_theme_group_light">Светлые</string>
+    <string name="appearance_theme_group_dark">Тёмные</string>
 </resources>

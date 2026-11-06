@@ -118,6 +118,8 @@ fun <T> SettingsDropdown(
     onSelect: (T) -> Unit,
     itemStyle: (T) -> TextStyle? = { null },
     itemHint: (T) -> String? = { null },
+    /** Заголовок группы перед пунктом (например, «Светлые»); null — пункт продолжает текущую группу. */
+    groupTitle: (T) -> String? = { null },
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedLabel = options.firstOrNull { it.first == selected }?.second.orEmpty()
@@ -135,6 +137,14 @@ fun <T> SettingsDropdown(
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (value, label) ->
+                groupTitle(value)?.let { title ->
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                    )
+                }
                 DropdownMenuItem(
                     text = {
                         val style = itemStyle(value) ?: LocalTextStyle.current

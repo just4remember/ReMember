@@ -57,6 +57,8 @@ fun ReMemberTheme(content: @Composable () -> Unit) {
         ThemeMode.AMOLED -> base.amoled()
         ThemeMode.ONE_DARK -> oneDarkScheme().withAccent(chosenAccent(settings))
         ThemeMode.NIGHT_OWL -> nightOwlScheme().withAccent(chosenAccent(settings))
+        ThemeMode.SOLARIZED_LIGHT -> solarizedLightScheme().withAccent(chosenAccent(settings), dark = false)
+        ThemeMode.TOKYO_NIGHT_LIGHT -> tokyoNightLightScheme().withAccent(chosenAccent(settings), dark = false)
         else -> base
     }.accentEverywhere()
 
@@ -84,7 +86,7 @@ private object SilentHaptics : HapticFeedback {
 @Composable
 fun isDarkTheme(mode: ThemeMode): Boolean = when (mode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    ThemeMode.LIGHT -> false
+    ThemeMode.LIGHT, ThemeMode.SOLARIZED_LIGHT, ThemeMode.TOKYO_NIGHT_LIGHT -> false
     ThemeMode.DARK, ThemeMode.AMOLED, ThemeMode.ONE_DARK, ThemeMode.NIGHT_OWL -> true
 }
 
@@ -144,9 +146,9 @@ private fun chosenAccent(settings: AppSettings): Color? = when {
  * Тема-палитра с выбранным акцентом: меняется только основной цвет (кнопки, выделение),
  * фон, карточки и вторичные цвета остаются от темы. Без акцента — родной цвет темы.
  */
-private fun ColorScheme.withAccent(accent: Color?): ColorScheme {
+private fun ColorScheme.withAccent(accent: Color?, dark: Boolean = true): ColorScheme {
     if (accent == null) return this
-    val tones = accentScheme(accent, dark = true)
+    val tones = accentScheme(accent, dark)
     return copy(
         primary = tones.primary,
         onPrimary = tones.onPrimary,

@@ -1372,4 +1372,6 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="widget_language_system">Same as the phone</string>
     <string name="widget_language_ru">Русский</string>
     <string name="widget_language_en">English</string>
+    <string name="appearance_theme_group_light">Light</string>
+    <string name="appearance_theme_group_dark">Dark</string>
 </resources>
