@@ -1265,4 +1265,35 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="stats_health_steps_of_goal">%1$s steps, %2$d%% of goal</string>
     <string name="stats_health_below_goal">Below goal</string>
     <string name="stats_health_above_goal">Above</string>
+    <string name="stats_finance_hint">Income, spending and categories</string>
+    <string name="stats_finance_expense">Spending</string>
+    <string name="stats_finance_income">Income</string>
+    <string name="stats_finance_balance">Balance</string>
+    <string name="stats_finance_daily">Spent per day</string>
+    <string name="stats_finance_vs_previous">Spending vs previous</string>
+    <string name="stats_finance_previous_was">was %1$s</string>
+    <string name="stats_finance_biggest">Biggest expense</string>
+    <string name="stats_finance_flow">Income and spending</string>
+    <string name="stats_finance_flow_days">By day; line - balance</string>
+    <string name="stats_finance_flow_weeks">By week; line - balance</string>
+    <string name="stats_finance_flow_months">By month; line - balance</string>
+    <string name="stats_finance_flow_selected">%1$s: income %2$s, spent %3$s</string>
+    <string name="stats_finance_categories">By category</string>
+    <string name="stats_finance_pace">Spending pace</string>
+    <string name="stats_finance_pace_less">By day %1$d spent %2$s - %3$d%% less than last month</string>
+    <string name="stats_finance_pace_more">By day %1$d spent %2$s - %3$d%% more than last month</string>
+    <string name="stats_finance_pace_alone">By day %1$d spent %2$s</string>
+    <string name="stats_finance_this_month">This month</string>
+    <string name="stats_finance_last_month">Last</string>
+    <string name="stats_finance_weekdays">Spending by day of week</string>
+    <string name="stats_finance_year">Spending this year</string>
+    <string name="stats_finance_year_summary">Total %1$s, days with spending: %2$d</string>
+    <string name="stats_finance_year_empty">No spending this year</string>
+    <string name="stats_finance_no_spend">no spending</string>
+    <string name="stats_finance_less">Less</string>
+    <string name="stats_finance_more">More</string>
+    <plurals name="stats_finance_operations">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
 </resources>

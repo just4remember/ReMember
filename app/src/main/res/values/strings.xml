@@ -1320,4 +1320,37 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="stats_health_steps_of_goal">%1$s шагов, %2$d%% цели</string>
     <string name="stats_health_below_goal">Меньше цели</string>
     <string name="stats_health_above_goal">Больше</string>
+    <string name="stats_finance_hint">Доходы, расходы и категории</string>
+    <string name="stats_finance_expense">Расходы</string>
+    <string name="stats_finance_income">Доходы</string>
+    <string name="stats_finance_balance">Баланс</string>
+    <string name="stats_finance_daily">Расход в день</string>
+    <string name="stats_finance_vs_previous">Расходы к прошлому</string>
+    <string name="stats_finance_previous_was">тогда было %1$s</string>
+    <string name="stats_finance_biggest">Самая крупная трата</string>
+    <string name="stats_finance_flow">Доходы и расходы</string>
+    <string name="stats_finance_flow_days">По дням; линия - баланс</string>
+    <string name="stats_finance_flow_weeks">По неделям; линия - баланс</string>
+    <string name="stats_finance_flow_months">По месяцам; линия - баланс</string>
+    <string name="stats_finance_flow_selected">%1$s: доход %2$s, расход %3$s</string>
+    <string name="stats_finance_categories">По категориям</string>
+    <string name="stats_finance_pace">Темп трат</string>
+    <string name="stats_finance_pace_less">К %1$d-му числу потрачено %2$s - на %3$d%% меньше, чем в прошлом месяце</string>
+    <string name="stats_finance_pace_more">К %1$d-му числу потрачено %2$s - на %3$d%% больше, чем в прошлом месяце</string>
+    <string name="stats_finance_pace_alone">К %1$d-му числу потрачено %2$s</string>
+    <string name="stats_finance_this_month">Этот месяц</string>
+    <string name="stats_finance_last_month">Прошлый</string>
+    <string name="stats_finance_weekdays">Расход по дням недели</string>
+    <string name="stats_finance_year">Расходы за год</string>
+    <string name="stats_finance_year_summary">Всего %1$s, дней с тратами: %2$d</string>
+    <string name="stats_finance_year_empty">В этом году трат нет</string>
+    <string name="stats_finance_no_spend">трат нет</string>
+    <string name="stats_finance_less">Меньше</string>
+    <string name="stats_finance_more">Больше</string>
+    <plurals name="stats_finance_operations">
+        <item quantity="one">%1$d операция</item>
+        <item quantity="few">%1$d операции</item>
+        <item quantity="many">%1$d операций</item>
+        <item quantity="other">%1$d операции</item>
+    </plurals>
 </resources>
