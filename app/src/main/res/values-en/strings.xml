@@ -638,19 +638,20 @@
     <string name="about_calendar">Events with colors and repeats, birthdays with age</string>
     <string name="about_gym">Workouts with a timer in the notification shade, exercises and sets, import of old logs</string>
     <string name="about_health">Steps, active time and calories from Health Connect, daily goals</string>
-    <string name="about_feed_title">Feed and search</string>
-    <string name="about_feed">All entries in a row and “On this day”, search across entries, notes and spending, a gallery of all photos</string>
-    <string name="about_stats">Heatmaps by category</string>
-    <string name="about_finance">Income and spending by month and year</string>
+    <string name="about_stats">Charts and heatmaps for sleep, day ratings, spending, workouts and activity over a chosen period</string>
     <string name="about_time">Alarms with a hard mode that turns off only after a game. Timer and stopwatch</string>
-    <string name="about_games">Five Letters: guess the English word in 6 tries, offline</string>
+    <string name="about_games">Five Letters: the English word in 6 tries, offline. Ra[skobki]: a daily puzzle with progress shared with raskobki.app</string>
     <string name="about_network">Internet speed test and whitelist site check</string>
     <string name="about_look_title">Make it yours</string>
     <string name="about_look">Themes and accent color, fonts, left-handed mode, custom tabs and section order, turning off unused sections</string>
+    <string name="about_search">Search across days, sleep, notes, tasks, events, spending, workouts and places, filtered by period and tags</string>
+    <string name="about_map">Places you have been to, with categories. A city can be downloaded so the map works offline</string>
+    <string name="about_widgets">Analog clock, digital clock and health rings on the home screen</string>
+    <string name="about_data">A gallery of all photos and storage usage. Backups with entries, photos, alarms and settings, including automatic upload to your own server</string>
     <string name="about_author">created by 4aik</string>
     <string name="about_reminders">Daily entry, sleep, events, tasks, morning summary, quiet hours</string>
     <string name="about_privacy_title">Privacy</string>
-    <string name="about_privacy">All data is stored only on the phone, the database is encrypted. PIN and fingerprint sign-in, backups protected with your password</string>
+    <string name="about_privacy">All data is stored only on the phone, the database is encrypted. PIN and fingerprint sign-in, protected notes, backups under your password</string>
 
     <!-- Data and backups -->
     <string name="data_storage">Storage</string>
@@ -679,8 +680,8 @@
     <string name="gallery_delete_text">The photo will be removed from the app. This cannot be undone</string>
     <string name="gallery_delete_text_used">The photo will also be removed from the entries that contain it. This cannot be undone</string>
     <string name="data_backup">Backup</string>
-    <string name="data_backup_text">All entries, notes, tasks, events, workouts and photos are saved to one file encrypted with your password. Data can be restored from this file on this or another phone</string>
-    <string name="data_backup_hint">Keep the backup off this phone: on a computer, NAS or in the cloud. App settings are not included in the backup</string>
+    <string name="data_backup_text">Entries, sleep, notes, tasks, events, spending, workouts, places and photos, as well as alarms, settings and game progress are saved to one file encrypted with your password. Data can be restored from this file on this or another phone</string>
+    <string name="data_backup_hint">Keep the backup off this phone: on a computer, NAS or in the cloud. The PIN, the Ra[skobki] sign-in and server backup settings are not included and need to be set again</string>
     <string name="server_backup">Backups to a server</string>
     <string name="server_backup_text">The same encrypted file as in an export is sent to your server with a POST request. It can be restored with a regular import</string>
     <string name="server_backup_url">Server address</string>
@@ -700,7 +701,7 @@
     <string name="server_help_answer_title">Answer</string>
     <string name="server_help_answer">Any 2xx code (200, 201, 204) means the backup is saved, and the app records the time in “Last backup on the server”. The response body is not read. Any other code or a lost connection is treated as an error: its text appears under the button, and a scheduled attempt is repeated later</string>
     <string name="server_help_file_title">What is in the file</string>
-    <string name="server_help_file">This is the same file as in a manual export: the database, its key and photos, encrypted with the backup password. The server cannot and should not read it, only store it. The backup is restored with a regular import in the app using the same password. Each upload creates a new full file, the server removes old backups itself if needed</string>
+    <string name="server_help_file">This is the same file as in a manual export: the database, its key, photos and settings, encrypted with the backup password. The server cannot and should not read it, only store it. The backup is restored with a regular import in the app using the same password. Each upload creates a new full file, the server removes old backups itself if needed</string>
     <string name="server_help_schedule_title">When it is sent</string>
     <string name="server_help_schedule">Manually, the backup is sent with “Send a backup now”. On schedule, it is sent once every specified number of days when the phone has a network connection. Android picks the exact time to save battery, so a backup may arrive a few hours later. If sending fails, the system retries later</string>
     <string name="server_help_safety_title">Security</string>

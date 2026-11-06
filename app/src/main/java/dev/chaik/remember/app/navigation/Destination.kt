@@ -89,8 +89,14 @@ enum class Destination(
     More(R.string.tab_more, R.string.tab_more, Icons.Outlined.Menu, Icons.Filled.Menu, MoreRoute),
     ;
 
+    /**
+     * Разделов пока нет в приложении: их нет ни во вкладках, ни в «Ещё», ни в «Страницах».
+     * Код остаётся — вернуть раздел значит убрать его отсюда.
+     */
+    val hidden: Boolean get() = this == Feed || this == Finance
+
     /** Можно ли поставить раздел вкладкой. */
-    val movable: Boolean get() = this != Settings && this != More
+    val movable: Boolean get() = !hidden && this != Settings && this != More
 
     companion object {
         /** Вкладок островка кроме «Ещё»: от 2 до 4 (всего с «Ещё» — от 3 до 5). */

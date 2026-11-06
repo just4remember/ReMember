@@ -11,7 +11,7 @@ class DestinationTest {
         val s = AppSettings()
         assertEquals(Destination.DefaultTabs + Destination.More, s.islandTabs())
         assertEquals(
-            listOf(Destination.Feed, Destination.Search, Destination.Stats, Destination.Finance, Destination.Health, Destination.Gym, Destination.Network, Destination.Time, Destination.Games, Destination.Places, Destination.Settings),
+            listOf(Destination.Search, Destination.Stats, Destination.Health, Destination.Gym, Destination.Network, Destination.Time, Destination.Games, Destination.Places, Destination.Settings),
             s.moreTiles(),
         )
     }
@@ -48,7 +48,15 @@ class DestinationTest {
 
     @Test
     fun `свой порядок плиток, новые разделы — в конец`() {
-        val s = AppSettings(moreOrder = listOf("Gym", "Feed"))
-        assertEquals(listOf(Destination.Gym, Destination.Feed, Destination.Search), s.moreTiles().take(3))
+        val s = AppSettings(moreOrder = listOf("Gym", "Network"))
+        assertEquals(listOf(Destination.Gym, Destination.Network, Destination.Search), s.moreTiles().take(3))
+    }
+
+    @Test
+    fun `скрытые разделы не попадают ни в «Ещё», ни во вкладки`() {
+        val s = AppSettings(islandTabs = listOf("Feed", "Finance", "Notes"), moreOrder = listOf("Finance", "Feed", "Gym"))
+        assertEquals(Destination.DefaultTabs + Destination.More, s.islandTabs())
+        assertEquals(Destination.Gym, s.moreTiles().first())
+        assert(s.moreTiles().none { it.hidden })
     }
 }

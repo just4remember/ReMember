@@ -60,7 +60,7 @@ class BackupRoundTripTest {
         File(srcFiles, "photos/thumbs/abc.webp").writeBytes(byteArrayOf(9))
 
         val file = File(root, "copy.rmbak")
-        val src = BackupManager(context, { srcDb }, srcKeys, SRC_DB, srcFiles, File(root, "src-staging"))
+        val src = BackupManager(context, { srcDb }, srcKeys, SRC_DB, srcFiles, File(root, "src-staging"), withSettings = false)
         assertTrue(src.export(Uri.fromFile(file), "пароль-копии".toCharArray()) > 0)
         srcDb.close()
 
@@ -69,7 +69,7 @@ class BackupRoundTripTest {
         val dstDb = DatabaseFactory.create(context, dstKeys, DST_DB)
         dstDb.openHelper.writableDatabase
         val dstFiles = File(root, "dst").apply { mkdirs() }
-        val dst = BackupManager(context, { dstDb }, dstKeys, DST_DB, dstFiles, File(root, "dst-staging"))
+        val dst = BackupManager(context, { dstDb }, dstKeys, DST_DB, dstFiles, File(root, "dst-staging"), withSettings = false)
 
         assertThrows(WrongPasswordException::class.java) {
             kotlinx.coroutines.runBlocking { dst.prepareRestore(Uri.fromFile(file), "не тот".toCharArray()) }

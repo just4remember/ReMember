@@ -10,14 +10,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.SportsEsports
-import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Lock
@@ -57,16 +59,18 @@ private val Features = listOf(
     Feature(Icons.Outlined.Description, R.string.tab_notes, R.string.about_notes),
     Feature(Icons.Outlined.TaskAlt, R.string.tab_tasks, R.string.about_tasks),
     Feature(Icons.Outlined.CalendarMonth, R.string.tab_calendar, R.string.about_calendar),
-    Feature(Icons.Outlined.ViewAgenda, R.string.about_feed_title, R.string.about_feed),
+    Feature(Icons.Outlined.Search, R.string.section_search, R.string.about_search),
     Feature(Icons.Outlined.Insights, R.string.section_stats, R.string.about_stats),
-    Feature(Icons.Outlined.AccountBalanceWallet, R.string.section_finance, R.string.about_finance),
     Feature(Icons.Outlined.FitnessCenter, R.string.section_gym, R.string.about_gym),
     Feature(Icons.Outlined.MonitorHeart, R.string.section_health, R.string.about_health),
+    Feature(Icons.Outlined.Map, R.string.section_map, R.string.about_map),
     Feature(Icons.Outlined.Alarm, R.string.section_time, R.string.about_time),
     Feature(Icons.Outlined.SportsEsports, R.string.section_games, R.string.about_games),
     Feature(Icons.Outlined.Speed, R.string.section_network, R.string.about_network),
     Feature(Icons.Outlined.Notifications, R.string.settings_reminders, R.string.about_reminders),
+    Feature(Icons.Outlined.Widgets, R.string.settings_widgets, R.string.about_widgets),
     Feature(Icons.Outlined.Palette, R.string.about_look_title, R.string.about_look),
+    Feature(Icons.Outlined.Backup, R.string.settings_data, R.string.about_data),
     Feature(Icons.Outlined.Lock, R.string.about_privacy_title, R.string.about_privacy),
 )
 

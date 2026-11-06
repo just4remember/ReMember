@@ -54,7 +54,8 @@ private data class BackupManifest(
 )
 
 /**
- * Резервная копия: база, ключ базы и фото — одним файлом, зашифрованным паролем копии.
+ * Резервная копия: база, ключ базы, фото и настройки ([BackupSettings]) — одним файлом,
+ * зашифрованным паролем копии.
  *
  * Сама база зашифрована ключом из чипа этого телефона, поэтому в копию кладётся и её ключ
  * (под паролем). При восстановлении ключ перешифровывается ключом чипа нового телефона.
@@ -72,6 +73,8 @@ class BackupManager(
     private val databaseName: String = DatabaseFactory.DATABASE_NAME,
     private val filesRoot: File = context.filesDir,
     private val stagingRoot: File = context.noBackupFilesDir,
+    /** Настройки — общие для процесса; тесты на телефоне не должны трогать настоящие. */
+    private val withSettings: Boolean = true,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val photosDir get() = File(filesRoot, PHOTOS_DIR)
@@ -116,6 +119,8 @@ class BackupManager(
                 zip.setLevel(Deflater.NO_COMPRESSION)
                 zip.putBytes(MANIFEST, json.encodeToString(BackupManifest.serializer(), manifest).toByteArray())
                 zip.putBytes(KEY, keyManager.passphrase())
+                // Настройки, будильники, игры, язык — всё, что не в базе
+                if (withSettings) zip.putBytes(SETTINGS, BackupSettings.export(context).toByteArray())
                 // Пока копируем файл базы, никто не пишет — снимок цельный
                 db.beginTransaction()
                 try {
@@ -197,6 +202,12 @@ class BackupManager(
             check(stagedPhotos.renameTo(photosDir)) { "Не удалось заменить фото" }
         }
         old.deleteRecursively()
+
+        // Настройки — до того, как их прочитает приложение. В старых копиях их нет: свои остаются
+        File(dir, SETTINGS).takeIf { withSettings && it.exists() }?.let { file ->
+            runCatching { BackupSettings.restore(context, file.readText()) }
+                .onFailure { Log.w(TAG, "Не удалось вернуть настройки из копии", it) }
+        }
         dir.deleteRecursively()
     }
 
@@ -210,7 +221,7 @@ class BackupManager(
                 val target = File(root, entry.name).canonicalFile
                 // Имя вроде «../../что-то» вывело бы файл за пределы папки — такой архив не наш
                 if (!target.path.startsWith(root.path + File.separator)) throw NotBackupException()
-                val allowed = entry.name == MANIFEST || entry.name == KEY ||
+                val allowed = entry.name == MANIFEST || entry.name == KEY || entry.name == SETTINGS ||
                     entry.name.startsWith("$DB_DIR/") || entry.name.startsWith("$PHOTOS_DIR/")
                 if (!allowed) continue
                 target.parentFile?.mkdirs()
@@ -239,6 +250,7 @@ class BackupManager(
         private const val MANIFEST = "manifest.json"
         private const val KEY = "key.bin"
         private const val KEY_SIZE = 32L
+        private const val SETTINGS = "settings.json"
         private const val DB_DIR = "db"
 
         /** В архиве база всегда под одним именем — независимо от имени файла на телефоне. */
