@@ -1422,4 +1422,11 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="feedback_not_ready_title">Пока не работает</string>
     <string name="feedback_not_ready_text">Отправка отзывов скоро заработает. Текст останется здесь, пока вы не закроете страницу.</string>
     <string name="feedback_limit">На сегодня хватит: можно отправить не больше %1$d сообщений в день. Возвращайтесь завтра.</string>
+    <string name="widgets_common">Общее</string>
+    <string name="widgets_language">Язык</string>
+    <string name="widgets_language_hint">На нём пишутся дата под часами и подписи на кольцах здоровья</string>
+    <string name="widget_language_app">Как в приложении</string>
+    <string name="widget_language_system">Как в телефоне</string>
+    <string name="widget_language_ru">Русский</string>
+    <string name="widget_language_en">English</string>
 </resources>

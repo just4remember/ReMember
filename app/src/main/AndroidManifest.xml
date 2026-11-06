@@ -105,7 +105,11 @@
             android:theme="@style/Theme.ReMember"
             android:turnScreenOn="true" />
 
-        <!-- Виджеты на рабочий стол -->
+        <!-- Виджеты на рабочий стол; в полночь их перерисовывает WidgetRefreshReceiver (новая дата) -->
+        <receiver
+            android:name=".core.widgets.WidgetRefreshReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".core.widgets.DigitalClockWidget"
             android:exported="false"

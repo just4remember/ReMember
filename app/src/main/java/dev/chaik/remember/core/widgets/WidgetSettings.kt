@@ -14,6 +14,8 @@ const val WIDGET_CARD_COLOR = 0xFF1C1F26
 /** Настройки виджетов на рабочем столе («Настройки → Виджеты»); общие для всех копий виджета. */
 @Serializable
 data class WidgetSettings(
+    /** Язык подписей виджетов: дата, «из 6 000» и т. п. */
+    val language: WidgetLanguage = WidgetLanguage.APP,
     // Часы со стрелками
     val analogTheme: DialTheme = DialTheme.DARK,
     val analogSeconds: Boolean = true,
@@ -45,6 +47,17 @@ enum class ClockWeight(val label: Int, val weight: Int, val layout: Int, val pla
     REGULAR(R.string.widget_weight_regular, 400, R.layout.widget_digits_regular, R.layout.widget_digits_regular_plain),
     MEDIUM(R.string.widget_weight_medium, 500, R.layout.widget_digits_medium, R.layout.widget_digits_medium_plain),
     BOLD(R.string.widget_weight_bold, 700, R.layout.widget_digits_bold, R.layout.widget_digits_bold_plain),
+}
+
+/** Язык виджетов. [tag] — язык; пусто — берётся из приложения или системы. */
+enum class WidgetLanguage(val label: Int, val tag: String) {
+    /** Как выбран язык в самом приложении. */
+    APP(R.string.widget_language_app, ""),
+
+    /** Как язык телефона. */
+    SYSTEM(R.string.widget_language_system, ""),
+    RU(R.string.widget_language_ru, "ru"),
+    EN(R.string.widget_language_en, "en"),
 }
 
 /** Тема циферблата часов со стрелками. */

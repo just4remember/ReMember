@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.widgets
 
+import dev.chaik.remember.core.widgets.WidgetLanguage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -89,6 +90,23 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
+
+            SettingsGroupTitle(stringResource(R.string.widgets_common))
+            SettingsCard {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.widgets_language), style = MaterialTheme.typography.bodyLarge)
+                    SettingsDropdown(
+                        selected = settings.language,
+                        options = WidgetLanguage.entries.map { it to stringResource(it.label) },
+                        onSelect = { language -> store.update { it.copy(language = language) } },
+                    )
+                    Text(
+                        stringResource(R.string.widgets_language_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             SettingsGroupTitle(stringResource(R.string.widgets_analog))
             SettingsCard {

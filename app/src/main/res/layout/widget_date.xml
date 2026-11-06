@@ -6,13 +6,12 @@
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <TextClock
+    <!-- Дату пишет приложение на выбранном языке виджетов и обновляет в полночь -->
+    <TextView
         android:id="@+id/clock_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
-        android:format12Hour="EEEE, d MMMM"
-        android:format24Hour="EEEE, d MMMM"
         android:maxLines="1"
         android:textColor="#E6FFFFFF"
         android:textSize="14sp"

@@ -99,7 +99,9 @@ class HealthWidget : AppWidgetProvider() {
             val activity = cached(context)
             val goals = context.appContainer.healthGoals.goals.value
             val progress = progress(activity, goals)
-            val number = NumberFormat.getIntegerInstance()
+            // Подписи и числа — на языке виджетов
+            val text = Widgets.localized(context)
+            val number = NumberFormat.getIntegerInstance(Widgets.locale(context))
             val values = listOf(
                 number.format(activity.steps),
                 activity.activeMinutes.toString(),
@@ -108,9 +110,9 @@ class HealthWidget : AppWidgetProvider() {
             // Цели — из раздела «Здоровье»; внутри колец их нет: места мало
             val showGoals = settings.healthGoals && !settings.healthTextInside
             val outsideGoals = listOf(
-                context.getString(R.string.health_of_steps, number.format(goals.steps)),
-                context.getString(R.string.health_of_minutes, goals.activeMinutes.toString()),
-                context.getString(R.string.health_of_calories, number.format(goals.calories)),
+                text.getString(R.string.health_of_steps, number.format(goals.steps)),
+                text.getString(R.string.health_of_minutes, goals.activeMinutes.toString()),
+                text.getString(R.string.health_of_calories, number.format(goals.calories)),
             )
             val density = context.resources.displayMetrics.density
             val click = Widgets.open(context, OpenTarget.Health, REQUEST_HEALTH)

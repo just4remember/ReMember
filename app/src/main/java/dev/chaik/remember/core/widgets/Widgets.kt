@@ -1,5 +1,13 @@
 package dev.chaik.remember.core.widgets
 
+import java.util.Locale
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
+import dev.chaik.remember.core.settings.AppLanguage
+import android.content.res.Resources
+import android.content.res.Configuration
+import android.content.BroadcastReceiver
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -32,6 +40,23 @@ import java.time.LocalDate
  * настройки, данные или размер виджета. Каждый виджет рисуется под свой точный размер.
  */
 object Widgets {
+    /** Язык подписей виджетов по настройке; пусто у «как в приложении» — значит язык телефона. */
+    fun locale(context: Context): Locale {
+        val setting = context.appContainer.widgetSettings.settings.value.language
+        val tag = when (setting) {
+            WidgetLanguage.APP -> AppLanguage.current(context)
+            WidgetLanguage.SYSTEM -> ""
+            else -> setting.tag
+        }
+        return if (tag.isEmpty()) Resources.getSystem().configuration.locales[0] else Locale.forLanguageTag(tag)
+    }
+
+    /** Контекст на языке виджетов: строки ресурсов («из 6 000», «мин») берутся из него. */
+    fun localized(context: Context): Context {
+        val config = Configuration(context.resources.configuration).apply { setLocale(locale(context)) }
+        return context.createConfigurationContext(config)
+    }
+
     /** Перерисовать все виджеты: сменились настройки, акцент или шрифт приложения. */
     fun updateAll(context: Context) {
         DigitalClockWidget.render(context)
@@ -93,7 +118,13 @@ object Widgets {
      */
     internal fun dateRow(context: Context, date: Boolean, streakOn: Boolean, sp: Float, plain: Boolean): RemoteViews {
         val layout = if (plain) R.layout.widget_date_plain else R.layout.widget_date
+        val locale = locale(context)
+        // Дата на выбранном языке: «четверг, 5 ноября» / «Thursday, 5 November». В полночь
+        // виджеты перерисуются сами — см. WidgetMidnight
+        val dateText = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale))
+        if (date) WidgetMidnight.schedule(context)
         return RemoteViews(context.packageName, layout).apply {
+            setTextViewText(R.id.clock_date, dateText)
             setTextViewTextSize(R.id.clock_date, COMPLEX_UNIT_DIP, sp)
             setViewVisibility(R.id.clock_date, if (date) View.VISIBLE else View.GONE)
             val streakVisibility = if (streakOn) View.VISIBLE else View.GONE
@@ -281,4 +312,32 @@ class AnalogClockWidget : AppWidgetProvider() {
         private const val LIGHT_FACE = 0xF2F4F4F7.toInt()
         private const val LIGHT_INK = 0xFF1C1F26.toInt()
     }
+}
+
+/**
+ * Перерисовка виджетов в полночь: дата под часами — обычный текст на выбранном языке,
+ * сама она не сменится.
+ */
+object WidgetMidnight {
+    fun schedule(context: Context) {
+        val alarms = context.getSystemService(AlarmManager::class.java)
+        val next = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() + 5_000
+        // Точный, но без пробуждения: спящий телефон обновит дату, когда включится экран
+        if (alarms.canScheduleExactAlarms()) alarms.setExact(AlarmManager.RTC, next, intent(context))
+        else alarms.setAndAllowWhileIdle(AlarmManager.RTC, next, intent(context))
+    }
+
+    private fun intent(context: Context): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        REQUEST,
+        Intent(context, WidgetRefreshReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    private const val REQUEST = 7205
+}
+
+/** Полночь — перерисовать виджеты (новая дата, новые кольца, серия). */
+class WidgetRefreshReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) = Widgets.updateAll(context)
 }

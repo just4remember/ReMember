@@ -1365,4 +1365,11 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="feedback_not_ready_title">Not working yet</string>
     <string name="feedback_not_ready_text">Sending feedback will work soon. Your text stays here until you close the page.</string>
     <string name="feedback_limit">That is enough for today: up to %1$d messages a day. Come back tomorrow.</string>
+    <string name="widgets_common">General</string>
+    <string name="widgets_language">Language</string>
+    <string name="widgets_language_hint">Used for the date under the clocks and the labels on the health rings</string>
+    <string name="widget_language_app">Same as the app</string>
+    <string name="widget_language_system">Same as the phone</string>
+    <string name="widget_language_ru">Русский</string>
+    <string name="widget_language_en">English</string>
 </resources>
