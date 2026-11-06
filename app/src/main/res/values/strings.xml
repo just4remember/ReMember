@@ -1353,4 +1353,29 @@ Authorization: Bearer и токен — только если в приложе�
         <item quantity="many">%1$d операций</item>
         <item quantity="other">%1$d операции</item>
     </plurals>
+    <string name="stats_gym_hint">Тренировки, упражнения и рекорды</string>
+    <string name="stats_gym_workouts">Тренировок</string>
+    <string name="stats_gym_per_week">В неделю</string>
+    <string name="stats_gym_duration">Длительность</string>
+    <string name="stats_gym_total_time">Время в зале</string>
+    <string name="stats_gym_body_weight">Вес тела</string>
+    <string name="stats_gym_weight_change">за период %1$s %2$s</string>
+    <string name="stats_gym_frequency">Тренировки по времени</string>
+    <string name="stats_gym_frequency_weeks">Сколько тренировок в неделю</string>
+    <string name="stats_gym_frequency_months">Сколько тренировок в месяц</string>
+    <string name="stats_gym_frequency_selected">%1$s: тренировок %2$d</string>
+    <string name="stats_gym_exercises">Упражнения</string>
+    <string name="stats_gym_exercises_hint">Чаще всего; нажмите на упражнение - его прогресс</string>
+    <string name="stats_gym_exercise_counts">%1$d трен. · %2$d подх.</string>
+    <string name="stats_gym_records">Рекорды периода</string>
+    <string name="stats_gym_records_empty">В этом периоде прошлые результаты не побиты</string>
+    <string name="stats_gym_when">Когда ты тренируешься</string>
+    <string name="stats_gym_weekdays_hint">По дням недели</string>
+    <string name="stats_gym_hours_peak">Чаще всего начинаешь с %1$d до %2$d ч</string>
+    <string name="stats_gym_year">Тренировки за год</string>
+    <string name="stats_gym_year_summary">Тренировок за год: %1$d</string>
+    <string name="stats_gym_year_empty">В этом году тренировок нет</string>
+    <string name="stats_gym_no_workout">тренировки нет</string>
+    <string name="stats_gym_shorter">Короче</string>
+    <string name="stats_gym_longer">Дольше</string>
 </resources>

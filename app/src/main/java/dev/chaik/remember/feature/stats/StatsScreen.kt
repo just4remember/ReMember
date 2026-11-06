@@ -25,6 +25,7 @@ import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.feature.more.SectionTile
 import dev.chaik.remember.feature.stats.days.DaysStatsRoute
 import dev.chaik.remember.feature.stats.finance.FinanceStatsRoute
+import dev.chaik.remember.feature.stats.gym.GymStatsRoute
 import dev.chaik.remember.feature.stats.health.HealthStatsRoute
 import dev.chaik.remember.feature.stats.sleep.SleepStatsRoute
 import kotlinx.serialization.Serializable
@@ -39,9 +40,8 @@ private val Sections = listOf(
     StatsSection(Icons.Outlined.Bedtime, R.string.stats_sleep, R.string.stats_sleep_hint, SleepStatsRoute),
     StatsSection(Destination.Today.icon, R.string.stats_days, R.string.stats_days_hint, DaysStatsRoute),
     StatsSection(Destination.Finance.icon, R.string.stats_finance, R.string.stats_finance_hint, FinanceStatsRoute),
-    StatsSection(Destination.Gym.icon, R.string.stats_gym, R.string.stats_soon, null),
+    StatsSection(Destination.Gym.icon, R.string.stats_gym, R.string.stats_gym_hint, GymStatsRoute),
     StatsSection(Destination.Health.icon, R.string.stats_health, R.string.stats_health_hint, HealthStatsRoute),
-    StatsSection(Destination.Tasks.icon, R.string.stats_tasks, R.string.stats_soon, null),
 )
 
 /** Статистика: плитки разделов, тап — страница с графиками этого раздела. */

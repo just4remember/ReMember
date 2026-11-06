@@ -72,6 +72,8 @@ import dev.chaik.remember.feature.stats.days.DaysStatsRoute
 import dev.chaik.remember.feature.stats.days.DaysStatsScreen
 import dev.chaik.remember.feature.stats.finance.FinanceStatsRoute
 import dev.chaik.remember.feature.stats.finance.FinanceStatsScreen
+import dev.chaik.remember.feature.stats.gym.GymStatsRoute
+import dev.chaik.remember.feature.stats.gym.GymStatsScreen
 import dev.chaik.remember.feature.stats.health.HealthStatsRoute
 import dev.chaik.remember.feature.stats.health.HealthStatsScreen
 import dev.chaik.remember.feature.stats.sleep.SleepStatsRoute
@@ -130,6 +132,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<DaysStatsRoute> { DaysStatsScreen(onBack = back) }
         entry<HealthStatsRoute> { HealthStatsScreen(onBack = back) }
         entry<FinanceStatsRoute> { FinanceStatsScreen(onBack = back) }
+        entry<GymStatsRoute> { GymStatsScreen(onBack = back) }
         entry<FinanceRoute> { FinanceScreen(onBack = backFor(it)) }
         entry<HealthRoute> { HealthScreen(onBack = backFor(it)) }
         entry<GymRoute> {

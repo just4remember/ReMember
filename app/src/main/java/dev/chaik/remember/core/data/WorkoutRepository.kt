@@ -55,6 +55,17 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
             }
         }
 
+    /** Все тренировки целиком — с упражнениями и подходами, по хронологии и с номерами. Для статистики. */
+    fun observeAllFull(): Flow<List<Workout>> =
+        combine(dao.observeAll(), dao.observeAllExerciseRows(), dao.observeAllSets()) { workouts, rows, sets ->
+            val rowsByWorkout = rows.groupBy { it.workoutId }
+            val setsByEntry = sets.groupBy { it.workoutExerciseId }
+            workouts.mapIndexed { i, w ->
+                val own = rowsByWorkout[w.id].orEmpty()
+                w.toModel(i + 1, own, own.flatMap { setsByEntry[it.id].orEmpty() })
+            }
+        }
+
     /** Тренировка целиком; null — удалена. */
     fun observe(id: Long): Flow<Workout?> =
         combine(dao.observe(id), dao.observeNumber(id), dao.observeExerciseRows(id), dao.observeSets(id)) { w, number, rows, sets ->

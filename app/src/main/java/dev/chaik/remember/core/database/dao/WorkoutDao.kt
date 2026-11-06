@@ -95,6 +95,10 @@ interface WorkoutDao {
     )
     fun observeSets(workoutId: Long): Flow<List<WorkoutSetEntity>>
 
+    /** Все подходы всех тренировок — для статистики зала. */
+    @Query("SELECT * FROM workout_set ORDER BY workout_exercise_id, sort_order")
+    fun observeAllSets(): Flow<List<WorkoutSetEntity>>
+
     /** Все подходы упражнения по хронологии — для подсказок и графика. */
     @Query(
         """

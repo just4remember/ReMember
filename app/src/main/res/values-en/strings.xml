@@ -1296,4 +1296,29 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
         <item quantity="one">%1$d transaction</item>
         <item quantity="other">%1$d transactions</item>
     </plurals>
+    <string name="stats_gym_hint">Workouts, exercises and records</string>
+    <string name="stats_gym_workouts">Workouts</string>
+    <string name="stats_gym_per_week">Per week</string>
+    <string name="stats_gym_duration">Duration</string>
+    <string name="stats_gym_total_time">Time in gym</string>
+    <string name="stats_gym_body_weight">Body weight</string>
+    <string name="stats_gym_weight_change">over period %1$s %2$s</string>
+    <string name="stats_gym_frequency">Workouts over time</string>
+    <string name="stats_gym_frequency_weeks">Workouts per week</string>
+    <string name="stats_gym_frequency_months">Workouts per month</string>
+    <string name="stats_gym_frequency_selected">%1$s: %2$d workouts</string>
+    <string name="stats_gym_exercises">Exercises</string>
+    <string name="stats_gym_exercises_hint">Most frequent; tap an exercise to see its progress</string>
+    <string name="stats_gym_exercise_counts">%1$d workouts · %2$d sets</string>
+    <string name="stats_gym_records">Records of the period</string>
+    <string name="stats_gym_records_empty">No previous bests beaten in this period</string>
+    <string name="stats_gym_when">When you train</string>
+    <string name="stats_gym_weekdays_hint">By day of week</string>
+    <string name="stats_gym_hours_peak">Most often you start from %1$d to %2$d h</string>
+    <string name="stats_gym_year">Workouts this year</string>
+    <string name="stats_gym_year_summary">Workouts this year: %1$d</string>
+    <string name="stats_gym_year_empty">No workouts this year</string>
+    <string name="stats_gym_no_workout">no workout</string>
+    <string name="stats_gym_shorter">Shorter</string>
+    <string name="stats_gym_longer">Longer</string>
 </resources>
