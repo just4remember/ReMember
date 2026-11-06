@@ -191,14 +191,15 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
         },
         actions = {
             val streak by viewModel.streak.collectAsStateWithLifecycle()
-            StreakFlame(streak, Modifier.padding(end = 12.dp))
+            // Значки плотнее и прижаты вправо: длинной дате («Воскресенье, 1 ноября») нужно место
+            StreakFlame(streak, Modifier.padding(end = if (mode == TodayMode.Money || !viewModel.isToday) 0.dp else 8.dp))
             if (mode == TodayMode.Money) {
-                IconButton(onClick = onOpenMoneyCategories) {
+                IconButton(onClick = onOpenMoneyCategories, modifier = Modifier.size(HeaderIcon)) {
                     Icon(Icons.Outlined.Settings, stringResource(R.string.money_categories))
                 }
             }
             if (!viewModel.isToday) {
-                IconButton(onClick = { viewModel.selectDate(viewModel.currentDay) }) {
+                IconButton(onClick = { viewModel.selectDate(viewModel.currentDay) }, modifier = Modifier.size(HeaderIcon)) {
                     Icon(Icons.Outlined.Today, stringResource(R.string.today_go_today))
                 }
             }
@@ -379,3 +380,6 @@ private fun BoxScope.PhotoButton(
 
 /** Какие фото открыты на весь экран и с какого начать. */
 private data class OpenedPhotos(val ids: List<String>, val index: Int)
+
+/** Кнопки в шапке «Сегодня» — компактнее стандартных 48 dp, чтобы влезала дата. */
+private val HeaderIcon = 40.dp

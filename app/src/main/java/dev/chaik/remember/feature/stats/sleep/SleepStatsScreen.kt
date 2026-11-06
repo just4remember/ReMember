@@ -349,9 +349,18 @@ private fun WindowsChart(
     val colors = MaterialTheme.colorScheme
     val measurer = rememberTextMeasurer()
     val labelStyle = MaterialTheme.typography.labelSmall.copy(color = colors.onSurfaceVariant)
-    // Шкала — по самым ранним отбою и поздним подъёму, с запасом до целого часа
-    val top = ((nights.minOf { it.bedMinute } - 30) / 60).coerceAtLeast(0) * 60
-    val bottom = ((nights.maxOf { it.wakeMinute } + 89) / 60).coerceAtMost(20) * 60
+    // Шкала — по самым ранним отбою и поздним подъёму, с запасом до целого часа. Без рамок
+    // «ночи»: и сон днём, и сон с вечера накануне помещаются целиком
+    val rawTop = Math.floorDiv(nights.minOf { it.bedMinute } - 30, 60) * 60
+    val rawBottom = (Math.floorDiv(nights.maxOf { it.wakeMinute } + 30, 60) + 1) * 60
+    val step = when {
+        rawBottom - rawTop > 24 * 60 -> 360
+        rawBottom - rawTop > 12 * 60 -> 240
+        else -> 120
+    }
+    // Края шкалы — по шагу сетки: сверху и снизу всегда подписанная линия
+    val top = Math.floorDiv(rawTop, step) * step
+    val bottom = -Math.floorDiv(-rawBottom, step) * step
     val axisPx = with(androidx.compose.ui.platform.LocalDensity.current) { AXIS_WIDTH.dp.toPx() }
     Canvas(
         Modifier
@@ -361,7 +370,6 @@ private fun WindowsChart(
     ) {
         val span = (bottom - top).toFloat()
         fun y(minute: Int) = (minute - top) / span * size.height
-        val step = if (bottom - top > 12 * 60) 240 else 120
         hourGrid(top, bottom, step, axisPx, measurer, labelStyle, colors.outlineVariant) { y(it) }
         dashed(y(averages.bedMinute), axisPx, colors.onSurfaceVariant.copy(alpha = 0.7f))
         dashed(y(averages.wakeMinute), axisPx, colors.onSurfaceVariant.copy(alpha = 0.7f))
@@ -418,7 +426,7 @@ private fun DrawScope.hourGrid(
     color: Color,
     y: (Int) -> Float,
 ) {
-    var minute = (top + step - 1) / step * step
+    var minute = Math.floorDiv(top + step - 1, step) * step
     while (minute <= bottom) {
         val yy = y(minute)
         drawLine(color, Offset(axisPx, yy), Offset(size.width, yy), strokeWidth = 1f)

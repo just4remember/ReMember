@@ -125,6 +125,24 @@ internal object RaskobkiApi {
         contentType: String = "application/json",
     ): JsonObject = json.parseToJsonElement(requestText(url, body, bearer, contentType)).jsonObject
 
+    /** Скачать файл не больше [maxBytes] — картинку выпуска. */
+    fun download(url: String, maxBytes: Int): ByteArray {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.connectTimeout = TIMEOUT_MS
+        connection.readTimeout = TIMEOUT_MS
+        try {
+            val code = connection.responseCode
+            if (code !in 200..299) throw RaskobkiApiException(code, "")
+            connection.inputStream.use { input ->
+                val bytes = input.readNBytes(maxBytes + 1)
+                if (bytes.size > maxBytes) throw IOException("слишком большой файл")
+                return bytes
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     private fun requestText(
         url: String,
         body: String? = null,

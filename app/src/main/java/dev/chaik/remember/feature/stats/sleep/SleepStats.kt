@@ -13,12 +13,11 @@ import kotlin.math.sqrt
 const val SLEEP_NORM_MINUTES = 8 * 60
 
 /**
- * Начало шкалы суток для сна — 18:00 предыдущего дня. Время отбоя и подъёма считаем в минутах
- * от этой точки: так отбой в 23:30 и в 00:30 стоят рядом, а не на разных концах суток.
+ * Время отбоя и подъёма — в минутах от полуночи дня пробуждения: отбой накануне вечером
+ * отрицательный (23:30 → −30), так 23:30 и 00:30 стоят рядом. Шкала не привязана к ночи:
+ * сон днём (08:00–16:00) — просто 480…960, а сон с вечера накануне — от минус часов.
  */
-const val SLEEP_AXIS_START_HOUR = 18
-
-/** Одна ночь: дата пробуждения, отбой и подъём в минутах от 18:00 накануне. */
+/** Один сон: дата пробуждения, отбой и подъём в минутах от полуночи дня пробуждения. */
 data class Night(
     val date: LocalDate,
     val bedMinute: Int,
@@ -60,8 +59,8 @@ object SleepStats {
         val wake = entry.wakeTime ?: return@mapNotNull null
         val minutes = Duration.between(bed, wake).toMinutes()
         if (minutes <= 0 || minutes > 20 * 60) return@mapNotNull null
-        // Шкала — от 18:00 дня перед пробуждением
-        val axisStart = entry.date.minusDays(1).atTime(SLEEP_AXIS_START_HOUR, 0).atZone(zone).toInstant()
+        // Шкала — от полуночи дня пробуждения
+        val axisStart = entry.date.atStartOfDay(zone).toInstant()
         val bedMinute = Duration.between(axisStart, bed).toMinutes().toInt()
         Night(entry.date, bedMinute, bedMinute + minutes.toInt(), entry.quality)
     }.sortedBy { it.date }
@@ -93,9 +92,9 @@ object SleepStats {
         )
     }
 
-    /** Минуты от 18:00 → время суток «23:40». */
+    /** Минуты от полуночи дня пробуждения (бывают и отрицательные) → время суток «23:40». */
     fun clock(axisMinute: Int): String {
-        val minuteOfDay = ((axisMinute + SLEEP_AXIS_START_HOUR * 60) % (24 * 60) + 24 * 60) % (24 * 60)
+        val minuteOfDay = Math.floorMod(axisMinute, 24 * 60)
         return "%02d:%02d".format(minuteOfDay / 60, minuteOfDay % 60)
     }
 }

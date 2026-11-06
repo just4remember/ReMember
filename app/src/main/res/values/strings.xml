@@ -1397,4 +1397,5 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="search_workout_title">Тренировка №%1$d</string>
     <string name="search_custom">Вручную</string>
     <string name="search_custom_title">Выберите начало и конец</string>
+    <string name="raskobki_solved_title">Решено: %1$d</string>
 </resources>

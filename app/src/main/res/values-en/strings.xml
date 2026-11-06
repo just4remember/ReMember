@@ -1340,4 +1340,5 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="search_workout_title">Workout #%1$d</string>
     <string name="search_custom">Custom</string>
     <string name="search_custom_title">Pick start and end</string>
+    <string name="raskobki_solved_title">Solved: %1$d</string>
 </resources>

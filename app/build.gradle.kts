@@ -66,6 +66,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.coil.compose)
+    // Картинки выпусков «Ра[скобок]» — SVG
+    implementation(libs.coil.svg)
     implementation(libs.androidx.biometric)
     // biometric тянет старый Fragment, с которым запросы разрешений работают неправильно
     implementation(libs.androidx.fragment)

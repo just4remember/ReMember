@@ -292,6 +292,19 @@ private fun Signed(account: RaskobkiAccount, repository: RaskobkiRepository) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodySmall,
     )
+    // Поддержать автора игры — над «На сайт» и «Выйти»
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { openRaskobkiLink(context, RASKOBKI_PATREON) }, modifier = Modifier.weight(1f)) {
+            Icon(Icons.AutoMirrored.Outlined.OpenInNew, null, Modifier.size(18.dp))
+            Spacer(Modifier.size(8.dp))
+            Text("Patreon")
+        }
+        OutlinedButton(onClick = { openRaskobkiLink(context, RASKOBKI_BOOSTY) }, modifier = Modifier.weight(1f)) {
+            Icon(Icons.AutoMirrored.Outlined.OpenInNew, null, Modifier.size(18.dp))
+            Spacer(Modifier.size(8.dp))
+            Text("Boosty")
+        }
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         OutlinedButton(onClick = { openRaskobkiSite(context) }, modifier = Modifier.weight(1f)) {
             Icon(Icons.AutoMirrored.Outlined.OpenInNew, null, Modifier.size(18.dp))

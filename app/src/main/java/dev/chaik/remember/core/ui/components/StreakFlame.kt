@@ -64,7 +64,7 @@ fun StreakFlame(days: Int, modifier: Modifier = Modifier, suffix: String? = null
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClickLabel = stringResource(R.string.today_streak_levels)) { showLevels = true }
             .semantics(mergeDescendants = true) { contentDescription = description }
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
     ) {
         Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(22.dp))
         Text(days.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)

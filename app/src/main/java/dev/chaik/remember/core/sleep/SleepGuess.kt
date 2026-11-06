@@ -18,7 +18,8 @@ data class SleepGuess(val bed: Instant, val wake: Instant)
 data class SleepOptions(val windows: List<SleepGuess>, val selected: Set<Int>)
 
 /**
- * Сон по истории телефона: самый длинный ночной перерыв, когда телефоном не пользовались.
+ * Сон по истории телефона: самый длинный перерыв, когда телефоном не пользовались, — в любое
+ * время суток: кто работает ночью, спит днём, и это тоже сон.
  * Отбой — экран погас после последнего использования, подъём — первая разблокировка после
  * перерыва. Экран, загоревшийся сам (уведомление), без разблокировки — не использование,
  * поэтому перерыв он не прерывает. Ночью «глянуть время» (до [NIGHT_GLANCE]) посреди сна
@@ -40,17 +41,17 @@ object SleepGuesser {
     /** Склеиваем, только если до этого уже спал столько — иначе вечерняя пауза «отложил на полчаса» стала бы началом сна. */
     private val ASLEEP_BEFORE_GLANCE: Duration = Duration.ofHours(1)
 
-    /** Сон, который закончился утром [date]: ищем с 18:00 накануне до 14:00 этого дня. */
+    /**
+     * Сон, который закончился в [date] — в любое время этих суток. Ищем с утра накануне
+     * ([EARLIEST_START]): так виден и сон, начавшийся днём или вечером вчера.
+     */
     fun window(date: LocalDate, zone: ZoneId): Pair<Instant, Instant> =
-        date.minusDays(1).atTime(EVENING).atZone(zone).toInstant() to date.atTime(AFTERNOON).atZone(zone).toInstant()
+        date.minusDays(1).atTime(EARLIEST_START).atZone(zone).toInstant() to date.plusDays(1).atStartOfDay(zone).toInstant()
 
-    fun guess(events: List<PhoneEvent>, date: LocalDate, zone: ZoneId): SleepGuess? {
-        // Лечь позже 6 утра — уже не ночной сон, а дневной
-        val latestBed = date.atTime(LATEST_BED).atZone(zone).toInstant()
-        return mergeGlances(idleGaps(events, date, zone))
-            .filter { it.length >= MIN_SLEEP && !it.bed.isAfter(latestBed) }
+    fun guess(events: List<PhoneEvent>, date: LocalDate, zone: ZoneId): SleepGuess? =
+        mergeGlances(idleGaps(events, date, zone))
+            .filter { it.length >= MIN_SLEEP }
             .maxByOrNull { it.length }
-    }
 
     /**
      * Варианты на выбор — каждый перерыв от часа отдельно, без склейки: сон бывает по частям
@@ -59,28 +60,33 @@ object SleepGuesser {
      * «взгляд на часы», если начались не раньше [EARLIEST_NIGHT]: так вечер к сну сам не приклеится.
      */
     fun options(events: List<PhoneEvent>, date: LocalDate, zone: ZoneId): SleepOptions {
-        val latestBed = date.atTime(LATEST_BED).atZone(zone).toInstant()
-        val earliestNight = date.minusDays(1).atTime(EARLIEST_NIGHT).atZone(zone).toInstant()
         val windows = idleGaps(events, date, zone)
             .filter { it.length >= MIN_PART }
             .sortedByDescending { it.length }
             .take(MAX_OPTIONS)
             .sortedBy { it.bed }
         val best = windows.indices
-            .filter { windows[it].length >= MIN_SLEEP && !windows[it].bed.isAfter(latestBed) }
+            .filter { windows[it].length >= MIN_SLEEP }
             .maxByOrNull { windows[it].length }
             ?: return SleepOptions(windows, emptySet())
+        // Предыдущая часть приклеивается, только если началась незадолго до основной: так долгий
+        // вечер за компьютером (или день без телефона) сам к сну не прилипает
+        val earliestPart = windows[best].bed.minus(MAX_PART_LEAD)
         var first = best
         var last = best
         fun glance(before: SleepGuess, after: SleepGuess) = Duration.between(before.wake, after.bed) <= NIGHT_GLANCE
-        while (first > 0 && glance(windows[first - 1], windows[first]) && !windows[first - 1].bed.isBefore(earliestNight)) first--
+        while (first > 0 && glance(windows[first - 1], windows[first]) && !windows[first - 1].bed.isBefore(earliestPart)) first--
         while (last < windows.lastIndex && glance(windows[last], windows[last + 1])) last++
         return SleepOptions(windows, (first..last).toSet())
     }
 
-    /** Перерывы «экран погас после использования → следующая разблокировка». */
+    /**
+     * Перерывы «экран погас после использования → следующая разблокировка», которые закончились
+     * в [date]: сон привязан к дню пробуждения.
+     */
     private fun idleGaps(events: List<PhoneEvent>, date: LocalDate, zone: ZoneId): List<SleepGuess> {
         val (from, to) = window(date, zone)
+        val dayStart = date.atStartOfDay(zone).toInstant()
         val gaps = mutableListOf<SleepGuess>()
         var inUse = false
         var idleSince: Instant? = null
@@ -98,7 +104,7 @@ object SleepGuesser {
                 }
             }
         }
-        return gaps
+        return gaps.filter { !it.wake.isBefore(dayStart) }
     }
 
     private fun mergeGlances(gaps: List<SleepGuess>): List<SleepGuess> {
@@ -116,10 +122,9 @@ object SleepGuesser {
 
     private val SleepGuess.length: Duration get() = Duration.between(bed, wake)
 
-    private val EVENING = LocalTime.of(18, 0)
-    private val AFTERNOON = LocalTime.of(14, 0)
-    private val LATEST_BED = LocalTime.of(6, 0)
+    /** С какого времени накануне ищем: сон, начавшийся раньше, длиннее суток не бывает. */
+    private val EARLIEST_START = LocalTime.of(6, 0)
 
-    /** Раньше этого перерыв — вечер, а не начало сна: сам к сну не приклеивается. */
-    private val EARLIEST_NIGHT = LocalTime.of(21, 0)
+    /** Часть сна, начавшаяся раньше основной больше чем на столько, сама не приклеивается. */
+    private val MAX_PART_LEAD: Duration = Duration.ofHours(4)
 }

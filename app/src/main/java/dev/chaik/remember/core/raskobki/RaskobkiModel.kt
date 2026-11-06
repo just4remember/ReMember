@@ -52,6 +52,8 @@ data class RaskobkiPuzzle(
     val region: String,
     val cardText: String,
     val root: List<RaskobkiPart>,
+    /** Картинка выпуска (SVG), как на карточке дня на сайте; null — нет. */
+    val cardImage: String? = null,
 ) {
     val total: Int get() = nodes().size
 
@@ -250,6 +252,9 @@ fun firestoreFields(fields: JsonObject?): JsonObject =
     JsonObject(fields.orEmpty().mapValues { firestoreToJson(it.value.jsonObject) })
 
 /** Выпуск из JSON; null — выпуск в незнакомом виде, такой открывается на сайте. */
+/** Где игра хранит картинки выпусков. */
+const val CARD_ART_HOST = "https://firebasestorage.googleapis.com/v0/b/raskobki.firebasestorage.app/"
+
 fun parseRaskobkiPuzzle(data: JsonObject): RaskobkiPuzzle? = runCatching {
     if (data["schemaVersion"]?.jsonPrimitive?.longOrNull != SCHEMA_VERSION) return null
     if (data["isReal"]?.jsonPrimitive?.booleanOrNull != true) return null
@@ -270,6 +275,8 @@ fun parseRaskobkiPuzzle(data: JsonObject): RaskobkiPuzzle? = runCatching {
         region = data.text("region"),
         cardText = data.text("cardText"),
         root = root,
+        // Только из хранилища игры: другой адрес мы бы и не стали скачивать
+        cardImage = data.text("cardImage").takeIf { it.startsWith(CARD_ART_HOST) },
     )
 }.getOrNull()
 

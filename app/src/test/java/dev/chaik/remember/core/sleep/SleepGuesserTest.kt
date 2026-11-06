@@ -70,10 +70,22 @@ class SleepGuesserTest {
     }
 
     @Test
-    fun `короткий перерыв и дневной сон — не ночной сон`() {
+    fun `днём тоже сон — для тех, кто работает ночью`() {
+        val events = listOf(
+            ev(t(7, 0), UNLOCK), ev(t(8, 10), SCREEN_OFF),
+            ev(t(16, 30), UNLOCK), ev(t(16, 40), SCREEN_OFF),
+        )
+        assertEquals(SleepGuess(t(8, 10), t(16, 30)), SleepGuesser.guess(events, today, zone))
+        // Лёг вечером накануне после смены и проспал до утра — тоже сон этого дня
+        val evening = listOf(ev(y(17, 0), UNLOCK), ev(y(18, 30), SCREEN_OFF), ev(t(2, 0), UNLOCK))
+        assertEquals(SleepGuess(y(18, 30), t(2, 0)), SleepGuesser.guess(evening, today, zone))
+    }
+
+    @Test
+    fun `короткий перерыв — не сон, и сон, закончившийся вчера, — не сегодняшний`() {
         assertNull(SleepGuesser.guess(listOf(ev(t(1, 0), SCREEN_OFF), ev(t(2, 0), UNLOCK)), today, zone))
-        val nap = listOf(ev(t(7, 0), UNLOCK), ev(t(9, 0), SCREEN_OFF), ev(t(13, 0), UNLOCK))
-        assertNull(SleepGuesser.guess(nap, today, zone))
+        val yesterdayNap = listOf(ev(y(7, 0), UNLOCK), ev(y(9, 0), SCREEN_OFF), ev(y(13, 0), UNLOCK))
+        assertNull(SleepGuesser.guess(yesterdayNap, today, zone))
         // Ещё не встал (нет разблокировки после перерыва) — подъёма нет
         assertNull(SleepGuesser.guess(listOf(ev(y(23, 0), UNLOCK), ev(y(23, 30), SCREEN_OFF)), today, zone))
     }

@@ -330,6 +330,27 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
                 color = colors.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
+            // Уже решённые скобки — внизу, последние сверху: видно, что открыто и чем
+            if (state.s.isNotEmpty()) {
+                val byId = remember(puzzle) { puzzle.nodes().associateBy { it.id } }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colors.surfaceContainerLow, RoundedCornerShape(20.dp))
+                        .padding(16.dp),
+                ) {
+                    RaskobkiKicker(stringResource(R.string.raskobki_solved_title, state.s.size))
+                    state.s.asReversed().forEach { id ->
+                        val node = byId[id] ?: return@forEach
+                        val marks = (if (node.id in state.h) " А" else "") + (if (node.id in state.rv) " ★" else "")
+                        Column {
+                            Text("[" + assembledClue(node, state) + "]", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                            Text((state.x[node.id] ?: "…") + marks, color = raskobkiAnswerColor(), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
         message?.let {
             Text(

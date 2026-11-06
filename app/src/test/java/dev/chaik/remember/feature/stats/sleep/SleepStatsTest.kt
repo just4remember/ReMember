@@ -39,6 +39,29 @@ class SleepStatsTest {
     }
 
     @Test
+    fun daySleepersAreNotCutByNight() {
+        val day = LocalDate.of(2026, 11, 2)
+        val summary = SleepStats.summary(
+            listOf(
+                SleepEntry(day, day.atTime(8, 0).toInstant(zone), day.atTime(16, 0).toInstant(zone)),
+                SleepEntry(day.plusDays(1), day.plusDays(1).atTime(9, 0).toInstant(zone), day.plusDays(1).atTime(17, 30).toInstant(zone)),
+            ),
+            zone,
+        )
+        val all = summary.all!!
+        assertEquals("08:30", SleepStats.clock(all.bedMinute))
+        assertEquals("16:45", SleepStats.clock(all.wakeMinute))
+        assertEquals((8 * 60 + 8 * 60 + 30) / 2, all.durationMinutes)
+        // После смены лёг вечером накануне и встал ночью
+        val evening = SleepStats.nights(
+            listOf(SleepEntry(day, day.minusDays(1).atTime(18, 30).toInstant(zone), day.atTime(2, 0).toInstant(zone))),
+            zone,
+        ).single()
+        assertEquals("18:30", SleepStats.clock(evening.bedMinute))
+        assertEquals(450, evening.durationMinutes)
+    }
+
+    @Test
     fun weekendIsWakingOnSaturdayOrSunday() {
         val friday = LocalDate.of(2026, 11, 6)
         val summary = SleepStats.summary(

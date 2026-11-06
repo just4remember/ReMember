@@ -58,6 +58,9 @@ data class RaskobkiAccount(val uid: String, val email: String, val name: String?
  */
 class RaskobkiRepository(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    /** Картинки выпусков: скачиваются один раз и дальше видны без сети. */
+    private val artDir = java.io.File(context.filesDir, "raskobki-art")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var local = readProgress()
@@ -129,6 +132,22 @@ class RaskobkiRepository(context: Context) {
         val puzzle = parseRaskobkiPuzzle(data) ?: return@withContext RaskobkiLoad.OnlyOnSite
         prefs.edit { putString(puzzleKey(day), data.toString()) }
         RaskobkiLoad.Ready(puzzle)
+    }
+
+    /** Картинка выпуска (SVG-файл); null — у выпуска её нет или не скачалась. */
+    suspend fun cardArt(puzzle: RaskobkiPuzzle): java.io.File? = withContext(Dispatchers.IO) {
+        val url = puzzle.cardImage ?: return@withContext null
+        val file = java.io.File(artDir, "${puzzle.day}.svg")
+        if (file.exists() && file.length() > 0) return@withContext file
+        runCatching {
+            val bytes = RaskobkiApi.download(url, MAX_ART_BYTES)
+            // Ждём именно SVG: что-то другое показывать не будем
+            if (!String(bytes, 0, minOf(bytes.size, 512)).contains("<svg")) return@runCatching null
+            artDir.mkdirs()
+            val temp = java.io.File(artDir, "${puzzle.day}.tmp")
+            temp.writeBytes(bytes)
+            if (temp.renameTo(file)) file else null
+        }.getOrNull()
     }
 
     // ---- Прогресс ----
@@ -583,6 +602,9 @@ class RaskobkiRepository(context: Context) {
         if (serverTime != 0L) lastServerTime = serverTime
         onElapsed(elapsed)
     }
+
+    /** Картинки выпусков — небольшие SVG; больше — что-то не то. */
+    private val MAX_ART_BYTES = 512 * 1024
 
     private fun puzzleKey(day: LocalDate) = "$PUZZLE_PREFIX$day"
     private fun stateKey(day: LocalDate) = "$STATE_PREFIX$day"

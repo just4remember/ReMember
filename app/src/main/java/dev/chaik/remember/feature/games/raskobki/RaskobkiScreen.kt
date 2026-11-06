@@ -1,5 +1,10 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.layout.ContentScale
+import coil3.svg.SvgDecoder
+import coil3.request.ImageRequest
+import coil3.compose.AsyncImage
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -117,10 +122,17 @@ private const val WEEKS_IN_GRID = 6
 private val SWIPE_THRESHOLD = 48.dp
 
 /** Сайт игры: выпуски, которых нет в приложении, имя и аватар. */
-internal fun openRaskobkiSite(context: Context, path: String = "") {
+internal fun openRaskobkiSite(context: Context, path: String = "") = openRaskobkiLink(context, "https://raskobki.app/$path")
+
+/** Поддержать автора игры. */
+internal const val RASKOBKI_PATREON = "https://www.patreon.com/cw/Raskobki"
+internal const val RASKOBKI_BOOSTY = "https://boosty.to/raskobki"
+
+/** Открыть ссылку в браузере (блокировка приложения при этом не срабатывает). */
+internal fun openRaskobkiLink(context: Context, url: String) {
     context.appContainer.appLock.allowExternal()
     try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, "https://raskobki.app/$path".toUri()))
+        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
     } catch (_: ActivityNotFoundException) {
         // Браузера нет — остаёмся на месте
     }
@@ -284,12 +296,12 @@ internal fun RaskobkiKicker(text: String, modifier: Modifier = Modifier) {
 @Composable
 private fun StreakCard(days: Int, ready: Boolean, modifier: Modifier = Modifier) {
     RaskobkiCard(modifier) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RaskobkiKicker(stringResource(R.string.raskobki_streak))
             if (ready) {
                 StreakFlame(days, suffix = pluralStringResource(R.plurals.raskobki_days_word, days))
             } else {
-                Text("—", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(vertical = 4.dp))
+                Text("—", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             CardHint(stringResource(R.string.raskobki_streak_hint))
         }
@@ -307,13 +319,13 @@ private fun CountdownCard(modifier: Modifier = Modifier) {
         }
     }
     RaskobkiCard(modifier) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RaskobkiKicker(stringResource(R.string.raskobki_next_layer))
             Text(
                 "%02d:%02d:%02d".format(left / 3600, left % 3600 / 60, left % 60),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier.padding(vertical = 2.dp),
             )
             CardHint(stringResource(R.string.raskobki_next_layer_hint))
         }
@@ -372,6 +384,9 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
     val repository = LocalContext.current.appContainer.raskobki
     val load by produceState<RaskobkiLoad?>(null, day) { value = repository.puzzle(day) }
     val puzzle = (load as? RaskobkiLoad.Ready)?.puzzle
+    // Картинка выпуска, как на карточке дня на сайте; скачивается один раз
+    val art by produceState<java.io.File?>(null, puzzle) { value = puzzle?.let { repository.cardArt(it) } }
+    val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
     val threshold = with(LocalDensity.current) { SWIPE_THRESHOLD.toPx() }
     val swipe by rememberUpdatedState(onSwipe)
@@ -412,6 +427,15 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
             puzzle?.cardText?.takeIf { it.isNotBlank() }?.let {
                 Text(it, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
+            // Картинка выпуска — как на сайте, без подложки; между текстом карточки и эпохой с регионом
+            art?.let { file ->
+                AsyncImage(
+                    model = remember(file) { ImageRequest.Builder(context).data(file).decoderFactory(SvgDecoder.Factory()).build() },
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(ART_HEIGHT),
+                )
+            }
             if (puzzle != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     PuzzleLabel(stringResource(R.string.raskobki_era), puzzle.era, Modifier.weight(1f))
@@ -435,10 +459,22 @@ private fun DayCard(day: LocalDate, state: RaskobkiState?, ready: Boolean, modif
 
 @Composable
 private fun PuzzleLabel(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        RaskobkiKicker(label)
-        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-    }
+    // Подпись и значение одной строкой: «ЭПОХА: Девяностые»; не влезает — шрифт сам меньше
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)) {
+                append(label.uppercase())
+                append(":")
+            }
+            append(" ")
+            withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(value) }
+        },
+        style = MaterialTheme.typography.bodySmall,
+        maxLines = 1,
+        softWrap = false,
+        autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 11.sp, stepSize = 0.5.sp),
+        modifier = modifier,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -592,3 +628,6 @@ private fun CalendarCell(
         }
     }
 }
+
+/** Высота картинки выпуска на карточке дня. */
+private val ART_HEIGHT = 100.dp
