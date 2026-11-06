@@ -264,8 +264,8 @@ fun RaskobkiScreen(
             streak = streak,
             onPick = {
                 calendar = false
+                // Только выбрать день: карточка загрузится, а игру откроет кнопка «Играть»
                 scope.launch { pager.scrollToPage(ChronoUnit.DAYS.between(RaskobkiStart, it).toInt()) }
-                onOpenDay(it)
             },
             onDismiss = { calendar = false },
         )

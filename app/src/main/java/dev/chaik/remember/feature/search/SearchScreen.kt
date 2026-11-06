@@ -53,8 +53,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -82,7 +80,6 @@ import dev.chaik.remember.feature.tasks.editor.TaskEditorRoute
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -93,7 +90,6 @@ data object SearchRoute : NavKey
 private enum class SearchPeriod(val days: Long?) { MONTH(30), YEAR(365), ALL(null), CUSTOM(null) }
 
 /** Пауза перед фокусом поля: пока въезжает страница, фокус не держится. */
-private const val FOCUS_DELAY_MS = 350L
 
 /** Сколько результатов группы видно сразу; остальные — по «Ещё». */
 private const val GROUP_PREVIEW = 3
@@ -124,10 +120,8 @@ fun SearchScreen(onBack: (() -> Unit)?, onOpen: (NavKey) -> Unit, modifier: Modi
     var source by rememberSaveable { mutableStateOf<SearchSource?>(null) }
     var period by rememberSaveable { mutableStateOf(SearchPeriod.ALL) }
     val expanded = remember { mutableStateListOf<SearchSource>() }
-    val focus = remember { FocusRequester() }
     // Автофокус — один раз при открытии: поле в ленивом списке создаётся заново, когда
     // прокручиваешь обратно наверх, и без этого флага ловило бы фокус каждый раз
-    var autoFocused by rememberSaveable { mutableStateOf(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     // Клавиатуру свернули — курсор уходит из поля (только при сворачивании, не при открытии экрана)
     val focusManager = LocalFocusManager.current
@@ -196,15 +190,6 @@ fun SearchScreen(onBack: (() -> Unit)?, onOpen: (NavKey) -> Unit, modifier: Modi
                 .imePadding(),
         ) {
             item(key = "field") {
-                // Поле в ленивом списке появляется не сразу, а страница ещё въезжает —
-                // фокус и клавиатура, когда переход закончился
-                LaunchedEffect(Unit) {
-                    if (autoFocused) return@LaunchedEffect
-                    autoFocused = true
-                    delay(FOCUS_DELAY_MS)
-                    focus.requestFocus()
-                    keyboard?.show()
-                }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -222,7 +207,7 @@ fun SearchScreen(onBack: (() -> Unit)?, onOpen: (NavKey) -> Unit, modifier: Modi
                         saveQuery(text)
                         keyboard?.hide()
                     }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             item(key = "sources") {

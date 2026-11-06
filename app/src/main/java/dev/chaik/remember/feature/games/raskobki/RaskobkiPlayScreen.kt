@@ -343,11 +343,7 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
                     RaskobkiKicker(stringResource(R.string.raskobki_solved_title, state.s.size))
                     state.s.asReversed().forEach { id ->
                         val node = byId[id] ?: return@forEach
-                        val marks = (if (node.id in state.h) " А" else "") + (if (node.id in state.rv) " ★" else "")
-                        Column {
-                            Text("[" + assembledClue(node, state) + "]", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                            Text((state.x[node.id] ?: "…") + marks, color = raskobkiAnswerColor(), fontWeight = FontWeight.Bold)
-                        }
+                        SolvedFragment(node, state, Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -557,16 +553,28 @@ private fun RaskobkiResult(puzzle: RaskobkiPuzzle, state: RaskobkiState, onBack:
         ) {
             RaskobkiKicker(stringResource(R.string.raskobki_fragments_title))
             puzzle.nodes().forEachIndexed { index, node ->
-                val marks = (if (node.id in state.h) " А" else "") + (if (node.id in state.rv) " ★" else "")
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("%02d".format(index + 1), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                    Column(Modifier.weight(1f)) {
-                        Text("[" + assembledClue(node, state) + "]", color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                        Text((state.x[node.id] ?: "…") + marks, color = raskobkiAnswerColor(), fontWeight = FontWeight.Bold)
-                    }
+                    SolvedFragment(node, state, Modifier.weight(1f))
                 }
             }
         }
+    }
+}
+
+/**
+ * Решённая скобка: подсказка и ответ слева, справа — пометки подсказок цветом активных скобок:
+ * «А» — была открыта первая буква, «★» — скобка открыта целиком.
+ */
+@Composable
+private fun SolvedFragment(node: RaskobkiNode, state: RaskobkiState, modifier: Modifier) {
+    val marks = listOfNotNull("А".takeIf { node.id in state.h }, "★".takeIf { node.id in state.rv }).joinToString(" ")
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
+        Column(Modifier.weight(1f)) {
+            Text("[" + assembledClue(node, state) + "]", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Text(state.x[node.id] ?: "…", color = raskobkiAnswerColor(), fontWeight = FontWeight.Bold)
+        }
+        if (marks.isNotEmpty()) Text(marks, color = raskobkiBracketColor(), fontWeight = FontWeight.Bold)
     }
 }
 
