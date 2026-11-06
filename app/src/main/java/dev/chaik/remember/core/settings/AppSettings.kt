@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 /** Настройки приложения (Профиль и Персонализация). Язык хранит сам Android — см. [AppLanguage]. */
 data class AppSettings(
     val nickname: String = "",
-    val gender: Gender = Gender.UNSET,
     /** Код валюты ISO 4217: RUB, USD, EUR… */
     val currency: String = "RUB",
     val firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY,
@@ -70,8 +69,6 @@ data class AppSettings(
     /** Порядок кнопок панели над клавиатурой (имена EditorTool); пусто — по умолчанию. */
     val editorTools: List<String> = emptyList(),
 )
-
-enum class Gender { UNSET, MALE, FEMALE }
 
 /**
  * Тема. ONE_DARK, NIGHT_OWL, SOLARIZED_LIGHT и TOKYO_NIGHT_LIGHT — готовые палитры со своими цветами; выбранный акцент меняет у них только основной цвет.

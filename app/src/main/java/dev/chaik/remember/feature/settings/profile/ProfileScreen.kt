@@ -19,9 +19,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +38,6 @@ import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.settings.AppLanguage
 import dev.chaik.remember.core.settings.Currencies
 import dev.chaik.remember.core.settings.currencySymbol
-import dev.chaik.remember.core.settings.Gender
 import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.feature.settings.SettingsCard
@@ -98,24 +94,6 @@ fun ProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
-
-            SettingsGroupTitle(stringResource(R.string.profile_gender))
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                val options = listOf(
-                    Gender.UNSET to R.string.profile_gender_unset,
-                    Gender.MALE to R.string.profile_gender_male,
-                    Gender.FEMALE to R.string.profile_gender_female,
-                )
-                options.forEachIndexed { i, (gender, label) ->
-                    SegmentedButton(
-                        selected = settings.gender == gender,
-                        onClick = { store.update { it.copy(gender = gender) } },
-                        shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                        icon = {},
-                        label = { Text(stringResource(label), maxLines = 1) },
-                    )
-                }
-            }
 
             SettingsGroupTitle(stringResource(R.string.profile_language))
             SettingsCard {

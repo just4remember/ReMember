@@ -25,7 +25,6 @@ class AppSettingsStore(context: Context) {
         val d = AppSettings()
         return AppSettings(
             nickname = prefs.getString("nickname", d.nickname).orEmpty(),
-            gender = enumOr(prefs.getString("gender", null), d.gender),
             currency = prefs.getString("currency", d.currency) ?: d.currency,
             firstDayOfWeek = prefs.getInt("first_day", 0).takeIf { it in 1..7 }?.let(DayOfWeek::of) ?: d.firstDayOfWeek,
             theme = enumOr(prefs.getString("theme", null), d.theme),
@@ -66,7 +65,7 @@ class AppSettingsStore(context: Context) {
 
     private fun write(s: AppSettings) = prefs.edit {
         putString("nickname", s.nickname)
-        putString("gender", s.gender.name)
+        remove("gender") // пол больше не спрашиваем — старое значение убираем
         putString("currency", s.currency)
         putInt("first_day", s.firstDayOfWeek.value)
         putString("theme", s.theme.name)

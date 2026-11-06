@@ -610,10 +610,6 @@
 
     <!-- Профиль -->
     <string name="profile_nickname">Никнейм</string>
-    <string name="profile_gender">Пол</string>
-    <string name="profile_gender_unset">Не указан</string>
-    <string name="profile_gender_male">Мужской</string>
-    <string name="profile_gender_female">Женский</string>
     <string name="profile_language">Язык</string>
     <string name="profile_language_system">Как в системе</string>
     <string name="profile_language_ru" translatable="false">Русский</string>

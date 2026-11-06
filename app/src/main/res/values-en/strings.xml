@@ -582,10 +582,6 @@
 
     <!-- Profile -->
     <string name="profile_nickname">Nickname</string>
-    <string name="profile_gender">Gender</string>
-    <string name="profile_gender_unset">Not set</string>
-    <string name="profile_gender_male">Male</string>
-    <string name="profile_gender_female">Female</string>
     <string name="profile_language">Language</string>
     <string name="profile_language_system">System default</string>
     <string name="profile_language_soon">Translation in progress</string>
