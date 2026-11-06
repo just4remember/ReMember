@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
@@ -41,6 +42,7 @@ import dev.chaik.remember.core.ui.components.ScreenScaffold
 import dev.chaik.remember.feature.settings.about.AboutRoute
 import dev.chaik.remember.feature.settings.appearance.PersonalizationRoute
 import dev.chaik.remember.feature.settings.data.DataRoute
+import dev.chaik.remember.feature.settings.feedback.FeedbackRoute
 import dev.chaik.remember.feature.settings.pages.PagesRoute
 import dev.chaik.remember.feature.settings.profile.ProfileRoute
 import dev.chaik.remember.feature.settings.reminders.RemindersRoute
@@ -62,6 +64,7 @@ private val Sections = listOf(
     Section(Icons.Outlined.Lock, R.string.settings_security, R.string.settings_security_hint, SecurityRoute),
     Section(Icons.Outlined.Backup, R.string.settings_data, R.string.settings_data_hint, DataRoute),
     Section(Icons.Outlined.Notifications, R.string.settings_reminders, R.string.settings_reminders_hint, RemindersRoute),
+    Section(Icons.Outlined.Feedback, R.string.settings_feedback, R.string.settings_feedback_hint, FeedbackRoute),
     Section(Icons.Outlined.Info, R.string.settings_about, R.string.settings_about_hint, AboutRoute),
 )
 
