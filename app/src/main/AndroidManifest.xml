@@ -31,6 +31,8 @@
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
     <!-- Уведомление о цели по шагам: шаги проверяются, пока приложение закрыто -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+    <!-- История старше 30 дней — для статистики за год и за всё время -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

@@ -1299,4 +1299,25 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="stats_days_year_empty">В этом году записей нет</string>
     <string name="stats_days_no_entry">нет записи</string>
     <string name="stats_days_no_rating">запись без оценки</string>
+    <string name="stats_health_hint">Шаги, активность и цели</string>
+    <string name="stats_health_failed">Не удалось прочитать данные Health Connect</string>
+    <string name="stats_health_history_title">Нужна история</string>
+    <string name="stats_health_history_text">Health Connect отдаёт данные только за 30 дней до первого доступа. Чтобы видеть статистику за более долгий срок, разрешите чтение истории.</string>
+    <string name="stats_health_history_button">Разрешить историю</string>
+    <string name="stats_health_steps_unit">шагов</string>
+    <string name="stats_health_record">Рекорд шагов</string>
+    <string name="stats_health_step_goal">Цель по шагам</string>
+    <string name="stats_health_all_goals">Все цели</string>
+    <string name="stats_health_days_hint">дней выполнено</string>
+    <string name="stats_health_by_day">По дням</string>
+    <string name="stats_health_goal_hint">Пунктир - цель %1$s %2$s, бледная линия - среднее</string>
+    <string name="stats_health_hours">Когда ты ходишь</string>
+    <string name="stats_health_hours_peak">Больше всего шагов с %1$d до %2$d ч</string>
+    <string name="stats_health_hour_selected">С %1$d до %2$d ч: %3$s шагов в среднем за день</string>
+    <string name="stats_health_year">Шаги за год</string>
+    <string name="stats_health_year_summary">Цель по шагам выполнена %1$d из %2$d дней</string>
+    <string name="stats_health_year_empty">В этом году шагов нет</string>
+    <string name="stats_health_steps_of_goal">%1$s шагов, %2$d%% цели</string>
+    <string name="stats_health_below_goal">Меньше цели</string>
+    <string name="stats_health_above_goal">Больше</string>
 </resources>

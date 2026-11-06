@@ -1244,4 +1244,25 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="stats_days_year_empty">No entries this year</string>
     <string name="stats_days_no_entry">no entry</string>
     <string name="stats_days_no_rating">entry without rating</string>
+    <string name="stats_health_hint">Steps, activity and goals</string>
+    <string name="stats_health_failed">Could not read Health Connect data</string>
+    <string name="stats_health_history_title">History needed</string>
+    <string name="stats_health_history_text">Health Connect only shares data from 30 days before access was first granted. Allow history to see longer periods.</string>
+    <string name="stats_health_history_button">Allow history</string>
+    <string name="stats_health_steps_unit">steps</string>
+    <string name="stats_health_record">Step record</string>
+    <string name="stats_health_step_goal">Step goal</string>
+    <string name="stats_health_all_goals">All goals</string>
+    <string name="stats_health_days_hint">days reached</string>
+    <string name="stats_health_by_day">By day</string>
+    <string name="stats_health_goal_hint">Dashed - goal %1$s %2$s, faint line - average</string>
+    <string name="stats_health_hours">When you walk</string>
+    <string name="stats_health_hours_peak">Most steps from %1$d to %2$d h</string>
+    <string name="stats_health_hour_selected">From %1$d to %2$d h: %3$s steps a day on average</string>
+    <string name="stats_health_year">Steps this year</string>
+    <string name="stats_health_year_summary">Step goal reached on %1$d of %2$d days</string>
+    <string name="stats_health_year_empty">No steps this year</string>
+    <string name="stats_health_steps_of_goal">%1$s steps, %2$d%% of goal</string>
+    <string name="stats_health_below_goal">Below goal</string>
+    <string name="stats_health_above_goal">Above</string>
 </resources>
