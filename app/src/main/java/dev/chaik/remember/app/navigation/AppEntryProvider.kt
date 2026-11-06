@@ -126,7 +126,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
 
         // Разделы из «Ещё»
         entry<FeedRoute> { FeedScreen(onBack = backFor(it)) }
-        entry<SearchRoute> { SearchScreen(onBack = backFor(it)) }
+        entry<SearchRoute> { SearchScreen(onBack = backFor(it), onOpen = { backStack.add(it) }) }
         entry<StatsRoute> { StatsScreen(onBack = backFor(it), onOpen = { backStack.add(it) }) }
         entry<SleepStatsRoute> { SleepStatsScreen(onBack = back) }
         entry<DaysStatsRoute> { DaysStatsScreen(onBack = back) }

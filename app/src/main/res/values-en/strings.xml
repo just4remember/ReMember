@@ -1321,4 +1321,23 @@ Authorization: Bearer and the token — only if a token is set in the app. The s
     <string name="stats_gym_no_workout">no workout</string>
     <string name="stats_gym_shorter">Shorter</string>
     <string name="stats_gym_longer">Longer</string>
+    <string name="search_hint">Words or #tag</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_all">All</string>
+    <string name="search_month">Month</string>
+    <string name="search_year">Year</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_recent_clear">Clear</string>
+    <string name="search_recent_remove">Remove search</string>
+    <string name="search_empty_hint">Searches days, dreams, notes, tasks, events, spending, workouts and places. Case does not matter, words in any order; #tag finds everything with that tag.</string>
+    <string name="search_nothing">Nothing found</string>
+    <string name="search_more">%1$d more</string>
+    <string name="search_dreams">Dreams</string>
+    <string name="search_events">Events</string>
+    <string name="search_places">Places</string>
+    <string name="search_untitled">Untitled</string>
+    <string name="search_protected">Protected note - text hidden</string>
+    <string name="search_workout_title">Workout #%1$d</string>
+    <string name="search_custom">Custom</string>
+    <string name="search_custom_title">Pick start and end</string>
 </resources>

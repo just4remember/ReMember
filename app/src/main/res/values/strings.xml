@@ -1378,4 +1378,23 @@ Authorization: Bearer и токен — только если в приложе�
     <string name="stats_gym_no_workout">тренировки нет</string>
     <string name="stats_gym_shorter">Короче</string>
     <string name="stats_gym_longer">Дольше</string>
+    <string name="search_hint">Слова или #тег</string>
+    <string name="search_clear">Очистить</string>
+    <string name="search_all">Все</string>
+    <string name="search_month">Месяц</string>
+    <string name="search_year">Год</string>
+    <string name="search_recent">Недавние запросы</string>
+    <string name="search_recent_clear">Очистить</string>
+    <string name="search_recent_remove">Удалить запрос</string>
+    <string name="search_empty_hint">Ищет по дням, снам, заметкам, задачам, событиям, тратам, тренировкам и местам. Регистр и «ё» не важны, слова - в любом порядке; #тег - всё с этим тегом.</string>
+    <string name="search_nothing">Ничего не нашлось</string>
+    <string name="search_more">Ещё %1$d</string>
+    <string name="search_dreams">Сны</string>
+    <string name="search_events">События</string>
+    <string name="search_places">Места</string>
+    <string name="search_untitled">Без названия</string>
+    <string name="search_protected">Защищённая заметка - текст скрыт</string>
+    <string name="search_workout_title">Тренировка №%1$d</string>
+    <string name="search_custom">Вручную</string>
+    <string name="search_custom_title">Выберите начало и конец</string>
 </resources>
