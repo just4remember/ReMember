@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -135,10 +136,16 @@ fun TimerTab(padding: PaddingValues) {
                 }
             }
             Spacer(Modifier.weight(0.4f))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalButton(onClick = controller::resetTimer) {
-                    Icon(Icons.Outlined.Refresh, null)
-                    Text(stringResource(R.string.time_reset), modifier = Modifier.padding(start = 6.dp))
+            // Боковые кнопки — в равных ячейках по краям, главная остаётся ровно по центру
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.weight(1f)) {
+                    FilledTonalIconButton(onClick = controller::resetTimer, modifier = Modifier.size(56.dp)) {
+                        Icon(Icons.Outlined.Refresh, stringResource(R.string.time_reset))
+                    }
                 }
                 LargeFloatingActionButton(onClick = if (timer.running) controller::pauseTimer else controller::resumeTimer) {
                     Icon(
@@ -147,7 +154,15 @@ fun TimerTab(padding: PaddingValues) {
                         modifier = Modifier.size(36.dp),
                     )
                 }
-                FilledTonalButton(onClick = controller::addMinute) { Text(stringResource(R.string.time_plus_minute)) }
+                Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.weight(1f)) {
+                    FilledTonalButton(
+                        onClick = controller::addMinute,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier.height(56.dp),
+                    ) {
+                        Text(stringResource(R.string.time_plus_minute), maxLines = 1, softWrap = false)
+                    }
+                }
             }
             Spacer(Modifier.height(16.dp))
         }
