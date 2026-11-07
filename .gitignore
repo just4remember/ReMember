@@ -9,6 +9,9 @@ build/
 # Локальные пути к SDK
 local.properties
 
+# Адреса и ключи серверов (пример — secrets.properties.example)
+secrets.properties
+
 # Android Studio / IntelliJ — личные настройки IDE, кроме стиля кода
 *.iml
 /.idea/*

@@ -1,5 +1,14 @@
 package dev.chaik.remember.feature.settings.feedback
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import dev.chaik.remember.core.feedback.LegalDoc
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.LinkAnnotation
 import dev.chaik.remember.feature.stats.onTapAnywhere
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.LaunchedEffect
@@ -94,6 +103,8 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     var message by rememberSaveable { mutableStateOf("") }
     var contact by rememberSaveable { mutableStateOf("") }
     var withDevice by rememberSaveable { mutableStateOf(true) }
+    // Согласие на обработку персональных данных: отдельно на каждый отзыв, по умолчанию не отмечено
+    var consent by rememberSaveable { mutableStateOf(false) }
     var photos by rememberSaveable(stateSaver = UriListSaver) { mutableStateOf(emptyList<Uri>()) }
     var sending by remember { mutableStateOf(false) }
     // Клавиатуру свернули — поле теряет фокус (только при сворачивании, не при открытии)
@@ -136,6 +147,7 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             if (ok) {
                 message = ""
                 photos = emptyList()
+                consent = false
             }
         }
     }
@@ -243,9 +255,10 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     hint = stringResource(R.string.feedback_device_hint),
                 )
             }
+            ConsentRow(checked = consent, onChange = { consent = it })
             Button(
                 onClick = ::send,
-                enabled = !sending && message.isNotBlank() && !limitReached,
+                enabled = !sending && message.isNotBlank() && consent && !limitReached,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (sending) {
@@ -301,3 +314,49 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
 /** Размер миниатюры фото. */
 private val PhotoSize = 76.dp
+
+/**
+ * Обязательная галочка согласия на обработку персональных данных. Согласие — отдельный документ
+ * (152-ФЗ, ст. 9): ссылки ведут на него и на политику конфиденциальности на сервере отзывов.
+ * Тап по тексту вне ссылок переключает галочку.
+ */
+@Composable
+private fun ConsentRow(checked: Boolean, onChange: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    val consentLink = stringResource(R.string.feedback_consent_link)
+    val policyLink = stringResource(R.string.feedback_policy_link)
+    val full = stringResource(R.string.feedback_consent_check, consentLink, policyLink)
+    val linkColor = MaterialTheme.colorScheme.primary
+    val withLinks = LegalDoc.CONSENT.url(context) != null
+    val text = remember(full, linkColor, withLinks) {
+        buildAnnotatedString {
+            append(full)
+            if (withLinks) {
+                for ((link, doc) in listOf(consentLink to LegalDoc.CONSENT, policyLink to LegalDoc.PRIVACY)) {
+                    val start = full.indexOf(link)
+                    if (start < 0) continue
+                    addLink(
+                        LinkAnnotation.Clickable(
+                            tag = doc.path,
+                            styles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
+                            linkInteractionListener = { doc.open(context) },
+                        ),
+                        start,
+                        start + link.length,
+                    )
+                }
+            }
+        }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .toggleable(value = checked, role = Role.Checkbox, onValueChange = onChange)
+            .padding(vertical = 4.dp),
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 8.dp))
+    }
+}

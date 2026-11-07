@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,6 +7,13 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
 }
+
+// Адрес и ключ сервера отзывов — из secrets.properties в корне проекта (в git не попадает,
+// пример — secrets.properties.example). Нет файла или значений — отправка отзывов недоступна
+val secrets = Properties().apply {
+    rootProject.file("secrets.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+}
+fun secret(key: String): String = secrets.getProperty(key, "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "dev.chaik.remember"
@@ -24,6 +33,12 @@ android {
         // Только 64-битный ARM — как у телефона. Карта и шифрование базы приносят свой нативный код
         // под каждый процессор, и без фильтра приложение весило бы в разы больше
         ndk { abiFilters += "arm64-v8a" }
+
+        buildConfigField("String", "FEEDBACK_ENDPOINT", "\"${secret("feedback.endpoint")}\"")
+        buildConfigField("String", "FEEDBACK_KEY", "\"${secret("feedback.key")}\"")
+        // Сколько отзывов в день можно отправить с телефона; нет значения или оно неверное — 5
+        val feedbackLimit = secret("feedback.dailyLimit").toIntOrNull()?.takeIf { it > 0 } ?: 5
+        buildConfigField("int", "FEEDBACK_DAILY_LIMIT", feedbackLimit.toString())
     }
 
     buildTypes {
@@ -44,6 +59,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

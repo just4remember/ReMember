@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import dev.chaik.remember.BuildConfig
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
@@ -36,6 +37,7 @@ data class Feedback(
  *
  * Поля: `type` (idea | bug), `message`, `contact` (может быть пустым), `platform` (android),
  * при согласии — `appVersion`, `device`, `os`; файлы — `photo` (до [MAX_PHOTOS], JPEG, сторона до [PHOTO_SIDE]).
+ * Заголовок `X-Feedback-Key` — ключ приложения [KEY] (APP_KEY сервера, см. FeedbackServer).
  * Заголовок `X-Install-Id` — случайный номер установки (не связан с человеком): по нему сервер
  * может ограничить число отзывов с одного телефона. Ответ 2xx — принято; 429 — лимит на сервере.
  * Больше ничего не уходит: ни записи, ни настройки.
@@ -52,7 +54,7 @@ class FeedbackSender(private val context: Context) {
         if (prefs.getLong(KEY_DAY, -1) == LocalDate.now().toEpochDay()) prefs.getInt(KEY_COUNT, 0) else 0
 
     /** Есть ли куда слать: сервер появится позже. */
-    val configured: Boolean get() = ENDPOINT.isNotBlank()
+    val configured: Boolean get() = ENDPOINT.isNotBlank() && KEY.isNotBlank()
 
     suspend fun send(feedback: Feedback) = withContext(Dispatchers.IO) {
         check(configured) { "Сервер отзывов ещё не настроен" }
@@ -66,6 +68,7 @@ class FeedbackSender(private val context: Context) {
             connection.readTimeout = TIMEOUT_MS
             connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
             connection.setRequestProperty("X-Install-Id", installId)
+            connection.setRequestProperty("X-Feedback-Key", KEY)
             // Фото сжимаются заранее, поэтому тело собираем целиком и знаем его длину
             val body = ByteArrayOutputStream()
             DataOutputStream(body).use { out ->
@@ -80,6 +83,8 @@ class FeedbackSender(private val context: Context) {
                 field("message", feedback.message.trim())
                 field("contact", feedback.contact.trim())
                 field("platform", "android")
+                // Пользователь отметил согласие этой редакции: сервер без него отзыв не примет
+                field("consent", CONSENT_VERSION)
                 if (feedback.withDevice) {
                     field("appVersion", appVersion())
                     field("device", "${Build.MANUFACTURER} ${Build.MODEL}")
@@ -134,15 +139,26 @@ class FeedbackSender(private val context: Context) {
 
     companion object {
         /**
-         * Адрес сервера отзывов. Пока пусто — сервер сделаем позже; кнопка «Отправить» тогда
-         * объясняет, что отправка ещё недоступна.
+         * Адрес сервера отзывов и ключ приложения (APP_KEY сервера) — из secrets.properties
+         * в корне проекта, файл в git не попадает. Пусто — кнопка «Отправить» объясняет,
+         * что отправка недоступна.
          */
-        const val ENDPOINT = ""
+        val ENDPOINT: String = BuildConfig.FEEDBACK_ENDPOINT
+        val KEY: String = BuildConfig.FEEDBACK_KEY
 
         const val MAX_PHOTOS = 10
 
-        /** Больше стольких отзывов в день с телефона не отправить. */
-        const val DAILY_LIMIT = 5
+        /**
+         * Редакция согласия на обработку персональных данных (страница /consent сервера отзывов).
+         * Меняется вместе с текстом согласия на сервере (ConsentVersion).
+         */
+        const val CONSENT_VERSION = "2026-11-08"
+
+        /**
+         * Больше стольких отзывов в день с телефона не отправить. Из secrets.properties
+         * (feedback.dailyLimit), по умолчанию 5; на сервере свой предел — LIMIT_PER_INSTALL.
+         */
+        val DAILY_LIMIT: Int = BuildConfig.FEEDBACK_DAILY_LIMIT
         private const val KEY_INSTALL = "install_id"
         private const val KEY_DAY = "day"
         private const val KEY_COUNT = "count"

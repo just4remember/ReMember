@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import dev.chaik.remember.core.feedback.openExternalLink
 import dev.chaik.remember.core.ui.components.SkeletonBox
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.layout.ContentScale
@@ -130,14 +131,7 @@ internal const val RASKOBKI_PATREON = "https://www.patreon.com/cw/Raskobki"
 internal const val RASKOBKI_BOOSTY = "https://boosty.to/raskobki"
 
 /** Открыть ссылку в браузере (блокировка приложения при этом не срабатывает). */
-internal fun openRaskobkiLink(context: Context, url: String) {
-    context.appContainer.appLock.allowExternal()
-    try {
-        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-    } catch (_: ActivityNotFoundException) {
-        // Браузера нет — остаёмся на месте
-    }
-}
+internal fun openRaskobkiLink(context: Context, url: String) = openExternalLink(context, url)
 
 /** Цвет скобок: свой из профиля или акцент темы. */
 @Composable

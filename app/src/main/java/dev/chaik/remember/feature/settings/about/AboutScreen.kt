@@ -1,5 +1,8 @@
 package dev.chaik.remember.feature.settings.about
 
+import dev.chaik.remember.core.feedback.LegalDoc
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -132,6 +135,41 @@ fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     }
                 }
             }
+
+            // Документы — на сервере отзывов; пока он не настроен, ссылок нет
+            if (LegalDoc.PRIVACY.url(context) != null) {
+                SettingsGroupTitle(stringResource(R.string.about_documents))
+                SettingsCard {
+                    DocRow(stringResource(R.string.legal_privacy)) { LegalDoc.PRIVACY.open(context) }
+                    DocRow(stringResource(R.string.legal_consent)) { LegalDoc.CONSENT.open(context) }
+                    DocRow(stringResource(R.string.legal_terms)) { LegalDoc.TERMS.open(context) }
+                }
+            }
+
+            SettingsGroupTitle(stringResource(R.string.about_sources))
+            SettingsCard {
+                Text(
+                    text = stringResource(R.string.about_sources_text),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+            }
         }
+    }
+}
+
+/** Строка-ссылка на документ: открывается в браузере. */
+@Composable
+private fun DocRow(title: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Icon(Icons.AutoMirrored.Outlined.OpenInNew, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

@@ -1428,4 +1428,17 @@
     <string name="widget_language_en">English</string>
     <string name="appearance_theme_group_light">Светлые</string>
     <string name="appearance_theme_group_dark">Тёмные</string>
+    <string name="about_documents">Документы</string>
+    <string name="legal_privacy">Политика конфиденциальности</string>
+    <string name="legal_terms">Пользовательское соглашение</string>
+    <string name="about_sources">Источники и лицензии</string>
+    <string name="about_sources_text">Картографические данные © участники OpenStreetMap, лицензия ODbL. Подложка карты: OpenFreeMap, поиск городов: Nominatim
+
+Головоломки Ра[скобок] принадлежат их автору и загружаются с сайта raskobki.app
+
+Шрифты Inter, Nunito и Medeo Sans распространяются по лицензии SIL Open Font License 1.1</string>
+    <string name="feedback_consent_link">согласие на обработку персональных данных</string>
+    <string name="feedback_consent_check">Я даю %1$s в соответствии с %2$s</string>
+    <string name="feedback_policy_link">Политикой конфиденциальности</string>
+    <string name="legal_consent">Согласие на обработку персональных данных</string>
 </resources>

@@ -1369,4 +1369,17 @@
     <string name="widget_language_en">English</string>
     <string name="appearance_theme_group_light">Light</string>
     <string name="appearance_theme_group_dark">Dark</string>
+    <string name="about_documents">Documents</string>
+    <string name="legal_privacy">Privacy Policy</string>
+    <string name="legal_terms">Terms of Use</string>
+    <string name="about_sources">Sources and licenses</string>
+    <string name="about_sources_text">Map data © OpenStreetMap contributors, ODbL license. Base map: OpenFreeMap, city search: Nominatim
+
+Ra[skobki] puzzles belong to their author and are loaded from raskobki.app
+
+The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font License 1.1</string>
+    <string name="feedback_consent_link">consent to the processing of personal data</string>
+    <string name="feedback_consent_check">I give my %1$s in accordance with the %2$s</string>
+    <string name="feedback_policy_link">Privacy Policy</string>
+    <string name="legal_consent">Consent to the Processing of Personal Data</string>
 </resources>
