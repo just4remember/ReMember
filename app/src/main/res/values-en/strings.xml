@@ -1449,4 +1449,22 @@ The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font L
     <string name="restore_notice_server">The server address, token and password for backups are not included in the backup. Enter them again in Settings → Data so backups go to the server again</string>
     <string name="restore_notice_other">The PIN, app lock and Ra[skobki] sign-in are not transferred either; you can set them up again at any time</string>
     <string name="restore_notice_other_alone">The PIN, app lock and Ra[skobki] sign-in are not included in the backup; you can set them up again at any time</string>
+    <string name="feedback_counter_bugs">bugs</string>
+    <string name="feedback_counter_ideas">ideas</string>
+    <string name="feedback_ranks_title">Helper badges</string>
+    <string name="feedback_ranks_text">Every report helps make the app better. A bug is worth %1$d points, an idea is worth one. The badge grows with your points</string>
+    <string name="feedback_ranks_top">The top badge is yours. Thank you for helping make Re:Member better</string>
+    <string name="feedback_rank_newcomer">Observer</string>
+    <string name="feedback_rank_bronze">Helper</string>
+    <string name="feedback_rank_silver">Explorer</string>
+    <string name="feedback_rank_gold">Bug hunter</string>
+    <string name="feedback_rank_legend">Co-author</string>
+    <plurals name="feedback_points">
+        <item quantity="one">%d point</item>
+        <item quantity="other">%d points</item>
+    </plurals>
+    <plurals name="feedback_ranks_next">
+        <item quantity="one">%1$d point left to the “%2$s” badge</item>
+        <item quantity="other">%1$d points left to the “%2$s” badge</item>
+    </plurals>
 </resources>

@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.backup
 
+import dev.chaik.remember.core.feedback.FeedbackSender
 import android.content.Context
 import android.content.SharedPreferences
 import dev.chaik.remember.core.settings.AppLanguage
@@ -45,6 +46,8 @@ internal object BackupSettings {
         Part("places"),
         // До какой версии приведены стандартные категории трат в этой базе
         Part("app_state"),
+        // Счётчики отправленных ошибок и предложений — значок на странице отзывов
+        Part("feedback") { it == FeedbackSender.KEY_BUGS || it == FeedbackSender.KEY_IDEAS },
         // Будильники хранятся там, где их видно до первой разблокировки; идущие таймер и секундомер — нет
         Part("time", deviceProtected = true) { it == "alarms" },
     )

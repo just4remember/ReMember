@@ -1508,4 +1508,26 @@
     <string name="restore_notice_server">Адрес сервера, токен и пароль для резервных копий в копию не входят. Введите их заново в «Настройки → Данные», чтобы копии снова отправлялись на сервер</string>
     <string name="restore_notice_other">PIN-код, блокировка и вход в Ра[скобки] тоже не переносятся, их можно настроить заново в любой момент</string>
     <string name="restore_notice_other_alone">PIN-код, блокировка и вход в Ра[скобки] в копию не входят, их можно настроить заново в любой момент</string>
+    <string name="feedback_counter_bugs">ошибки</string>
+    <string name="feedback_counter_ideas">идеи</string>
+    <string name="feedback_ranks_title">Значки помощника</string>
+    <string name="feedback_ranks_text">Каждый отзыв помогает сделать приложение лучше. Ошибка приносит %1$d очка, предложение одно. Значок растёт вместе с очками</string>
+    <string name="feedback_ranks_top">Высший значок уже ваш. Спасибо, что помогаете делать Re:Member лучше</string>
+    <string name="feedback_rank_newcomer">Наблюдатель</string>
+    <string name="feedback_rank_bronze">Помощник</string>
+    <string name="feedback_rank_silver">Исследователь</string>
+    <string name="feedback_rank_gold">Охотник за ошибками</string>
+    <string name="feedback_rank_legend">Соавтор</string>
+    <plurals name="feedback_points">
+        <item quantity="one">%d очко</item>
+        <item quantity="few">%d очка</item>
+        <item quantity="many">%d очков</item>
+        <item quantity="other">%d очка</item>
+    </plurals>
+    <plurals name="feedback_ranks_next">
+        <item quantity="one">До значка «%2$s» осталось %1$d очко</item>
+        <item quantity="few">До значка «%2$s» осталось %1$d очка</item>
+        <item quantity="many">До значка «%2$s» осталось %1$d очков</item>
+        <item quantity="other">До значка «%2$s» осталось %1$d очка</item>
+    </plurals>
 </resources>

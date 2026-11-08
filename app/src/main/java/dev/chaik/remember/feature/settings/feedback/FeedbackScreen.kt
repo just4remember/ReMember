@@ -118,6 +118,8 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     var sentToday by remember { mutableIntStateOf(sender.sentToday()) }
     val limitReached = sentToday >= FeedbackSender.DAILY_LIMIT
     var result by remember { mutableStateOf<SendResult?>(null) }
+    // Отправленные за всё время: значок растёт вместе с ними
+    var counts by remember { mutableStateOf(FeedbackCounts(sender.sentBugs(), sender.sentIdeas())) }
 
     val left = FeedbackSender.MAX_PHOTOS - photos.size
     val pickMany = rememberLauncherForActivityResult(PickMultipleVisualMedia(FeedbackSender.MAX_PHOTOS)) { picked ->
@@ -143,6 +145,7 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             val ok = runCatching { sender.send(Feedback(type, message, contact, withDevice, photos)) }.isSuccess
             sending = false
             sentToday = sender.sentToday()
+            counts = FeedbackCounts(sender.sentBugs(), sender.sentIdeas())
             result = if (ok) SendResult.SENT else SendResult.FAILED
             if (ok) {
                 message = ""
@@ -164,6 +167,7 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 .padding(top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 24.dp)
                 .padding(horizontal = 16.dp),
         ) {
+            FeedbackRewardsCard(counts)
             Text(
                 stringResource(R.string.feedback_intro),
                 style = MaterialTheme.typography.bodyMedium,

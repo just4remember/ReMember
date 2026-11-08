@@ -53,6 +53,10 @@ class FeedbackSender(private val context: Context) {
     fun sentToday(): Int =
         if (prefs.getLong(KEY_DAY, -1) == LocalDate.now().toEpochDay()) prefs.getInt(KEY_COUNT, 0) else 0
 
+    /** Сколько ошибок и предложений отправлено за всё время — для значка на странице отзывов. */
+    fun sentBugs(): Int = prefs.getInt(KEY_BUGS, 0)
+    fun sentIdeas(): Int = prefs.getInt(KEY_IDEAS, 0)
+
     /** Есть ли куда слать: сервер появится позже. */
     val configured: Boolean get() = ENDPOINT.isNotBlank() && KEY.isNotBlank()
 
@@ -105,11 +109,15 @@ class FeedbackSender(private val context: Context) {
             connection.outputStream.use { it.write(bytes) }
             val code = connection.responseCode
             if (code !in 200..299) error("HTTP $code")
-            // Принят — считаем в дневной лимит
+            // Принят — считаем в дневной лимит и в счётчик ошибок или предложений
             val today = LocalDate.now().toEpochDay()
             prefs.edit {
                 putLong(KEY_DAY, today)
                 putInt(KEY_COUNT, sentToday() + 1)
+                when (feedback.type) {
+                    FeedbackType.BUG -> putInt(KEY_BUGS, sentBugs() + 1)
+                    FeedbackType.IDEA -> putInt(KEY_IDEAS, sentIdeas() + 1)
+                }
             }
         } finally {
             connection.disconnect()
@@ -162,6 +170,9 @@ class FeedbackSender(private val context: Context) {
         private const val KEY_INSTALL = "install_id"
         private const val KEY_DAY = "day"
         private const val KEY_COUNT = "count"
+        /** Счётчики за всё время; едут в резервной копии (см. BackupSettings). */
+        const val KEY_BUGS = "bugs"
+        const val KEY_IDEAS = "ideas"
         const val MAX_MESSAGE = 4000
         private const val PHOTO_SIDE = 1600
         private const val JPEG_QUALITY = 82
