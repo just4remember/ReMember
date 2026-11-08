@@ -7,7 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import dev.chaik.remember.app.ReMemberApp
+import dev.chaik.remember.core.ui.releaseFocus
 import dev.chaik.remember.core.reminders.OpenTarget
 import dev.chaik.remember.feature.lock.LockActivity
 
@@ -21,7 +25,10 @@ class MainActivity : FragmentActivity() {
         // Без полупрозрачной подложки под кнопками навигации — контент виден до самого низа
         window.isNavigationBarContrastEnforced = false
         setContent {
-            ReMemberApp(lock)
+            // Свернули клавиатуру или нажали мимо полей — курсор уходит (у окон и шторок это своё)
+            Box(Modifier.fillMaxSize().releaseFocus()) {
+                ReMemberApp(lock)
+            }
         }
         if (savedInstanceState == null) handleOpen(intent)
         askNotificationsOnce()

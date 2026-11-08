@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -88,7 +89,7 @@ fun BodyWeightDialog(
         onDismissRequest = onSkip,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = text,
                     onValueChange = { new -> if (new.length <= 6 && new.all { it.isDigit() || it == ',' || it == '.' }) text = new },

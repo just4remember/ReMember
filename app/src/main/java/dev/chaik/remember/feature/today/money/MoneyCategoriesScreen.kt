@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.today.money
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +181,7 @@ private fun CategoryDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (category.id == 0L) R.string.money_category_new else R.string.money_category_edit)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

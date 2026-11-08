@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.data
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.ImeAction
@@ -413,7 +414,7 @@ private fun PasswordDialog(title: String, confirm: Boolean, onDone: (CharArray) 
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 val transformation = if (visible) VisualTransformation.None else PasswordVisualTransformation()
                 OutlinedTextField(
                     value = password,

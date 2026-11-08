@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.calendar.editor
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -382,7 +383,7 @@ private fun CustomRemindDialog(initial: Int?, onPick: (Int) -> Unit, onDismiss: 
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.event_remind_custom_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { text -> if (text.length <= 3 && text.all(Char::isDigit)) amount = text },

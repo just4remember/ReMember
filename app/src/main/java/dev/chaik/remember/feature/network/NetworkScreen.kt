@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.network
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -451,7 +452,7 @@ private fun AddSiteDialog(onAdd: (String) -> Boolean, onDismiss: () -> Unit) {
                 isError = invalid,
                 supportingText = if (invalid) ({ Text(stringResource(R.string.network_site_invalid)) }) else null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().releaseFocus(),
             )
         },
         confirmButton = {
@@ -532,7 +533,7 @@ private fun ServerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.network_server)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 SettingsRadioRow(label = "Cloudflare (speed.cloudflare.com)", selected = choice == ServerChoice.CLOUDFLARE, onClick = { choice = ServerChoice.CLOUDFLARE })
                 SettingsRadioRow(label = stringResource(R.string.network_server_selectel), selected = choice == ServerChoice.SELECTEL, onClick = { choice = ServerChoice.SELECTEL })
                 if (choice == ServerChoice.SELECTEL) {

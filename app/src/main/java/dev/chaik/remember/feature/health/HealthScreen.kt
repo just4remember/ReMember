@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.health
 
+import dev.chaik.remember.core.ui.releaseFocus
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -386,7 +387,7 @@ private fun GoalsDialog(goals: HealthGoals, onSave: (HealthGoals) -> Unit, onDis
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.health_goals_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 GoalField(stringResource(R.string.health_goal_steps), steps, StepsColor) { steps = it }
                 GoalField(stringResource(R.string.health_goal_minutes), minutes, MinutesColor) { minutes = it }
                 GoalField(stringResource(R.string.health_goal_calories), calories, CaloriesColor) { calories = it }

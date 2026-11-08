@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym.exercises
 
+import dev.chaik.remember.core.ui.releaseFocus
 import dev.chaik.remember.core.ui.primaryCornerModifier
 import androidx.compose.material3.FloatingActionButton
 import dev.chaik.remember.core.model.ExerciseKind
@@ -178,7 +179,7 @@ private fun ExerciseEditor(exercise: Exercise, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.gym_exercise_edit)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
@@ -264,7 +265,7 @@ private fun NewExerciseDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.gym_exercise_add)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = {

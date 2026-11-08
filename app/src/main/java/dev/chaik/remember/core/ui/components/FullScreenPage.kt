@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.ui.components
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -109,6 +110,8 @@ fun FullScreenPage(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxSize()
+                // Своё окно — свой фокус: курсор уходит, когда свернули клавиатуру или нажали мимо поля
+                .releaseFocus()
                 .graphicsLayer { translationX = offset.value }
                 .pointerInput(Unit) {
                     val flingVelocity = FlingVelocity.toPx()

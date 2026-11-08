@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym.workout
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -307,7 +308,7 @@ fun AddExerciseDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.gym_new_exercise)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

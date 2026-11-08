@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.editor
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -399,7 +400,7 @@ private fun LinkDialog(state: EditorState) {
         onDismissRequest = { state.linkDialogOpen = false },
         title = { Text(stringResource(R.string.editor_link)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it.replace('\n', ' ') },

@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.appearance
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -72,7 +73,7 @@ fun ColorPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(title ?: stringResource(R.string.appearance_custom_color)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.releaseFocus()) {
                 Box(
                     Modifier
                         .fillMaxWidth()

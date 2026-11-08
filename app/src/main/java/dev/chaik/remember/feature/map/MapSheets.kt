@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.map
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -88,6 +89,7 @@ internal fun PlaceSheet(place: Place, categories: List<PlaceCategory>, onDismiss
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
+                .releaseFocus()
                 .fillMaxWidth()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
@@ -257,6 +259,7 @@ internal fun CategoriesSheet(categories: List<PlaceCategory>, onDismiss: () -> U
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
+                .releaseFocus()
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
@@ -313,7 +316,7 @@ private fun CategoryEditor(category: PlaceCategory, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (category.id == 0L) R.string.place_category_add else R.string.place_category_edit)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.releaseFocus().verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.replace('\n', ' ') },

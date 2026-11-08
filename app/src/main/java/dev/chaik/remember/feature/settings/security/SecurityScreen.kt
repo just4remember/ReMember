@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.security
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -254,7 +255,7 @@ private fun PinDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.releaseFocus()) {
                 if (needCurrent) {
                     PinField(stringResource(R.string.security_current_pin), current, Modifier.focusRequester(focus)) { current = it; error = null }
                     if (confirmWithFingerprint != null) {

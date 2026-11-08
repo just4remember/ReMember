@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.notes
 
+import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,6 +64,7 @@ fun NameDialog(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { confirm() }),
                 modifier = Modifier
+                    .releaseFocus()
                     .fillMaxWidth()
                     .focusRequester(focus),
             )
