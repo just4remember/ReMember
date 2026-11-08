@@ -5,7 +5,9 @@ import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import dev.chaik.remember.core.data.StreakPause
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /** Настройки в SharedPreferences: читаются мгновенно при запуске, до открытия базы. */
 class AppSettingsStore(context: Context) {
@@ -60,6 +62,12 @@ class AppSettingsStore(context: Context) {
             paragraphGap = prefs.getInt("paragraph_gap", d.paragraphGap).coerceIn(0, GAP_MAX),
             showMarkup = prefs.getBoolean("show_markup", d.showMarkup),
             editorTools = list("editor_tools"),
+            streak = prefs.getBoolean("streak", d.streak),
+            streakSpare = prefs.getBoolean("streak_spare", d.streakSpare),
+            streakPauses = list("streak_pauses").mapNotNull(::parsePause),
+            raskobkiStreak = prefs.getBoolean("raskobki_streak", d.raskobkiStreak),
+            raskobkiTimer = prefs.getBoolean("raskobki_timer", d.raskobkiTimer),
+            raskobkiResults = prefs.getBoolean("raskobki_results", d.raskobkiResults),
         )
     }
 
@@ -99,7 +107,19 @@ class AppSettingsStore(context: Context) {
         putInt("paragraph_gap", s.paragraphGap)
         putBoolean("show_markup", s.showMarkup)
         putString("editor_tools", s.editorTools.joinToString(","))
+        putBoolean("streak", s.streak)
+        putBoolean("streak_spare", s.streakSpare)
+        putString("streak_pauses", s.streakPauses.joinToString(",") { "${it.start}_${it.end}" })
+        putBoolean("raskobki_streak", s.raskobkiStreak)
+        putBoolean("raskobki_timer", s.raskobkiTimer)
+        putBoolean("raskobki_results", s.raskobkiResults)
     }
+
+    /** «2026-11-08_2026-11-15» — пауза; битая запись пропускается. */
+    private fun parsePause(text: String): StreakPause? = runCatching {
+        val (start, end) = text.split('_')
+        StreakPause(LocalDate.parse(start), LocalDate.parse(end)).takeIf { !it.end.isBefore(it.start) }
+    }.getOrNull()
 
     private fun list(key: String): List<String> =
         prefs.getString(key, null).orEmpty().split(',').filter { it.isNotBlank() }

@@ -14,8 +14,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import dev.chaik.remember.core.model.Tag
 import dev.chaik.remember.core.data.DayStreak
+import dev.chaik.remember.core.data.StreakInfo
 import dev.chaik.remember.core.settings.logicalToday
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -55,13 +58,14 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
 
     val isToday: Boolean get() = date == currentDay
 
-    /** Сколько дней подряд написана запись дня. */
+    /** Сколько дней подряд написана запись дня — с паузами и запасным днём из настроек. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val streak: StateFlow<Int> = combine(
+    val streak: StateFlow<StreakInfo> = combine(
         container.dayRepository.observeWrittenDates(),
         snapshotFlow { currentDay },
-    ) { dates, today -> DayStreak.length(dates, today) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+        container.settings.settings.map { it.streakRules }.distinctUntilChanged(),
+    ) { dates, today, rules -> StreakInfo(DayStreak.length(dates, today, rules), DayStreak.activePause(rules, today)?.end) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StreakInfo(0, null))
 
     /** Самый ранний месяц в календаре выбора дня: январь 2000-го или раньше, если записи старше. */
     var calendarStart by mutableStateOf(CALENDAR_START)

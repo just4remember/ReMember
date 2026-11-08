@@ -192,7 +192,14 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
         actions = {
             val streak by viewModel.streak.collectAsStateWithLifecycle()
             // Значки плотнее и прижаты вправо: длинной дате («Воскресенье, 1 ноября») нужно место
-            StreakFlame(streak, Modifier.padding(end = if (mode == TodayMode.Money || !viewModel.isToday) 0.dp else 8.dp))
+            if (LocalAppSettings.current.streak) {
+                StreakFlame(
+                    streak.days,
+                    Modifier.padding(end = if (mode == TodayMode.Money || !viewModel.isToday) 0.dp else 8.dp),
+                    pausedUntil = streak.pausedUntil,
+                    spareDay = LocalAppSettings.current.streakSpare,
+                )
+            }
             if (mode == TodayMode.Money) {
                 IconButton(onClick = onOpenMoneyCategories, modifier = Modifier.size(HeaderIcon)) {
                     Icon(Icons.Outlined.Settings, stringResource(R.string.money_categories))

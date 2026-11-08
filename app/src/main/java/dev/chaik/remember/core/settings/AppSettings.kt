@@ -1,6 +1,8 @@
 package dev.chaik.remember.core.settings
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import dev.chaik.remember.core.data.StreakPause
+import dev.chaik.remember.core.data.StreakRules
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -68,7 +70,21 @@ data class AppSettings(
     val showMarkup: Boolean = true,
     /** Порядок кнопок панели над клавиатурой (имена EditorTool); пусто — по умолчанию. */
     val editorTools: List<String> = emptyList(),
-)
+    /** Огонёк серии дневника: на «Сегодня» и в виджетах. */
+    val streak: Boolean = true,
+    /** Запасной день: один пропуск в неделю серию не обрывает. */
+    val streakSpare: Boolean = true,
+    /** Паузы серии: прошлые тоже храним, иначе серия оборвётся задним числом. */
+    val streakPauses: List<StreakPause> = emptyList(),
+    /** Ра[скобки]: огонёк серии на главной игры, в календаре и профиле. */
+    val raskobkiStreak: Boolean = true,
+    /** Ра[скобки]: время на экране игры и в результате. Сайт время учитывает всё равно. */
+    val raskobkiTimer: Boolean = true,
+    /** Ра[скобки]: цифры результата видны сразу; выключено — размыты до нажатия. */
+    val raskobkiResults: Boolean = true,
+) {
+    val streakRules: StreakRules get() = StreakRules(streakPauses, streakSpare)
+}
 
 /**
  * Тема. ONE_DARK, NIGHT_OWL, SOLARIZED_LIGHT и TOKYO_NIGHT_LIGHT — готовые палитры со своими цветами; выбранный акцент меняет у них только основной цвет.

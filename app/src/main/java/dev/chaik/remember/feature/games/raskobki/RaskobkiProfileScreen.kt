@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import dev.chaik.remember.core.settings.LocalAppSettings
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -100,6 +101,8 @@ fun RaskobkiProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             RaskobkiColorPreview()
             HorizontalDivider()
             RaskobkiReminderSection()
+            HorizontalDivider()
+            RaskobkiDisplaySection()
             HorizontalDivider()
             val metrics = LocalContext.current.appContainer.raskobkiMetrics
             val consent by metrics.consent.collectAsState()
@@ -271,9 +274,11 @@ private fun Signed(account: RaskobkiAccount, repository: RaskobkiRepository) {
             Text(account.email, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.raskobki_streak), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        StreakFlame(streak)
+    if (LocalAppSettings.current.raskobkiStreak) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.raskobki_streak), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            StreakFlame(streak)
+        }
     }
     Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.raskobki_completed_count), color = MaterialTheme.colorScheme.onSurfaceVariant)

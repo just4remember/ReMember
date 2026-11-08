@@ -187,7 +187,9 @@ fun RaskobkiScreen(
             if (gameHaptics) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
         }
     }
-    val streak = remember(progress, today) { raskobkiStreak(progress, today) }
+    // Серию можно скрыть в «Настройки → Профиль»: тогда нет ни карточки, ни отметок в календаре
+    val showStreak = LocalAppSettings.current.raskobkiStreak
+    val streak = remember(progress, today, showStreak) { if (showStreak) raskobkiStreak(progress, today) else emptyList() }
     // Обновляемся и при открытии экрана, и при возврате в приложение, например с сайта
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
     val resumed = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
@@ -227,7 +229,7 @@ fun RaskobkiScreen(
                 style = MaterialTheme.typography.bodySmall,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                StreakCard(streak.size, ready, Modifier.weight(1f).fillMaxHeight())
+                if (showStreak) StreakCard(streak.size, ready, Modifier.weight(1f).fillMaxHeight())
                 CountdownCard(Modifier.weight(1f).fillMaxHeight())
             }
             DaySwitcher(

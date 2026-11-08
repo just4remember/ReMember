@@ -60,7 +60,7 @@ data object ProfileRoute : NavKey
 /** Языки, которые уже переведены; остальные в списке видны, но недоступны. */
 private val TranslatedLanguages = setOf("", "ru", "en")
 
-/** Профиль: никнейм, пол, язык, валюта, первый день недели. Всё сохраняется сразу. */
+/** Профиль: никнейм, язык, валюта, смена дня, первый день недели и огонёк серии. Всё сохраняется сразу. */
 @OptIn(ExperimentalLayoutApi::class, FlowPreview::class)
 @Composable
 fun ProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
@@ -157,6 +157,8 @@ fun ProfileScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     )
                 }
             }
+
+            StreakSettings()
         }
     }
 }

@@ -1011,7 +1011,7 @@
         <item quantity="one">day</item>
         <item quantity="other">days</item>
     </plurals>
-    <string name="raskobki_streak_hint">Solve puzzles daily or your streak burns out</string>
+    <string name="raskobki_streak_hint">A puzzle solved on its release day extends the streak</string>
     <string name="raskobki_next_layer_hint">00:00 · Europe/Moscow</string>
     <string name="raskobki_next_layer">Next layer</string>
     <string name="raskobki_previous_day">Previous day</string>
@@ -1416,4 +1416,29 @@ The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font L
     <string name="tutorial_settings_hints">Hints on pages</string>
     <string name="tutorial_settings_hints_hint">A card describing a section the first time you open it</string>
     <string name="tutorial_settings_restart">Restart the tutorial</string>
+    <string name="today_streak_paused">The streak is paused until %1$s: missed days don’t break it</string>
+    <string name="today_streak_spare">One missed day a week doesn’t break the streak</string>
+    <string name="widgets_streak_off">The flame is turned off in Settings → Profile</string>
+    <string name="profile_streak_title">Streak flame</string>
+    <string name="profile_streak_show">Show the flame</string>
+    <string name="profile_streak_show_hint">How many days in a row have a day entry, on Today and in widgets</string>
+    <string name="profile_streak_spare">Spare day</string>
+    <string name="profile_streak_spare_hint">One missed day a week doesn’t break the streak</string>
+    <string name="profile_streak_pause">Pause</string>
+    <string name="profile_streak_pause_hint">For a vacation or a break: paused days don’t break the streak and don’t count toward it</string>
+    <string name="profile_streak_pause_until">The streak is paused through %1$s</string>
+    <string name="profile_streak_pause_start">Pause the streak</string>
+    <string name="profile_streak_pause_change">Change date</string>
+    <string name="profile_streak_pause_stop">End pause</string>
+    <string name="profile_streak_pause_pick">Pause until</string>
+    <string name="profile_raskobki_streak">Streak</string>
+    <string name="profile_raskobki_streak_hint">The flame on the game home and in the profile, streak marks in the calendar</string>
+    <string name="profile_raskobki_timer">Timer</string>
+    <string name="profile_raskobki_timer_hint">Time on the game screen and in the result</string>
+    <string name="profile_raskobki_results">Results</string>
+    <string name="profile_raskobki_results_hint">Score, mistakes and hints are shown right away. When off, the numbers are blurred until you tap</string>
+    <string name="profile_raskobki_note">These settings only change what the app shows. The streak and time are still counted on raskobki.app</string>
+    <string name="raskobki_results_show">Show the result</string>
+    <string name="raskobki_results_neutral">Puzzle solved</string>
+    <string name="raskobki_results_neutral_note">The find is yours. The result numbers are hidden, tap here if you want to see them</string>
 </resources>

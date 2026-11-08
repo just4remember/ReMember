@@ -5,11 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -33,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.chaik.remember.R
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /** Цвет огонька с такого числа дней подряд. Следующая строка — следующий цвет. */
 private class StreakLevel(val fromDays: Int, val color: Color)
@@ -52,12 +57,25 @@ private fun streakLevel(days: Int): StreakLevel? = StreakLevels.lastOrNull { day
 /** Цвет огонька для серии такой длины; null — серии нет. */
 fun streakColor(days: Int): Color? = streakLevel(days)?.color
 
-/** Огонёк серии: значок и число одного цвета, цвет растёт вместе с серией. Тап — какие цвета бывают. */
+/** Цвет огонька на паузе: серия заморожена. */
+private val PausedColor = Color(0xFF7FC8F8)
+
+/**
+ * Огонёк серии: значок и число одного цвета, цвет растёт вместе с серией. Тап — какие цвета бывают.
+ * [pausedUntil] — серия на паузе до этого дня: вместо огонька снежинка. [spareDay] — в окне
+ * с цветами сказать, что один пропуск в неделю серию не обрывает.
+ */
 @Composable
-fun StreakFlame(days: Int, modifier: Modifier = Modifier, suffix: String? = null) {
+fun StreakFlame(
+    days: Int,
+    modifier: Modifier = Modifier,
+    suffix: String? = null,
+    pausedUntil: LocalDate? = null,
+    spareDay: Boolean = false,
+) {
     var showLevels by remember { mutableStateOf(false) }
     val description = pluralStringResource(R.plurals.today_streak, days, days)
-    val color = streakLevel(days)?.color ?: MaterialTheme.colorScheme.outline
+    val color = if (pausedUntil != null) PausedColor else streakLevel(days)?.color ?: MaterialTheme.colorScheme.outline
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -66,7 +84,7 @@ fun StreakFlame(days: Int, modifier: Modifier = Modifier, suffix: String? = null
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(horizontal = 4.dp, vertical = 4.dp),
     ) {
-        Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(22.dp))
+        Icon(if (pausedUntil != null) Icons.Filled.AcUnit else Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(22.dp))
         Text(days.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
         suffix?.let {
             Text(
@@ -78,12 +96,12 @@ fun StreakFlame(days: Int, modifier: Modifier = Modifier, suffix: String? = null
             )
         }
     }
-    if (showLevels) StreakLevelsDialog(days, description, onDismiss = { showLevels = false })
+    if (showLevels) StreakLevelsDialog(days, description, pausedUntil, spareDay, onDismiss = { showLevels = false })
 }
 
 /** Все цвета огонька и сколько дней подряд нужно для каждого; текущий выделен. */
 @Composable
-private fun StreakLevelsDialog(days: Int, current: String, onDismiss: () -> Unit) {
+private fun StreakLevelsDialog(days: Int, current: String, pausedUntil: LocalDate?, spareDay: Boolean, onDismiss: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val active = streakLevel(days)
     AlertDialog(
@@ -95,8 +113,23 @@ private fun StreakLevelsDialog(days: Int, current: String, onDismiss: () -> Unit
                     text = current,
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = if (pausedUntil == null && !spareDay) 8.dp else 0.dp),
                 )
+                pausedUntil?.let { end ->
+                    Text(
+                        text = stringResource(R.string.today_streak_paused, end.format(DateTimeFormatter.ofPattern("d MMMM"))),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PausedColor,
+                    )
+                }
+                if (spareDay) {
+                    Text(
+                        text = stringResource(R.string.today_streak_spare),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
+                if (pausedUntil != null || spareDay) Spacer(Modifier.height(8.dp))
                 StreakLevels.forEachIndexed { index, level ->
                     val next = StreakLevels.getOrNull(index + 1)
                     Row(

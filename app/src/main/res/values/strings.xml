@@ -1068,7 +1068,7 @@
         <item quantity="many">дней</item>
         <item quantity="other">дня</item>
     </plurals>
-    <string name="raskobki_streak_hint">Решайте ежедневно, иначе серия сгорит</string>
+    <string name="raskobki_streak_hint">Выпуск, решённый в день выхода, продлевает серию</string>
     <string name="raskobki_next_layer_hint">00:00 · Europe/Moscow</string>
     <string name="raskobki_next_layer">Следующий слой</string>
     <string name="raskobki_previous_day">Предыдущий день</string>
@@ -1475,4 +1475,29 @@
     <string name="tutorial_settings_hints">Подсказки на страницах</string>
     <string name="tutorial_settings_hints_hint">Карточка с описанием раздела при первом входе в него</string>
     <string name="tutorial_settings_restart">Пройти обучение заново</string>
+    <string name="today_streak_paused">Серия на паузе до %1$s: пропуски в эти дни её не обрывают</string>
+    <string name="today_streak_spare">Один пропуск в неделю серию не обрывает</string>
+    <string name="widgets_streak_off">Огонёк выключен в «Настройки → Профиль»</string>
+    <string name="profile_streak_title">Огонёк серии</string>
+    <string name="profile_streak_show">Показывать огонёк</string>
+    <string name="profile_streak_show_hint">Сколько дней подряд написана запись дня, на «Сегодня» и в виджетах</string>
+    <string name="profile_streak_spare">Запасной день</string>
+    <string name="profile_streak_spare_hint">Один пропуск в неделю не обрывает серию</string>
+    <string name="profile_streak_pause">Пауза</string>
+    <string name="profile_streak_pause_hint">На время отпуска или перерыва: дни паузы не обрывают серию и не засчитываются в неё</string>
+    <string name="profile_streak_pause_until">Серия на паузе до %1$s включительно</string>
+    <string name="profile_streak_pause_start">Поставить на паузу</string>
+    <string name="profile_streak_pause_change">Изменить дату</string>
+    <string name="profile_streak_pause_stop">Снять паузу</string>
+    <string name="profile_streak_pause_pick">До какого дня пауза</string>
+    <string name="profile_raskobki_streak">Серия</string>
+    <string name="profile_raskobki_streak_hint">Огонёк на главной игры и в профиле, отметки серии в календаре</string>
+    <string name="profile_raskobki_timer">Таймер</string>
+    <string name="profile_raskobki_timer_hint">Время на экране игры и в результате</string>
+    <string name="profile_raskobki_results">Результаты</string>
+    <string name="profile_raskobki_results_hint">Счёт, ошибки и подсказки видны сразу. Если выключить, цифры будут размыты до нажатия</string>
+    <string name="profile_raskobki_note">Эти настройки меняют только то, что видно в приложении. Серия и время по-прежнему считаются на сайте raskobki.app</string>
+    <string name="raskobki_results_show">Показать результат</string>
+    <string name="raskobki_results_neutral">Головоломка решена</string>
+    <string name="raskobki_results_neutral_note">Находка ваша. Цифры результата скрыты, нажмите сюда, если захотите их посмотреть</string>
 </resources>

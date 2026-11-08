@@ -136,7 +136,7 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     stringResource(R.string.widgets_streak),
                     settings.analogStreak,
                     { on -> store.update { it.copy(analogStreak = on) } },
-                    hint = stringResource(R.string.widgets_streak_hint),
+                    hint = stringResource(if (LocalAppSettings.current.streak) R.string.widgets_streak_hint else R.string.widgets_streak_off),
                 )
             }
 
@@ -167,7 +167,7 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     stringResource(R.string.widgets_streak),
                     settings.digitalStreak,
                     { on -> store.update { it.copy(digitalStreak = on) } },
-                    hint = stringResource(R.string.widgets_streak_hint),
+                    hint = stringResource(if (LocalAppSettings.current.streak) R.string.widgets_streak_hint else R.string.widgets_streak_off),
                 )
             }
 

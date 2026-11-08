@@ -81,8 +81,20 @@ class ReMemberApplication : Application() {
         }
         container.appScope.launch {
             // Огонёк серии на часах: записали день — серия могла вырасти
+            var streakShown: Boolean? = null
             runCatching {
-                container.dayRepository.observeWrittenDates().collect { WidgetStreak.update(this@ReMemberApplication, it) }
+                // Правила серии и огонёк из «Профиля» тоже меняют часы
+                combine(
+                    container.dayRepository.observeWrittenDates(),
+                    container.settings.settings.map { Triple(it.streak, it.streakRules, it.dayStartMinutes) }.distinctUntilChanged(),
+                ) { written, flags -> written to flags.first }
+                    .collect { (written, shown) ->
+                        WidgetStreak.update(this@ReMemberApplication, written)
+                        if (shown != streakShown) {
+                            if (streakShown != null) Widgets.updateClocks(this@ReMemberApplication)
+                            streakShown = shown
+                        }
+                    }
             }.onFailure { Log.w(TAG, "Не удалось следить за серией для виджетов", it) }
         }
         container.appScope.launch {

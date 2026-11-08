@@ -1,5 +1,11 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
+import dev.chaik.remember.core.settings.LocalAppSettings
 import android.content.Intent
 import android.os.SystemClock
 import androidx.compose.foundation.background
@@ -214,7 +220,8 @@ private fun RaskobkiGame(puzzle: RaskobkiPuzzle, repository: RaskobkiRepository,
         modifier = modifier,
         onBack = onBack,
         actions = {
-            if (!current.c) {
+            // Время можно скрыть в «Настройки → Профиль»: идёт оно всё равно, сайт его учитывает
+            if (!current.c && LocalAppSettings.current.raskobkiTimer) {
                 Text(
                     raskobkiTime(elapsed.toLong()),
                     fontWeight = FontWeight.Bold,
@@ -509,12 +516,18 @@ internal fun puzzleText(
     return buildAnnotatedString { append(parts) }
 }
 
-/** Пройденный выпуск, как на сайте: находка, сохранность, счёт и все фрагменты. */
+/**
+ * Пройденный выпуск, как на сайте: находка, сохранность, счёт и все фрагменты. Если результаты
+ * скрыты в настройках, цифры размыты, а вместо оценки — спокойное поздравление; нажатие их показывает.
+ */
 @Composable
 private fun RaskobkiResult(puzzle: RaskobkiPuzzle, state: RaskobkiState, onBack: () -> Unit, modifier: Modifier) {
     val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
+    val settings = LocalAppSettings.current
     val grade = RaskobkiGrade.of(state.score)
+    var revealed by rememberSaveable(puzzle.day) { mutableStateOf(false) }
+    val hidden = !settings.raskobkiResults && !revealed
     val shape = RoundedCornerShape(20.dp)
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -536,16 +549,26 @@ private fun RaskobkiResult(puzzle: RaskobkiPuzzle, state: RaskobkiState, onBack:
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceContainerLow, shape).padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(colors.surfaceContainerLow)
+                .then(if (hidden) Modifier.clickable(onClickLabel = stringResource(R.string.raskobki_results_show)) { revealed = true } else Modifier)
+                .padding(16.dp),
         ) {
-            Text(grade.roman, fontWeight = FontWeight.Bold, fontSize = 40.sp, color = colors.primary)
-            Text(grade.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text(grade.note, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            ResultRow(stringResource(R.string.raskobki_score), state.score.toString())
-            ResultRow(stringResource(R.string.raskobki_time), raskobkiTime(state.e))
-            ResultRow(stringResource(R.string.raskobki_mistakes), state.w.toString())
-            ResultRow(stringResource(R.string.raskobki_peeks), state.h.size.toString())
-            ResultRow(stringResource(R.string.raskobki_reveals), state.rv.size.toString())
+            Text(grade.roman, fontWeight = FontWeight.Bold, fontSize = 40.sp, color = colors.primary, modifier = Modifier.hiddenIf(hidden))
+            if (hidden) {
+                Text(stringResource(R.string.raskobki_results_neutral), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.raskobki_results_neutral_note), color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            } else {
+                Text(grade.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(grade.note, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            }
+            ResultRow(stringResource(R.string.raskobki_score), state.score.toString(), hidden)
+            if (settings.raskobkiTimer) ResultRow(stringResource(R.string.raskobki_time), raskobkiTime(state.e), hidden)
+            ResultRow(stringResource(R.string.raskobki_mistakes), state.w.toString(), hidden)
+            ResultRow(stringResource(R.string.raskobki_peeks), state.h.size.toString(), hidden)
+            ResultRow(stringResource(R.string.raskobki_reveals), state.rv.size.toString(), hidden)
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -587,11 +610,15 @@ private fun assembledClue(node: RaskobkiNode, state: RaskobkiState): String =
     }.replace(Regex("\\s+"), " ").trim()
 
 @Composable
-private fun ResultRow(label: String, value: String) {
+private fun ResultRow(label: String, value: String, hidden: Boolean = false) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-        Text(value, fontWeight = FontWeight.Bold)
+        Text(value, fontWeight = FontWeight.Bold, modifier = Modifier.hiddenIf(hidden))
     }
 }
+
+/** Размыть цифру результата так, чтобы её нельзя было прочитать. */
+private fun Modifier.hiddenIf(hidden: Boolean): Modifier =
+    if (hidden) blur(10.dp, BlurredEdgeTreatment.Unbounded).clearAndSetSemantics {} else this
 
 private fun raskobkiTime(seconds: Long): String = "%02d:%02d".format(seconds / 60, seconds % 60)

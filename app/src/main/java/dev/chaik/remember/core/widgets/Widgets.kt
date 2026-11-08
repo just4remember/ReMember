@@ -32,6 +32,7 @@ import dev.chaik.remember.core.reminders.OpenTarget
 import dev.chaik.remember.core.settings.AccentColor
 import dev.chaik.remember.core.settings.logicalToday
 import dev.chaik.remember.core.ui.components.streakColor
+import dev.chaik.remember.core.data.DayStreak
 import java.time.LocalDate
 
 /**
@@ -160,41 +161,36 @@ object Widgets {
 
 /**
  * Серия дней с записью для огонька. Базу из виджета не открываем (она зашифрована и
- * открывается долго): приложение запоминает, каким днём закончилась серия и какой длины.
+ * открывается долго): приложение запоминает длину серии и до какого дня она доживёт без записей.
  */
 object WidgetStreak {
-    /** Даты с записью изменились — пересчитать; изменилась серия — перерисовать часы. */
+    /** Даты с записью или правила серии изменились — пересчитать; изменилась серия — перерисовать часы. */
     fun update(context: Context, written: Set<LocalDate>) {
-        val today = context.appContainer.settings.settings.value.logicalToday()
-        val end = written.filter { !it.isAfter(today) }.maxOrNull()
-        var length = 0
-        if (end != null) {
-            var day: LocalDate = end
-            while (day in written) {
-                length++
-                day = day.minusDays(1)
-            }
-        }
+        val settings = context.appContainer.settings.settings.value
+        val today = settings.logicalToday()
+        val rules = settings.streakRules
+        val length = DayStreak.length(written, today, rules)
+        val alive = DayStreak.aliveThrough(written, today, rules)?.toEpochDay() ?: Long.MIN_VALUE
         val prefs = prefs(context)
-        val endDay = end?.toEpochDay() ?: Long.MIN_VALUE
-        if (prefs.getLong(KEY_END, Long.MIN_VALUE) == endDay && prefs.getInt(KEY_LENGTH, 0) == length) return
+        if (prefs.getLong(KEY_ALIVE, Long.MIN_VALUE) == alive && prefs.getInt(KEY_LENGTH, 0) == length) return
         prefs.edit {
-            putLong(KEY_END, endDay)
+            remove("end") // раньше хранили последний день серии
+            putLong(KEY_ALIVE, alive)
             putInt(KEY_LENGTH, length)
         }
         Widgets.updateClocks(context)
     }
 
-    /** Серия на сегодня: обрывается, только если пропущен вчерашний день (сегодня ещё можно написать). */
+    /** Серия на сегодня: держится, пока не прошёл последний день, до которого она доживает. */
     fun current(context: Context): Int {
         val prefs = prefs(context)
-        val end = prefs.getLong(KEY_END, Long.MIN_VALUE)
+        val alive = prefs.getLong(KEY_ALIVE, Long.MIN_VALUE)
         val today = context.appContainer.settings.settings.value.logicalToday().toEpochDay()
-        return if (end >= today - 1) prefs.getInt(KEY_LENGTH, 0) else 0
+        return if (alive >= today) prefs.getInt(KEY_LENGTH, 0) else 0
     }
 
     private fun prefs(context: Context) = context.getSharedPreferences("widget_streak", Context.MODE_PRIVATE)
-    private const val KEY_END = "end"
+    private const val KEY_ALIVE = "alive"
     private const val KEY_LENGTH = "length"
 }
 
@@ -213,7 +209,8 @@ class DigitalClockWidget : AppWidgetProvider() {
             val settings = context.appContainer.widgetSettings.settings.value
             val (digitsWidth, digitsHeight) = Widgets.measureDigits(settings.digitalWeight)
             val click = Widgets.open(context, OpenTarget.Time, REQUEST_DIGITAL)
-            val showRow = settings.digitalDate || settings.digitalStreak
+            val digitalStreak = settings.digitalStreak && context.appContainer.settings.settings.value.streak
+            val showRow = settings.digitalDate || digitalStreak
             ids.forEach { id ->
                 val size = Widgets.size(manager, id, SizeF(250f, 110f))
                 val padding = if (settings.digitalCard) 12f else 4f
@@ -238,7 +235,7 @@ class DigitalClockWidget : AppWidgetProvider() {
                         },
                     )
                     removeAllViews(R.id.date_slot)
-                    if (showRow) addView(R.id.date_slot, Widgets.dateRow(context, settings.digitalDate, settings.digitalStreak, rowSp, plain = settings.digitalCard))
+                    if (showRow) addView(R.id.date_slot, Widgets.dateRow(context, settings.digitalDate, digitalStreak, rowSp, plain = settings.digitalCard))
                     setOnClickPendingIntent(R.id.widget_root, click)
                 }
                 manager.updateAppWidget(id, views)
@@ -264,7 +261,8 @@ class AnalogClockWidget : AppWidgetProvider() {
             val settings = context.appContainer.widgetSettings.settings.value
             val color = ColorStateList.valueOf(settings.analogColor?.toInt() ?: Widgets.accent(context))
             val click = Widgets.open(context, OpenTarget.Time, REQUEST_ANALOG)
-            val showRow = settings.analogDate || settings.analogStreak
+            val analogStreak = settings.analogStreak && context.appContainer.settings.settings.value.streak
+            val showRow = settings.analogDate || analogStreak
             ids.forEach { id ->
                 val size = Widgets.size(manager, id, SizeF(110f, 110f))
                 val rowSp = (minOf(size.width, size.height) * 0.08f).coerceIn(10f, 15f)
@@ -299,7 +297,7 @@ class AnalogClockWidget : AppWidgetProvider() {
                     addView(R.id.dial_slot, dial)
                     removeAllViews(R.id.date_slot)
                     setViewVisibility(R.id.date_slot, if (showRow) View.VISIBLE else View.GONE)
-                    if (showRow) addView(R.id.date_slot, Widgets.dateRow(context, settings.analogDate, settings.analogStreak, rowSp, plain = false))
+                    if (showRow) addView(R.id.date_slot, Widgets.dateRow(context, settings.analogDate, analogStreak, rowSp, plain = false))
                     setOnClickPendingIntent(R.id.widget_root, click)
                 }
                 manager.updateAppWidget(id, views)
