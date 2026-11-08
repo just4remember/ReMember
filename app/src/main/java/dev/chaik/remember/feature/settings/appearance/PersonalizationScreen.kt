@@ -1,5 +1,7 @@
 package dev.chaik.remember.feature.settings.appearance
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.TextButton
 import dev.chaik.remember.core.editor.editorTools
 import dev.chaik.remember.core.editor.EditorTool
 import androidx.compose.material3.IconButton
@@ -176,6 +178,22 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     checked = settings.leftHanded,
                     onChange = { on -> store.update { it.copy(leftHanded = on) } },
                 )
+            }
+
+            // Обучение: подсказки на страницах и тур заново (он начнётся сразу, с первой вкладки)
+            val tutorialStore = LocalContext.current.appContainer.tutorial
+            val tutorial by tutorialStore.tutorial.collectAsStateWithLifecycle()
+            SettingsGroupTitle(stringResource(R.string.tutorial_settings_title))
+            SettingsCard {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.tutorial_settings_hints),
+                    hint = stringResource(R.string.tutorial_settings_hints_hint),
+                    checked = tutorial.enabled,
+                    onChange = { on -> tutorialStore.setEnabled(on) },
+                )
+                TextButton(onClick = tutorialStore::restart, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)) {
+                    Text(stringResource(R.string.tutorial_settings_restart))
+                }
             }
 
             SettingsGroupTitle(stringResource(R.string.appearance_haptics_title))

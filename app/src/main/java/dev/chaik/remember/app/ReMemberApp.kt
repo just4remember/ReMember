@@ -1,5 +1,10 @@
 package dev.chaik.remember.app
 
+import dev.chaik.remember.R
+import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.saveable.rememberSaveable
+import dev.chaik.remember.core.tutorial.TutorialCard
+import dev.chaik.remember.core.tutorial.Lessons
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -107,7 +112,8 @@ fun ReMemberApp(lock: AppLock) {
 
         Surface(color = MaterialTheme.colorScheme.surface) {
             Box(Modifier.graphicsLayer { alpha = if (unlockedOnce) 1f else 0f }) {
-                MainScaffold()
+                // Обучение ждёт, пока уйдут замок и приветствие
+                MainScaffold(ready = unlockedOnce && !locked && !welcome)
             }
             AnimatedVisibility(visible = welcome, enter = EnterTransition.None, exit = fadeOut(tween(WELCOME_FADE_MILLIS))) {
                 WelcomeScreen(nickname = settings.nickname)
@@ -125,7 +131,7 @@ fun ReMemberApp(lock: AppLock) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MainScaffold() {
+private fun MainScaffold(ready: Boolean) {
     val settings = LocalAppSettings.current
     val tabs = remember(settings.islandTabs) { settings.islandTabs() }
     val pagerState = rememberPagerState { tabs.size }
@@ -267,7 +273,79 @@ private fun MainScaffold() {
                 },
             )
         }
+
+        Tutorial(ready = ready, tabs = tabs, pagerState = pagerState, backStacks = backStacks, currentStack = currentStack)
     }
+}
+
+/**
+ * Обучение. При первом запуске — тур: вступление и вкладки островка по порядку, с «Назад»,
+ * «Далее» и крестиком. Остальные разделы показывают свою карточку при первом входе.
+ * Крестик выключает обучение целиком; вернуть — в Персонализации.
+ */
+@Composable
+private fun Tutorial(
+    ready: Boolean,
+    tabs: List<Destination>,
+    pagerState: PagerState,
+    backStacks: Map<Destination, NavBackStack<NavKey>>,
+    currentStack: NavBackStack<NavKey>,
+) {
+    val store = LocalContext.current.appContainer.tutorial
+    val tutorial by store.tutorial.collectAsStateWithLifecycle()
+    val tour = remember(tabs) { listOf(Lessons.Intro to null) + tabs.mapNotNull { tab -> Lessons.of(tab)?.let { it to tab } } }
+    var tourStep by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    // Тур начинается, когда приложение готово: с первой вкладки и с корней всех вкладок
+    LaunchedEffect(ready, tutorial.enabled, tutorial.tourDone) {
+        if (!ready || !tutorial.enabled || tutorial.tourDone || tourStep != null) return@LaunchedEffect
+        backStacks.values.forEach { stack -> while (stack.size > 1) stack.removeLastOrNull() }
+        pagerState.scrollToPage(0)
+        tourStep = 0
+    }
+    // Шаг тура про вкладку — эта вкладка на экране
+    LaunchedEffect(tourStep) {
+        val tab = tourStep?.let { tour.getOrNull(it)?.second } ?: return@LaunchedEffect
+        tabs.indexOf(tab).takeIf { it >= 0 }?.let { pagerState.animateScrollToPage(it) }
+    }
+
+    val step = tourStep
+    if (step != null && tutorial.enabled) {
+        val last = tour.lastIndex
+        TutorialCard(
+            lesson = tour[step.coerceIn(0, last)].first,
+            step = stringResource(R.string.tutorial_step, step + 1, tour.size),
+            nextLabel = stringResource(if (step >= last) R.string.tutorial_done else R.string.tutorial_next),
+            onBack = if (step > 0) ({ tourStep = step - 1 }) else null,
+            onNext = {
+                if (step < last) {
+                    tourStep = step + 1
+                } else {
+                    store.finishTour(tour.map { it.first.key })
+                    tourStep = null
+                }
+            },
+            onClose = {
+                store.disable()
+                tourStep = null
+            },
+        )
+        return
+    }
+    if (!ready || !tutorial.enabled || !tutorial.tourDone || pagerState.isScrollInProgress) return
+
+    // Раздел открыт впервые (его корень на верху стека) — его карточка
+    val top = currentStack.lastOrNull()
+    val lesson = Destination.entries.firstOrNull { it.root == top }?.let(Lessons::of)
+    if (lesson == null || lesson.key in tutorial.seen) return
+    TutorialCard(
+        lesson = lesson,
+        step = null,
+        nextLabel = stringResource(R.string.tutorial_got_it),
+        onBack = null,
+        onNext = { store.markSeen(lesson.key) },
+        onClose = { store.disable() },
+    )
 }
 
 /** Стек экранов одной вкладки. */

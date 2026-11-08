@@ -102,6 +102,7 @@ class AppContainer(context: Context) {
 
     /** Профиль и персонализация. */
     val settings by lazy { AppSettingsStore(appContext) }
+    val tutorial by lazy { dev.chaik.remember.core.tutorial.TutorialStore(appContext) }
 
     val dayRepository by lazy { DayRepository(database) }
     val sleepRepository by lazy { SleepRepository(database) }

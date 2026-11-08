@@ -36,6 +36,8 @@ android {
 
         buildConfigField("String", "FEEDBACK_ENDPOINT", "\"${secret("feedback.endpoint")}\"")
         buildConfigField("String", "FEEDBACK_KEY", "\"${secret("feedback.key")}\"")
+        // Ссылка на сбор средств «Поддержать автора»; пусто — раздела нет
+        buildConfigField("String", "SUPPORT_URL", "\"${secret("support.url")}\"")
         // Сколько отзывов в день можно отправить с телефона; нет значения или оно неверное — 5
         val feedbackLimit = secret("feedback.dailyLimit").toIntOrNull()?.takeIf { it > 0 } ?: 5
         buildConfigField("int", "FEEDBACK_DAILY_LIMIT", feedbackLimit.toString())

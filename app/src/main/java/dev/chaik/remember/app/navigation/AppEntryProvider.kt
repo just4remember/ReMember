@@ -1,5 +1,7 @@
 package dev.chaik.remember.app.navigation
 
+import dev.chaik.remember.feature.settings.support.SupportScreen
+import dev.chaik.remember.feature.settings.support.SupportRoute
 import dev.chaik.remember.feature.gym.exercises.ExercisesScreen
 import dev.chaik.remember.feature.gym.exercises.ExercisesRoute
 import androidx.navigation3.runtime.NavBackStack
@@ -174,6 +176,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<GalleryRoute> { GalleryScreen(onBack = back, onOpenNote = { backStack.add(NoteEditorRoute(noteId = it)) }) }
         entry<AboutRoute> { AboutScreen(onBack = back) }
         entry<FeedbackRoute> { FeedbackScreen(onBack = back) }
+        entry<SupportRoute> { SupportScreen(onBack = back, onOpenFeedback = { backStack.add(FeedbackRoute) }) }
         entry<PersonalizationRoute> { PersonalizationScreen(onBack = back) }
     }
 }

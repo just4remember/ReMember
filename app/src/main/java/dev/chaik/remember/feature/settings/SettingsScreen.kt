@@ -1,5 +1,8 @@
 package dev.chaik.remember.feature.settings
 
+import dev.chaik.remember.feature.settings.support.SupportUrl
+import dev.chaik.remember.feature.settings.support.SupportRoute
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +68,7 @@ private val Sections = listOf(
     Section(Icons.Outlined.Backup, R.string.settings_data, R.string.settings_data_hint, DataRoute),
     Section(Icons.Outlined.Notifications, R.string.settings_reminders, R.string.settings_reminders_hint, RemindersRoute),
     Section(Icons.Outlined.Feedback, R.string.settings_feedback, R.string.settings_feedback_hint, FeedbackRoute),
+    Section(Icons.Outlined.VolunteerActivism, R.string.settings_support, R.string.settings_support_hint, SupportRoute),
     Section(Icons.Outlined.Info, R.string.settings_about, R.string.settings_about_hint, AboutRoute),
 )
 
@@ -84,7 +88,8 @@ fun SettingsScreen(
                 .padding(top = padding.calculateTopPadding() + 8.dp, bottom = padding.calculateBottomPadding() + 16.dp)
                 .padding(horizontal = 16.dp),
         ) {
-            Sections.forEach { section ->
+            // «Поддержать автора» — только если задана ссылка на сбор
+            Sections.filter { it.route != SupportRoute || SupportUrl.isNotBlank() }.forEach { section ->
                 SettingsItem(
                     icon = section.icon,
                     title = stringResource(section.title),

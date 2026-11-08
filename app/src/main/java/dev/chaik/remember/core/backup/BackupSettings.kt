@@ -38,6 +38,8 @@ internal object BackupSettings {
         Part("network"),
         Part("widget_settings"),
         Part("games"),
+        // Отметки обучения: после восстановления оно не начнётся заново
+        Part("tutorial"),
         Part("raskobki") { it !in RASKOBKI_ACCOUNT },
         // Будильники хранятся там, где их видно до первой разблокировки; идущие таймер и секундомер — нет
         Part("time", deviceProtected = true) { it == "alarms" },
