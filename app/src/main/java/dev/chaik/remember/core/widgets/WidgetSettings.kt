@@ -8,6 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/** Границы и шаг ползунка размера цифр цифровых часов, %. */
+const val DIGITS_SIZE_MIN = 40
+const val DIGITS_SIZE_STEP = 5
+
 /** Тёмная подложка виджетов по умолчанию — как карточки приложения. */
 const val WIDGET_CARD_COLOR = 0xFF1C1F26
 
@@ -25,6 +29,8 @@ data class WidgetSettings(
     val analogStreak: Boolean = false,
     // Цифровые часы
     val digitalWeight: ClockWeight = ClockWeight.THIN,
+    /** Размер цифр, % от наибольшего, который помещается в виджет ([DIGITS_SIZE_MIN]…100). */
+    val digitalSize: Int = 100,
     val digitalCard: Boolean = false,
     val digitalCardColor: Long = WIDGET_CARD_COLOR,
     val digitalDate: Boolean = true,

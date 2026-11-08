@@ -33,6 +33,12 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
+/** Шаг копии на сервер: сборка архива или отправка. */
+enum class BackupStage { PACK, SEND }
+
+/** Ход копии: шаг и доля от 0 до 1. */
+data class BackupProgress(val stage: BackupStage, val fraction: Float)
+
 /** Настройки копий на сервер. [intervalDays] = 0 — только вручную. */
 data class ServerBackupSettings(
     val url: String = "",
@@ -66,6 +72,10 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
 
     private val _running = MutableStateFlow(false)
     val running: StateFlow<Boolean> = _running
+
+    /** Ход идущей копии — для полосок на странице «Данные»; null — копия не идёт. */
+    private val _progress = MutableStateFlow<BackupProgress?>(null)
+    val progress: StateFlow<BackupProgress?> = _progress
 
     fun setUrl(url: String) = save { putString(KEY_URL, url.trim()) }
 
@@ -106,6 +116,17 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
         )
     }
 
+    /**
+     * Пора ли делать копию по расписанию. Новое расписание система запускает почти сразу —
+     * если свежая копия уже есть (моложе половины периода), этот запуск пропускаем.
+     */
+    fun isDue(now: Instant = Instant.now()): Boolean {
+        val current = _settings.value
+        val last = current.lastSuccess ?: return true
+        val half = TimeUnit.DAYS.toMillis(current.intervalDays.coerceAtLeast(1).toLong()) / 2
+        return now.toEpochMilli() - last.toEpochMilli() >= half
+    }
+
     /** Сделать копию и отправить. true — сервер её принял. */
     suspend fun upload(): Boolean = lock.withLock {
         val current = _settings.value
@@ -114,9 +135,10 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
         _running.value = true
         val file = File(context.cacheDir, "server-backup.${BackupManager.EXTENSION}")
         try {
-            backup.export(Uri.fromFile(file), password.toCharArray())
+            backup.export(Uri.fromFile(file), password.toCharArray()) { _progress.value = BackupProgress(BackupStage.PACK, it) }
             val token = prefs.getString(KEY_TOKEN, null)?.let { runCatching { decrypt(it) }.getOrNull() }
-            send(current.url, file, token)
+            _progress.value = BackupProgress(BackupStage.SEND, 0f)
+            send(current.url, file, token) { _progress.value = BackupProgress(BackupStage.SEND, it) }
             save {
                 putLong(KEY_LAST_SUCCESS, Instant.now().toEpochMilli())
                 remove(KEY_LAST_ERROR)
@@ -127,11 +149,12 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
             false
         } finally {
             file.delete()
+            _progress.value = null
             _running.value = false
         }
     }
 
-    private suspend fun send(url: String, file: File, token: String?) = withContext(Dispatchers.IO) {
+    private suspend fun send(url: String, file: File, token: String?, onProgress: (Float) -> Unit) = withContext(Dispatchers.IO) {
         val connection = URL(url).openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
@@ -142,7 +165,26 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
             connection.setRequestProperty("Content-Type", "application/octet-stream")
             connection.setRequestProperty("X-Backup-Name", "remember-${NameFormat.format(Instant.now())}.${BackupManager.EXTENSION}")
             token?.let { connection.setRequestProperty("Authorization", "Bearer $it") }
-            file.inputStream().use { input -> connection.outputStream.use { input.copyTo(it) } }
+            // Отдаём кусками и считаем отправленное — для полоски отправки
+            val total = file.length().coerceAtLeast(1)
+            var sent = 0L
+            var lastPercent = -1
+            file.inputStream().use { input ->
+                connection.outputStream.use { output ->
+                    val buffer = ByteArray(SEND_CHUNK)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        sent += read
+                        val percent = (sent * 100 / total).toInt()
+                        if (percent != lastPercent) {
+                            lastPercent = percent
+                            onProgress(percent / 100f)
+                        }
+                    }
+                }
+            }
             val code = connection.responseCode
             if (code !in 200..299) error("HTTP $code")
         } finally {
@@ -199,6 +241,7 @@ class ServerBackup(private val context: Context, private val backup: BackupManag
         /** Номер задачи в JobScheduler: у приложения он один. */
         private const val JOB_ID = 4201
         private const val TIMEOUT_MS = 60_000
+        private const val SEND_CHUNK = 64 * 1024
         private const val KEY_URL = "url"
         private const val KEY_INTERVAL = "interval_hours"
         private const val KEY_INTERVAL_DAYS = "interval_days"
@@ -221,6 +264,8 @@ class ServerBackupJob : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         val container = applicationContext.appContainer
+        // Свежая копия уже есть — например, расписание только что поменяли
+        if (!container.serverBackup.isDue()) return false
         work = container.appScope.launch {
             val ok = container.serverBackup.upload()
             // Не дошла — система повторит позже сама, с паузой

@@ -1500,4 +1500,12 @@
     <string name="raskobki_results_show">Показать результат</string>
     <string name="raskobki_results_neutral">Головоломка решена</string>
     <string name="raskobki_results_neutral_note">Находка ваша. Цифры результата скрыты, нажмите сюда, если захотите их посмотреть</string>
+    <string name="widgets_digits_size">Размер цифр</string>
+    <string name="widgets_digits_size_hint">При 100% цифры занимают весь виджет</string>
+    <string name="server_backup_packing">Сборка архива</string>
+    <string name="server_backup_sending">Отправка на сервер</string>
+    <string name="restore_notice_title">Данные восстановлены</string>
+    <string name="restore_notice_server">Адрес сервера, токен и пароль для резервных копий в копию не входят. Введите их заново в «Настройки → Данные», чтобы копии снова отправлялись на сервер</string>
+    <string name="restore_notice_other">PIN-код, блокировка и вход в Ра[скобки] тоже не переносятся, их можно настроить заново в любой момент</string>
+    <string name="restore_notice_other_alone">PIN-код, блокировка и вход в Ра[скобки] в копию не входят, их можно настроить заново в любой момент</string>
 </resources>

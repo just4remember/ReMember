@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.pages
 
+import androidx.compose.material3.ButtonDefaults
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -244,6 +245,8 @@ fun PagesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             TextButton(
                 onClick = { store.update { it.copy(islandTabs = emptyList(), moreOrder = emptyList()) } },
+                // Сброс порядка — красным, как другие действия, которые нельзя отменить
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text(stringResource(R.string.pages_reset))

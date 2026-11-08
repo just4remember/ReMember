@@ -100,8 +100,11 @@ class BackupManager(
         (listOf(info.sourceDir) + info.splitSourceDirs.orEmpty()).sumOf { File(it).length() }
     }
 
-    /** Записать копию в [target] (файл, выбранный пользователем). Возвращает размер файла. */
-    suspend fun export(target: Uri, password: CharArray): Long = withContext(Dispatchers.IO) {
+    /**
+     * Записать копию в [target] (файл, выбранный пользователем). Возвращает размер файла.
+     * [onProgress] — доля записанного от 0 до 1: по байтам базы и фото, остальное мелочь.
+     */
+    suspend fun export(target: Uri, password: CharArray, onProgress: (Float) -> Unit = {}): Long = withContext(Dispatchers.IO) {
         val db = database().openHelper.writableDatabase
         // Всё из журнала WAL — в основной файл, чтобы копировать один файл
         db.query("PRAGMA wal_checkpoint(TRUNCATE)").use { it.moveToFirst() }
@@ -112,6 +115,12 @@ class BackupManager(
             databaseVersion = db.version,
             photos = photos.count { it.parentFile == photosDir },
         )
+        val wal = File(dbFile.path + "-wal")
+        val progress = Progress(
+            total = dbFile.length() + (if (wal.exists()) wal.length() else 0L) + photos.sumOf { it.length() },
+            report = onProgress,
+        )
+        onProgress(0f)
         val output = context.contentResolver.openOutputStream(target, "wt") ?: throw FileNotFoundException(target.toString())
         output.use { raw ->
             ZipOutputStream(BackupCrypto.encrypt(BufferedOutputStream(raw), password)).use { zip ->
@@ -124,14 +133,15 @@ class BackupManager(
                 // Пока копируем файл базы, никто не пишет — снимок цельный
                 db.beginTransaction()
                 try {
-                    zip.putFile(ARCHIVE_DB, dbFile)
-                    File(dbFile.path + "-wal").takeIf { it.exists() && it.length() > 0 }?.let { zip.putFile(ARCHIVE_WAL, it) }
+                    zip.putFile(ARCHIVE_DB, dbFile, progress)
+                    wal.takeIf { it.exists() && it.length() > 0 }?.let { zip.putFile(ARCHIVE_WAL, it, progress) }
                 } finally {
                     db.endTransaction()
                 }
-                photos.forEach { zip.putFile("$PHOTOS_DIR/" + it.relativeTo(photosDir).invariantSeparatorsPath, it) }
+                photos.forEach { zip.putFile("$PHOTOS_DIR/" + it.relativeTo(photosDir).invariantSeparatorsPath, it, progress) }
             }
         }
+        onProgress(1f)
         context.contentResolver.openFileDescriptor(target, "r")?.use { it.statSize } ?: -1L
     }
 
@@ -208,6 +218,8 @@ class BackupManager(
             runCatching { BackupSettings.restore(context, file.readText()) }
                 .onFailure { Log.w(TAG, "Не удалось вернуть настройки из копии", it) }
         }
+        // При запуске скажем, что в копию не входит: адрес и пароль копий на сервер, PIN, вход в игру
+        if (withSettings) RestoreNotice.mark(context)
         dir.deleteRecursively()
     }
 
@@ -236,10 +248,33 @@ class BackupManager(
         closeEntry()
     }
 
-    private fun ZipOutputStream.putFile(name: String, file: File) {
+    private fun ZipOutputStream.putFile(name: String, file: File, progress: Progress? = null) {
         putNextEntry(ZipEntry(name))
-        file.inputStream().use { it.copyTo(this) }
+        file.inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE * 8)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                write(buffer, 0, read)
+                progress?.add(read)
+            }
+        }
         closeEntry()
+    }
+
+    /** Сколько записано из [total]; сообщает долю, только когда она меняется на процент. */
+    private class Progress(private val total: Long, private val report: (Float) -> Unit) {
+        private var done = 0L
+        private var lastPercent = -1
+
+        fun add(bytes: Int) {
+            done += bytes
+            val percent = if (total <= 0) 100 else (done * 100 / total).toInt().coerceAtMost(100)
+            if (percent != lastPercent) {
+                lastPercent = percent
+                report(percent / 100f)
+            }
+        }
     }
 
     companion object {

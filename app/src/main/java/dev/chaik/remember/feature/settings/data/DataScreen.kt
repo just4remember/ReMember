@@ -1,5 +1,14 @@
 package dev.chaik.remember.feature.settings.data
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.animation.core.animateFloatAsState
+import dev.chaik.remember.core.backup.BackupStage
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.text.KeyboardActions
@@ -526,6 +535,7 @@ private fun ServerBackupCard() {
     val server = container.serverBackup
     val settings by server.settings.collectAsStateWithLifecycle()
     val running by server.running.collectAsStateWithLifecycle()
+    val progress by server.progress.collectAsStateWithLifecycle()
     var url by remember { mutableStateOf(settings.url) }
     var token by remember { mutableStateOf("") }
     var askPassword by remember { mutableStateOf(false) }
@@ -585,8 +595,16 @@ private fun ServerBackupCard() {
             Text(stringResource(if (settings.hasPassword) R.string.server_backup_password_change else R.string.server_backup_password_set))
         }
 
-        // Раз в сколько дней; пусто или 0 — только вручную
+        // Раз в сколько дней; пусто или 0 — только вручную. Сохраняем, когда ввод закончен
+        // (ушёл фокус, «Готово» или ушли со страницы): каждое новое расписание система
+        // запускает почти сразу, и копия уходила бы на первой же набранной цифре
         var days by remember { mutableStateOf(settings.intervalDays.takeIf { it > 0 }?.toString().orEmpty()) }
+        val commitDays by rememberUpdatedState {
+            val value = days.toIntOrNull() ?: 0
+            if (value != server.settings.value.intervalDays) server.setInterval(value)
+        }
+        DisposableEffect(Unit) { onDispose { commitDays() } }
+        var daysFocused by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = days,
             onValueChange = { text ->
@@ -594,7 +612,6 @@ private fun ServerBackupCard() {
                 // Больше месяца — не копия, а архив: ограничиваем
                 val value = digits.toIntOrNull()?.coerceAtMost(ServerBackup.MAX_DAYS)
                 days = value?.toString() ?: digits
-                server.setInterval(value ?: 0)
             },
             label = { Text(stringResource(R.string.server_backup_period)) },
             suffix = { Text(stringResource(R.string.server_backup_days)) },
@@ -607,7 +624,12 @@ private fun ServerBackupCard() {
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { state ->
+                    if (daysFocused && !state.isFocused) commitDays()
+                    daysFocused = state.isFocused
+                },
         )
 
         val last = settings.lastSuccess
@@ -645,12 +667,22 @@ private fun ServerBackupCard() {
             },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            if (running) {
-                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-            } else {
-                Icon(Icons.Outlined.CloudUpload, null, Modifier.size(18.dp))
-            }
+            Icon(Icons.Outlined.CloudUpload, null, Modifier.size(18.dp))
             Text(stringResource(R.string.server_backup_now), modifier = Modifier.padding(start = 8.dp))
+        }
+        // Идёт копия — по кнопке или по расписанию: сборка архива, потом отправка
+        AnimatedVisibility(visible = running) {
+            val current = progress
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+                val packed = when (current?.stage) {
+                    BackupStage.PACK -> current.fraction
+                    BackupStage.SEND -> 1f
+                    null -> 0f
+                }
+                val sent = if (current?.stage == BackupStage.SEND) current.fraction else 0f
+                BackupProgressLine(stringResource(R.string.server_backup_packing), packed)
+                BackupProgressLine(stringResource(R.string.server_backup_sending), sent)
+            }
         }
         if (result == true) {
             Text(stringResource(R.string.server_backup_done), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
@@ -699,5 +731,32 @@ private fun ServerBackupHelp(onDismiss: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/** Тонкая полоска хода копии с подписью и процентом. */
+@Composable
+private fun BackupProgressLine(label: String, fraction: Float) {
+    val shown by animateFloatAsState(fraction, label = "backupProgress")
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "${(fraction * 100).toInt()}%",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        LinearProgressIndicator(
+            progress = { shown },
+            gapSize = 0.dp,
+            drawStopIndicator = {},
+            modifier = Modifier.fillMaxWidth().height(3.dp),
+        )
     }
 }

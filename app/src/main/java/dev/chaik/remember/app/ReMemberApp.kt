@@ -1,5 +1,6 @@
 package dev.chaik.remember.app
 
+import dev.chaik.remember.core.backup.RestoreNoticeDialog
 import dev.chaik.remember.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -275,6 +276,8 @@ private fun MainScaffold(ready: Boolean) {
         }
 
         Tutorial(ready = ready, tabs = tabs, pagerState = pagerState, backStacks = backStacks, currentStack = currentStack)
+        // Только что восстановили копию — что ввести заново
+        RestoreNoticeDialog(ready = ready)
     }
 }
 

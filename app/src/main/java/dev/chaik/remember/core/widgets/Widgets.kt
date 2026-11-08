@@ -216,11 +216,13 @@ class DigitalClockWidget : AppWidgetProvider() {
                 val padding = if (settings.digitalCard) 12f else 4f
                 val rowSp = (size.height * 0.12f).coerceIn(10f, 16f)
                 val rowHeight = if (showRow) rowSp * 1.45f else 0f
-                // Цифры — во всю ширину или высоту, что раньше упрётся
-                val digits = minOf(
-                    (size.width - padding * 2) * 0.94f * 100f / digitsWidth,
-                    (size.height - padding * 2 - rowHeight) * 100f / digitsHeight,
-                ).coerceAtLeast(12f)
+                // Цифры — во всю ширину или высоту, что раньше упрётся, и уменьшены по настройке
+                val digits = (
+                    minOf(
+                        (size.width - padding * 2) * 0.94f * 100f / digitsWidth,
+                        (size.height - padding * 2 - rowHeight) * 100f / digitsHeight,
+                    ) * settings.digitalSize.coerceIn(DIGITS_SIZE_MIN, 100) / 100f
+                    ).coerceAtLeast(12f)
                 val views = RemoteViews(context.packageName, R.layout.widget_clock_digital).apply {
                     setViewVisibility(R.id.widget_bg, if (settings.digitalCard) View.VISIBLE else View.GONE)
                     if (settings.digitalCard) setColorStateList(R.id.widget_bg, "setImageTintList", Widgets.cardColor(settings.digitalCardColor))

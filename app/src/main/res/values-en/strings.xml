@@ -1441,4 +1441,12 @@ The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font L
     <string name="raskobki_results_show">Show the result</string>
     <string name="raskobki_results_neutral">Puzzle solved</string>
     <string name="raskobki_results_neutral_note">The find is yours. The result numbers are hidden, tap here if you want to see them</string>
+    <string name="widgets_digits_size">Digit size</string>
+    <string name="widgets_digits_size_hint">At 100% the digits fill the whole widget</string>
+    <string name="server_backup_packing">Packing the archive</string>
+    <string name="server_backup_sending">Sending to the server</string>
+    <string name="restore_notice_title">Data restored</string>
+    <string name="restore_notice_server">The server address, token and password for backups are not included in the backup. Enter them again in Settings → Data so backups go to the server again</string>
+    <string name="restore_notice_other">The PIN, app lock and Ra[skobki] sign-in are not transferred either; you can set them up again at any time</string>
+    <string name="restore_notice_other_alone">The PIN, app lock and Ra[skobki] sign-in are not included in the backup; you can set them up again at any time</string>
 </resources>

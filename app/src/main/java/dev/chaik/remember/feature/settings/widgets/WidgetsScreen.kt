@@ -1,5 +1,10 @@
 package dev.chaik.remember.feature.settings.widgets
 
+import dev.chaik.remember.core.widgets.DIGITS_SIZE_STEP
+import dev.chaik.remember.core.widgets.DIGITS_SIZE_MIN
+import dev.chaik.remember.core.ui.components.AppSlider
+import kotlin.math.roundToInt
+import androidx.compose.runtime.mutableFloatStateOf
 import dev.chaik.remember.core.widgets.WidgetLanguage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -152,6 +157,32 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         itemStyle = { TextStyle(fontWeight = FontWeight(it.weight)) },
                     )
                 }
+                // Размер цифр: 100% — во весь виджет; сохраняем, когда палец отпустили, чтобы часы не перерисовывались на каждом шаге
+                var digitsSize by remember(settings.digitalSize) { mutableFloatStateOf(settings.digitalSize.toFloat()) }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.widgets_digits_size), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            stringResource(R.string.widgets_digits_size_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        "${digitsSize.roundToInt()}%",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
+                AppSlider(
+                    value = digitsSize,
+                    onValueChange = { digitsSize = it },
+                    onValueChangeFinished = { store.update { it.copy(digitalSize = digitsSize.roundToInt()) } },
+                    valueRange = DIGITS_SIZE_MIN.toFloat()..100f,
+                    steps = (100 - DIGITS_SIZE_MIN) / DIGITS_SIZE_STEP - 1,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+                )
                 SettingsSwitchRow(stringResource(R.string.widgets_card), settings.digitalCard, { on -> store.update { it.copy(digitalCard = on) } })
                 ColorRow(
                     title = stringResource(R.string.widgets_card_color),
