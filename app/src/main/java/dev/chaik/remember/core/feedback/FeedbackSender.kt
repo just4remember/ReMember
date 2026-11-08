@@ -160,7 +160,7 @@ class FeedbackSender(private val context: Context) {
          * Редакция согласия на обработку персональных данных (страница /consent сервера отзывов).
          * Меняется вместе с текстом согласия на сервере (ConsentVersion).
          */
-        const val CONSENT_VERSION = "2026-11-08"
+        const val CONSENT_VERSION = "2026-11-09"
 
         /**
          * Больше стольких отзывов в день с телефона не отправить. Из secrets.properties
