@@ -370,14 +370,8 @@ private fun RaskobkiField(puzzle: RaskobkiPuzzle, state: RaskobkiState, elapsed:
         ) {
             OutlinedTextField(
                 value = input,
-                onValueChange = { value ->
-                    input = if (value.text.any(Char::isDigit)) {
-                        val text = value.text.filterNot(Char::isDigit)
-                        TextFieldValue(text, TextRange(text.length))
-                    } else {
-                        value
-                    }
-                },
+                // Любые символы: в ответах бывают и числа
+                onValueChange = { input = it },
                 placeholder = { Text(stringResource(R.string.raskobki_answer_hint)) },
                 singleLine = true,
                 shape = RoundedCornerShape(14.dp),

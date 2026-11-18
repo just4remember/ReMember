@@ -244,7 +244,7 @@ fun FeedbackScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             OutlinedTextField(
                 value = contact,
-                onValueChange = { contact = it.take(200) },
+                onValueChange = { contact = it.take(FeedbackSender.MAX_CONTACT) },
                 label = { Text(stringResource(R.string.feedback_contact)) },
                 placeholder = { Text(stringResource(R.string.feedback_contact_hint)) },
                 singleLine = true,

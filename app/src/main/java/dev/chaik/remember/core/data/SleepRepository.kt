@@ -23,8 +23,11 @@ class SleepRepository(db: ReMemberDatabase) {
     fun observeRange(from: LocalDate, to: LocalDate): Flow<List<SleepEntry>> =
         dao.observeRange(from, to).map { list -> list.map { it.toModel() } }
 
-    /** Дни с записанным сном — для луны в календаре. */
+    /** Дни, за которые есть любая запись сна (время, оценка или сон). */
     fun observeDates(): Flow<Set<LocalDate>> = dao.observeDates().map { it.toSet() }
+
+    /** Дни с записанным временем сна — для луны в календаре. Только оценка луну не ставит. */
+    fun observeTimedDates(): Flow<Set<LocalDate>> = dao.observeTimedDates().map { it.toSet() }
 
     suspend fun save(entry: SleepEntry) = dao.upsert(entry.toEntity(updatedAt = Instant.now()))
 

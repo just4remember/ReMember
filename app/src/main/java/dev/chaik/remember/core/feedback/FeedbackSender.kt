@@ -174,6 +174,8 @@ class FeedbackSender(private val context: Context) {
         const val KEY_BUGS = "bugs"
         const val KEY_IDEAS = "ideas"
         const val MAX_MESSAGE = 4000
+        /** Почта или ник в Telegram: длиннее не бывает. */
+        const val MAX_CONTACT = 50
         private const val PHOTO_SIDE = 1600
         private const val JPEG_QUALITY = 82
         private const val TIMEOUT_MS = 60_000

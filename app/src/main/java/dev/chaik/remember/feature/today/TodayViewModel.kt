@@ -40,7 +40,8 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     var currentDay by mutableStateOf(container.settings.settings.value.logicalToday())
         private set
 
-    var date by mutableStateOf(currentDay)
+    /** Выбранный день хранится в [TodaySession] — переживает выгрузку экрана. */
+    var date by mutableStateOf(container.todaySession.date ?: currentDay)
         private set
 
     /** Режим хранится в приложении ([TodaySession]) — переживает пересоздание вкладки. */
@@ -78,7 +79,7 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Дни с записанным сном — луна в календаре выбора дня. */
-    val calendarSleep: StateFlow<Set<LocalDate>> = container.sleepRepository.observeDates()
+    val calendarSleep: StateFlow<Set<LocalDate>> = container.sleepRepository.observeTimedDates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Теги дней — для списка в календаре выбора дня. */
@@ -92,6 +93,10 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
         load(date)
         // Фото удалили в галерее — убрать и из открытой записи, чтобы она не вернула ссылку
         viewModelScope.launch { container.photoLibrary.removed.collect(day.editor::removePhotos) }
+        // Новое открытие приложения сбросило выбранный день — вернуться на сегодня
+        viewModelScope.launch {
+            snapshotFlow { container.todaySession.date }.collect { selectDate(it ?: currentDay) }
+        }
         viewModelScope.launch {
             container.dayRepository.firstDate()
                 ?.let(YearMonth::from)
@@ -115,6 +120,7 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
     fun selectDate(date: LocalDate) {
         if (date == this.date) return
         this.date = date
+        container.todaySession.date = date.takeIf { it != currentDay }
         load(date)
     }
 

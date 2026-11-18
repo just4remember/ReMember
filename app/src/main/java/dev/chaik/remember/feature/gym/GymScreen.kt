@@ -443,6 +443,19 @@ private fun WorkoutCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+        if (summary.templateNames.isNotEmpty()) {
+            Text(
+                text = pluralStringResource(
+                    R.plurals.gym_templates_used,
+                    summary.templateNames.size,
+                    summary.templateNames.joinToString(", "),
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.outline,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         if (summary.imported) {
             Text(
                 text = stringResource(R.string.gym_imported),

@@ -51,6 +51,7 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
                     active = w.active,
                     imported = w.imported,
                     exerciseNames = names[w.id].orEmpty(),
+                    templateNames = templateNames(w.templates),
                 )
             }
         }
@@ -128,6 +129,11 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
         var order = dao.nextExerciseOrder(workoutId)
         stackTemplates(templates, present).forEach { exerciseId ->
             dao.insertWorkoutExercise(WorkoutExerciseEntity(0, workoutId, exerciseId, order++))
+        }
+        // Запомнить, какие шаблоны использованы: они видны в карточке тренировки
+        dao.get(workoutId)?.let { workout ->
+            val used = templateNames(workout.templates) + templateIds.mapNotNull { dao.templateName(it)?.trim() }
+            dao.setTemplates(workoutId, used.filter { it.isNotEmpty() }.distinct().joinToString("\n"))
         }
         repeatedInTemplates(templates, present)
     }
@@ -287,6 +293,9 @@ class WorkoutRepository(private val db: ReMemberDatabase) {
         )
     }
 }
+
+/** Названия шаблонов из колонки workout.templates. */
+private fun templateNames(stored: String): List<String> = stored.lines().filter { it.isNotBlank() }
 
 /** Итог разбора файла перед импортом. */
 data class ImportPreview(

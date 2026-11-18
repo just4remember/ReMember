@@ -1467,4 +1467,8 @@ The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font L
         <item quantity="one">%1$d point left to the “%2$s” badge</item>
         <item quantity="other">%1$d points left to the “%2$s” badge</item>
     </plurals>
+    <plurals name="gym_templates_used">
+        <item quantity="one">Template: %s</item>
+        <item quantity="other">Templates: %s</item>
+    </plurals>
 </resources>

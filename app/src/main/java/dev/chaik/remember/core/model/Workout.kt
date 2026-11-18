@@ -138,6 +138,8 @@ data class WorkoutSummary(
     val active: Boolean,
     val imported: Boolean,
     val exerciseNames: List<String>,
+    /** Шаблоны, упражнения которых добавлены в тренировку. */
+    val templateNames: List<String> = emptyList(),
 )
 
 /** «40», «17,5», «65,75». */

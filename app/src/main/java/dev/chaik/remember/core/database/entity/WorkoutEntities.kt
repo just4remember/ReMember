@@ -35,6 +35,11 @@ data class WorkoutEntity(
     val imported: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
+    /**
+     * Названия шаблонов, упражнения которых добавлены в тренировку, через перевод строки.
+     * Названия, а не id: шаблон потом могут переименовать или удалить. Появилось в версии 13 базы.
+     */
+    @ColumnInfo(defaultValue = "") val templates: String = "",
 )
 
 @Entity(

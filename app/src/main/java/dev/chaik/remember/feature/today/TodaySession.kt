@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.time.LocalDate
 import java.time.LocalTime
 
 /**
@@ -21,6 +22,12 @@ class TodaySession(
     private val dayStartMinutes: () -> Int = { 0 },
 ) {
     var mode by mutableStateOf(openingMode())
+
+    /**
+     * Выбранный на странице день; null — сегодня. Тоже живёт здесь: экран «Сегодня»
+     * выгружается при уходе на другие вкладки, и выбранный день раньше сбрасывался.
+     */
+    var date by mutableStateOf<LocalDate?>(null)
 
     /**
      * Сколько раз сменилась вкладка островка. Вкладки держатся в памяти, и экран «Сегодня»
@@ -42,7 +49,11 @@ class TodaySession(
 
     /** Вернулись: после долгой паузы это новое «открытие» — режим снова по времени суток. */
     fun onForeground(now: Long = System.currentTimeMillis()) {
-        if (leftAt > 0 && now - leftAt >= NEW_OPENING_MILLIS) mode = openingMode()
+        if (leftAt > 0 && now - leftAt >= NEW_OPENING_MILLIS) {
+            mode = openingMode()
+            // Новое открытие — снова сегодняшний день
+            date = null
+        }
         leftAt = 0
     }
 

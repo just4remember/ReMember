@@ -1530,4 +1530,10 @@
         <item quantity="many">До значка «%2$s» осталось %1$d очков</item>
         <item quantity="other">До значка «%2$s» осталось %1$d очка</item>
     </plurals>
+    <plurals name="gym_templates_used">
+        <item quantity="one">Шаблон: %s</item>
+        <item quantity="few">Шаблоны: %s</item>
+        <item quantity="many">Шаблоны: %s</item>
+        <item quantity="other">Шаблоны: %s</item>
+    </plurals>
 </resources>

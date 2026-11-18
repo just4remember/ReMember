@@ -151,6 +151,12 @@ interface WorkoutDao {
     )
     fun observeTemplateExercises(): Flow<List<TemplateExerciseRow>>
 
+    @Query("SELECT name FROM workout_template WHERE id = :id")
+    suspend fun templateName(id: Long): String?
+
+    @Query("UPDATE workout SET templates = :templates WHERE id = :id")
+    suspend fun setTemplates(id: Long, templates: String)
+
     @Query("SELECT exercise_id FROM workout_template_exercise WHERE template_id = :templateId ORDER BY sort_order")
     suspend fun templateExerciseIds(templateId: Long): List<Long>
 
