@@ -1,5 +1,11 @@
 package dev.chaik.remember.feature.notes
 
+import dev.chaik.remember.core.model.NoteFolder
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Surface
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,10 +80,25 @@ fun NotesScreen(
     modifier: Modifier = Modifier,
 ) {
     val container = LocalContext.current.appContainer
-    val viewModel = viewModel { NotesViewModel(container.noteRepository, container.settings.settings) }
+    val lock = container.appLock
+    val viewModel = viewModel {
+        NotesViewModel(
+            notes = container.noteRepository,
+            settings = container.settings.settings,
+            openFolder = lock::openFolder,
+            closeFolders = lock::closeFolders,
+        )
+    }
     val folders by viewModel.folders.collectAsStateWithLifecycle()
     val tags by viewModel.usedTags.collectAsStateWithLifecycle()
     val notes by viewModel.visibleNotes.collectAsStateWithLifecycle()
+    val openFolders by lock.openFolders.collectAsStateWithLifecycle()
+    // Открыта закрытая защищённая папка — вместо карточек ввод PIN
+    val shownFolder = folders.firstOrNull { it.id == viewModel.currentFolderId }
+    val folderLocked = shownFolder != null && shownFolder.isProtected && lock.enabled && shownFolder.id !in openFolders
+    // Действие над защищённой папкой (переименовать, удалить, снять защиту) — после PIN
+    var unlocking by remember { mutableStateOf<Pair<NoteFolder, () -> Unit>?>(null) }
+    var needPin by remember { mutableStateOf(false) }
 
     var moving by remember { mutableStateOf<NoteSummary?>(null) }
     var deleting by remember { mutableStateOf<NoteSummary?>(null) }
@@ -94,6 +115,12 @@ fun NotesScreen(
                         onCreate = viewModel::createFolder,
                         onRename = viewModel::renameFolder,
                         onDelete = viewModel::deleteFolder,
+                        canProtect = lock.enabled,
+                        isOpen = { !lock.enabled || it.id in openFolders },
+                        onSetProtected = viewModel::setFolderProtected,
+                        onNeedPin = { needPin = true },
+                        onUnlockFirst = { folder, action -> unlocking = folder to action },
+                        onCreateProtected = viewModel::createFolder,
                     )
                     if (tags.isNotEmpty()) {
                         NoteTagFilter(
@@ -109,6 +136,13 @@ fun NotesScreen(
 
                 val list = notes
                 when {
+                    folderLocked -> ProtectedLock(
+                        title = shownFolder.name,
+                        onUnlocked = { lock.openFolder(shownFolder.id) },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = padding.calculateBottomPadding()),
+                    )
                     list == null -> NotesSkeleton(bottomPadding = padding.calculateBottomPadding())
                     list.isEmpty() -> EmptyNotes(Modifier.fillMaxWidth().padding(32.dp))
                     else -> NotesGrid(
@@ -133,7 +167,7 @@ fun NotesScreen(
                 }
             }
 
-            FloatingActionButton(
+            if (!folderLocked) FloatingActionButton(
                 onClick = { onCreate(viewModel.currentFolderId) },
                 modifier = primaryCornerModifier(bottom = padding.calculateBottomPadding()),
             ) {
@@ -142,6 +176,29 @@ fun NotesScreen(
         }
     }
 
+    unlocking?.let { (folder, action) ->
+        Dialog(onDismissRequest = { unlocking = null }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+                ProtectedLock(
+                    title = folder.name,
+                    onUnlocked = {
+                        lock.openFolder(folder.id)
+                        unlocking = null
+                        action()
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+    }
+    if (needPin) {
+        AlertDialog(
+            onDismissRequest = { needPin = false },
+            title = { Text(stringResource(R.string.notes_protect_folder)) },
+            text = { Text(stringResource(R.string.notes_folder_need_pin)) },
+            confirmButton = { TextButton(onClick = { needPin = false }) { Text(stringResource(R.string.action_ok)) } },
+        )
+    }
     moving?.let { note ->
         FolderPickerDialog(
             folders = folders,

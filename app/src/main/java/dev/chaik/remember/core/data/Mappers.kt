@@ -97,4 +97,4 @@ internal fun Note.toEntity(createdAt: Instant, updatedAt: Instant) = NoteEntity(
     updatedAt = updatedAt,
 )
 
-internal fun NoteFolderEntity.toModel() = NoteFolder(id, name, sortOrder)
+internal fun NoteFolderEntity.toModel() = NoteFolder(id, name, sortOrder, isProtected)

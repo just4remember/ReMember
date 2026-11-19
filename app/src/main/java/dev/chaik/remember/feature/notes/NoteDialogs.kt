@@ -1,5 +1,10 @@
 package dev.chaik.remember.feature.notes
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Checkbox
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -34,7 +39,11 @@ import androidx.compose.ui.unit.dp
 import dev.chaik.remember.R
 import dev.chaik.remember.core.model.NoteFolder
 
-/** Ввод названия (новая папка, переименование). */
+/**
+ * Ввод названия (новая папка, переименование). [protectLabel] — показать под полем галочку
+ * «защищённая» (для новой папки); [canProtect] = false — галочка выключена, а [protectHint]
+ * объясняет почему. Выбор галочки приходит вторым аргументом [onConfirm].
+ */
 @Composable
 fun NameDialog(
     title: String,
@@ -42,13 +51,18 @@ fun NameDialog(
     confirmLabel: String,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
+    protectLabel: String? = null,
+    canProtect: Boolean = true,
+    protectHint: String? = null,
+    onConfirmProtected: ((String, Boolean) -> Unit)? = null,
 ) {
     var value by remember { mutableStateOf(TextFieldValue(initial, TextRange(initial.length))) }
+    var protect by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val confirm = {
         if (value.text.isNotBlank()) {
-            onConfirm(value.text)
+            if (onConfirmProtected != null) onConfirmProtected(value.text, protect) else onConfirm(value.text)
             onDismiss()
         }
     }
@@ -57,17 +71,39 @@ fun NameDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { confirm() }),
-                modifier = Modifier
-                    .releaseFocus()
-                    .fillMaxWidth()
-                    .focusRequester(focus),
-            )
+            Column {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { confirm() }),
+                    modifier = Modifier
+                        .releaseFocus()
+                        .fillMaxWidth()
+                        .focusRequester(focus),
+                )
+                if (protectLabel != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .fillMaxWidth()
+                            .clickable(enabled = canProtect) { protect = !protect },
+                    ) {
+                        Checkbox(checked = protect, onCheckedChange = { protect = it }, enabled = canProtect)
+                        Text(protectLabel, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    if (!canProtect && protectHint != null) {
+                        Text(
+                            protectHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 12.dp),
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = confirm, enabled = value.text.isNotBlank()) { Text(confirmLabel) }
@@ -120,7 +156,7 @@ fun FolderPickerDialog(
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 FolderOption(stringResource(R.string.notes_no_folder), current == null) { onPick(null) }
                 folders.forEach { folder ->
-                    FolderOption(folder.name, current == folder.id) { onPick(folder.id) }
+                    FolderOption(folder.name, current == folder.id, locked = folder.isProtected) { onPick(folder.id) }
                 }
             }
         },
@@ -131,7 +167,7 @@ fun FolderPickerDialog(
 }
 
 @Composable
-private fun FolderOption(name: String, selected: Boolean, onClick: () -> Unit) {
+private fun FolderOption(name: String, selected: Boolean, locked: Boolean = false, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -141,5 +177,15 @@ private fun FolderOption(name: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         RadioButton(selected = selected, onClick = onClick)
         Text(name, style = MaterialTheme.typography.bodyLarge)
+        if (locked) {
+            Icon(
+                Icons.Outlined.Lock,
+                contentDescription = stringResource(R.string.notes_protected_folder),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .size(16.dp),
+            )
+        }
     }
 }

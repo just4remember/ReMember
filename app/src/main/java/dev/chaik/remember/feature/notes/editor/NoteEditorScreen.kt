@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.notes.editor
 
+import dev.chaik.remember.feature.notes.ProtectedLock
 import dev.chaik.remember.core.editor.MediaImportProgress
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -101,34 +102,6 @@ data class NoteEditorRoute(
 ) : NavKey
 
 
-/** Вход в защищённую заметку: тот же PIN и отпечаток, что у приложения; окно отпечатка — сразу. */
-@Composable
-private fun ProtectedNoteLock(title: String, onUnlocked: () -> Unit, modifier: Modifier = Modifier) {
-    val container = LocalContext.current.appContainer
-    val lock = container.appLock
-    val activity = LocalActivity.current as? FragmentActivity
-    val biometricTitle = stringResource(R.string.notes_protected)
-    val usePin = stringResource(R.string.lock_biometric_use_pin)
-    val showBiometric: (() -> Unit)? = activity
-        ?.takeIf { lock.biometricEnabled && BiometricUnlock.isAvailable(it) }
-        ?.let { host ->
-            {
-                lock.allowExternal()
-                BiometricUnlock.prompt(host, biometricTitle, usePin, onSuccess = onUnlocked)
-            }
-        }
-    // Окно отпечатка не показываем поверх другой вкладки, в фоне и пока закрыто само приложение
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val tabVisible = LocalTabVisible.current
-    LaunchedEffect(tabVisible) {
-        if (!tabVisible) return@LaunchedEffect
-        lifecycle.currentStateFlow.first { it.isAtLeast(Lifecycle.State.RESUMED) }
-        lock.locked.first { !it }
-        showBiometric?.invoke()
-    }
-    LockScreen(lock = lock, onUnlocked = onUnlocked, onBiometric = showBiometric, modifier = modifier, title = title)
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NoteEditorScreen(
@@ -150,16 +123,20 @@ fun NoteEditorScreen(
     var disablingProtection by remember { mutableStateOf(false) }
     var needPin by remember { mutableStateOf(false) }
     var openingPicker by remember { mutableStateOf(false) }
-    val askToOpen = viewModel.isLoaded && viewModel.isProtected && lock.enabled && !unlocked
+    // Заметку в защищённой папке защищает папка: открыли папку — заметка открывается без PIN
+    val openFolders by lock.openFolders.collectAsStateWithLifecycle()
+    val folderOpen = viewModel.folderProtected && viewModel.folderId in openFolders
+    val hidden = viewModel.isProtected || viewModel.folderProtected
+    val askToOpen = viewModel.isLoaded && hidden && lock.enabled && !unlocked && !folderOpen
     val showLock = askToOpen || disablingProtection
     fun relock() {
-        if (!viewModel.isProtected) return
+        if (!hidden) return
         focusManager.clearFocus()
         unlocked = false
         disablingProtection = false
     }
     // Смена вкладки закроет защищённую заметку (см. protectedScreens), обычная останется открытой
-    val protectedNow = viewModel.isProtected && lock.enabled
+    val protectedNow = hidden && lock.enabled
     LaunchedEffect(protectedNow) {
         if (protectedNow) container.protectedScreens.add(route) else container.protectedScreens.remove(route)
     }
@@ -211,7 +188,8 @@ fun NoteEditorScreen(
         onBack = if (disablingProtection) ({ disablingProtection = false }) else onBack,
         actions = {
             if (showLock) return@ScreenScaffold
-            IconButton(
+            // В защищённой папке своей защиты у заметки не бывает — кнопки нет
+            if (!viewModel.folderProtected) IconButton(
                 modifier = HeaderButton,
                 onClick = {
                     when {
@@ -250,9 +228,17 @@ fun NoteEditorScreen(
         },
     ) { padding ->
         if (showLock) {
-            ProtectedNoteLock(
-                title = stringResource(if (disablingProtection) R.string.notes_unprotect else R.string.notes_protected),
+            ProtectedLock(
+                title = stringResource(
+                    when {
+                        disablingProtection -> R.string.notes_unprotect
+                        viewModel.folderProtected -> R.string.notes_protected_folder
+                        else -> R.string.notes_protected
+                    },
+                ),
                 onUnlocked = {
+                    // Открыли заметку из защищённой папки — открыта и папка
+                    if (viewModel.folderProtected) viewModel.folderId?.let(lock::openFolder)
                     if (disablingProtection) {
                         disablingProtection = false
                         viewModel.changeProtected(false)

@@ -69,11 +69,17 @@ class RepositoriesTest {
         assertEquals(created.createdAt, updated.createdAt) // дата создания не меняется при правке
     }
 
+    /** Сколько тегов в базе вообще — и привязанных, и нет (у репозитория такого списка нет). */
+    private fun tagCount(): Int = db.query("SELECT COUNT(*) FROM tag", null).use {
+        it.moveToFirst()
+        it.getInt(0)
+    }
+
     @Test
     fun tagNamesAreCaseInsensitive() = runTest {
         val tags = TagRepository(db)
         assertEquals(tags.getOrCreate("Работа").id, tags.getOrCreate("работа").id)
-        assertEquals(1, tags.observeAll().first().size)
+        assertEquals(1, tagCount())
     }
 
     @Test
@@ -85,7 +91,7 @@ class RepositoriesTest {
 
         tags.deleteUnused()
 
-        assertTrue(tags.observeAll().first().isEmpty())
+        assertEquals(0, tagCount())
     }
 
     @Test
@@ -138,6 +144,28 @@ class RepositoriesTest {
 
         // Все три заметки на месте, «Обычная» теперь тоже без папки
         assertEquals(3, notes.observeInFolder(null).first().size)
+    }
+
+    @Test
+    fun protectedFolderHidesNotesAndMovesKeepThemHidden() = runTest {
+        val notes = NoteRepository(db)
+        val safe = notes.saveFolder(NoteFolder(name = "Личное", isProtected = true))
+        val plain = notes.saveFolder(NoteFolder(name = "Идеи"))
+        val secret = notes.save(Note(title = "Секрет", text = "пароль от сейфа", isProtected = true))
+
+        // В защищённую папку — своя защита снимается, превью скрыто папкой
+        notes.moveToFolder(secret, safe)
+        val inside = notes.observeSummaries().first().first { it.id == secret }
+        assertTrue(!inside.isProtected && inside.inProtectedFolder && inside.preview.isEmpty())
+
+        // Из защищённой папки в обычную — заметка становится защищённой
+        notes.moveToFolder(secret, plain)
+        assertTrue(notes.get(secret)!!.isProtected)
+
+        // Удалили защищённую папку — её заметки становятся защищёнными
+        val other = notes.save(Note(title = "Ещё", folderId = safe))
+        notes.deleteFolder(safe)
+        assertTrue(notes.get(other)!!.isProtected)
     }
 
     @Test

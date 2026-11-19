@@ -48,17 +48,20 @@ fun searchIndex(container: AppContainer, labels: SearchLabels, currency: String)
     }
     val dreams = container.sleepRepository.observeRange(from, to)
     val notes = combine(container.noteRepository.observeAll(), container.noteRepository.observeSummaries()) { all, summaries ->
-        val tags = summaries.associate { it.id to it.tags }
-        all.map { n ->
+        val byId = summaries.associateBy { it.id }
+        all.mapNotNull { n ->
+            // Заметок защищённой папки в поиске нет совсем: видны они только внутри папки
+            if (byId[n.id]?.inProtectedFolder == true) return@mapNotNull null
+            val hidden = n.isProtected
             SearchItem(
                 source = SearchSource.NOTES,
                 key = "note-${n.id}",
                 title = n.title,
-                text = if (n.isProtected) "" else plain(n.text),
+                text = if (hidden) "" else plain(n.text),
                 date = n.updatedAt?.atZone(zone)?.toLocalDate(),
                 target = SearchTarget.Note(n.id),
-                tags = if (n.isProtected) emptyList() else tags[n.id].orEmpty().map { it.name },
-                hidden = n.isProtected,
+                tags = if (hidden) emptyList() else byId[n.id]?.tags.orEmpty().map { it.name },
+                hidden = hidden,
             )
         }
     }

@@ -75,9 +75,27 @@ class AppLock(
         external = true
     }
 
+    private val _openFolders = MutableStateFlow<Set<Long>>(emptySet())
+
+    /**
+     * Защищённые папки заметок, открытые в этом сеансе: их заметки открываются без PIN.
+     * Закрываются, когда приложение уходит в фон (кроме системных окон по нашей просьбе),
+     * при смене вкладки и при переключении папок в списке заметок.
+     */
+    val openFolders: StateFlow<Set<Long>> = _openFolders.asStateFlow()
+
+    fun openFolder(id: Long) {
+        _openFolders.value += id
+    }
+
+    fun closeFolders() {
+        _openFolders.value = emptySet()
+    }
+
     /** Приложение ушло в фон. */
     fun onBackground() {
         if (!_locked.value) store.backgroundSince = clock()
+        if (!external) closeFolders()
     }
 
     /** Приложение вернулось: если пробыло в фоне дольше таймаута — блокируем. */

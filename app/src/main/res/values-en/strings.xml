@@ -216,6 +216,12 @@
     <string name="notes_delete_folder">Delete folder</string>
     <string name="notes_delete_folder_title">Delete folder “%1$s”?</string>
     <string name="notes_delete_folder_text">Notes from this folder are kept, but without a folder</string>
+    <string name="notes_delete_folder_protected_text">Notes from this folder are kept without a folder and become protected notes</string>
+    <string name="notes_protect_folder">Protect folder</string>
+    <string name="notes_unprotect_folder">Remove protection</string>
+    <string name="notes_protected_folder">Protected folder</string>
+    <string name="notes_folder_protected_option">Protected: opens with a PIN or fingerprint</string>
+    <string name="notes_folder_need_pin">A protected folder opens with a PIN or fingerprint, so first set a PIN in Settings → Security</string>
     <string name="notes_new">New note</string>
     <string name="notes_pinned">Pinned</string>
     <string name="notes_others">Others</string>

@@ -222,6 +222,12 @@
     <string name="notes_delete_folder">Удалить папку</string>
     <string name="notes_delete_folder_title">Удалить папку «%1$s»?</string>
     <string name="notes_delete_folder_text">Заметки из папки сохранятся, но будут без папки</string>
+    <string name="notes_delete_folder_protected_text">Заметки из папки сохранятся без папки и станут защищёнными заметками</string>
+    <string name="notes_protect_folder">Защитить папку</string>
+    <string name="notes_unprotect_folder">Снять защиту</string>
+    <string name="notes_protected_folder">Защищённая папка</string>
+    <string name="notes_folder_protected_option">Защищённая: открывается по PIN-коду или отпечатку</string>
+    <string name="notes_folder_need_pin">Защищённая папка открывается по PIN-коду или отпечатку, поэтому сначала задайте PIN-код в разделе «Настройки» → «Безопасность»</string>
     <string name="notes_new">Новая заметка</string>
     <string name="notes_pinned">Закреплённые</string>
     <string name="notes_others">Остальные</string>

@@ -13,6 +13,11 @@ data class NoteFolderEntity(
     val name: String,
     @ColumnInfo(name = "sort_order") val sortOrder: Int,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    /**
+     * Защищённая папка: открывается по PIN или отпечатку один раз за сеанс, её заметки
+     * сами по себе не защищены. Появилось в версии 15 базы.
+     */
+    @ColumnInfo(name = "is_protected", defaultValue = "0") val isProtected: Boolean = false,
 )
 
 @Entity(

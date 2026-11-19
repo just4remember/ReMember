@@ -32,21 +32,25 @@ class NoteRepository(private val db: ReMemberDatabase) {
      * из которого в фоновом потоке готовится превью без разметки.
      */
     fun observeSummaries(): Flow<List<NoteSummary>> =
-        combine(noteDao.observeSummaries(), tagDao.observeAllNoteTags()) { rows, tagRows ->
+        combine(noteDao.observeSummaries(), tagDao.observeAllNoteTags(), noteDao.observeFolders()) { rows, tagRows, folders ->
             val tags = tagRows.groupBy({ it.noteId }, { Tag(it.tagId, it.name) })
+            val protectedFolders = folders.filter { it.isProtected }.map { it.id }.toSet()
             rows.map { row ->
+                val inProtectedFolder = row.folderId in protectedFolders
+                val hidden = row.isProtected || inProtectedFolder
                 NoteSummary(
                     id = row.id,
                     title = row.title,
-                    preview = if (row.isProtected) "" else MarkdownPreview.plain(row.head, maxChars = PREVIEW_CHARS),
-                    coverPhotoId = row.coverPhotoId.takeUnless { row.isProtected },
+                    preview = if (hidden) "" else MarkdownPreview.plain(row.head, maxChars = PREVIEW_CHARS),
+                    coverPhotoId = row.coverPhotoId.takeUnless { hidden },
                     folderId = row.folderId,
                     pinned = row.pinned,
                     isProtected = row.isProtected,
-                    tags = if (row.isProtected) emptyList() else tags[row.id].orEmpty(),
+                    tags = if (hidden) emptyList() else tags[row.id].orEmpty(),
                     createdAt = row.createdAt,
                     updatedAt = row.updatedAt,
                     sortOrder = row.sortOrder,
+                    inProtectedFolder = inProtectedFolder,
                 )
             }
         }.flowOn(Dispatchers.Default)
@@ -63,8 +67,21 @@ class NoteRepository(private val db: ReMemberDatabase) {
         ids.forEachIndexed { index, id -> noteDao.setSortOrder(id, index) }
     }
 
-    /** Перенести в папку (null — без папки), не трогая дату изменения. */
-    suspend fun moveToFolder(id: Long, folderId: Long?) = noteDao.setFolder(id, folderId)
+    /**
+     * Перенести в папку (null — без папки), не трогая дату изменения. Защита следует
+     * [protectionAfterMove]: в защищённой папке своя защита снимается, а из неё заметка
+     * выходит защищённой.
+     */
+    suspend fun moveToFolder(id: Long, folderId: Long?) = db.withTransaction {
+        val note = noteDao.get(id) ?: return@withTransaction
+        noteDao.setFolder(id, folderId)
+        val protect = protectionAfterMove(note.isProtected, isFolderProtected(note.folderId), isFolderProtected(folderId))
+        if (protect != note.isProtected) noteDao.setProtected(id, protect)
+    }
+
+    /** Защищена ли папка; null (без папки) — нет. */
+    suspend fun isFolderProtected(folderId: Long?): Boolean =
+        folderId != null && noteDao.isFolderProtected(folderId) == true
 
     /** Заметки папки; null — заметки без папки. */
     fun observeInFolder(folderId: Long?): Flow<List<Note>> =
@@ -77,6 +94,9 @@ class NoteRepository(private val db: ReMemberDatabase) {
     /** Создаёт заметку (id = 0) или обновляет существующую. Возвращает id. */
     suspend fun save(note: Note): Long = db.withTransaction {
         val now = Instant.now()
+        // В защищённой папке заметка сама не защищена — защищает папка
+        @Suppress("NAME_SHADOWING")
+        val note = if (note.isProtected && isFolderProtected(note.folderId)) note.copy(isProtected = false) else note
         val id = if (note.id == 0L) {
             // Новая — первой в ручном порядке
             val first = (noteDao.minSortOrder() ?: 0) - 1
@@ -104,14 +124,42 @@ class NoteRepository(private val db: ReMemberDatabase) {
     /** Создаёт папку (id = 0) или переименовывает/двигает существующую. Возвращает id. */
     suspend fun saveFolder(folder: NoteFolder): Long =
         if (folder.id == 0L) {
-            noteDao.insertFolder(NoteFolderEntity(name = folder.name, sortOrder = folder.sortOrder, createdAt = Instant.now()))
+            noteDao.insertFolder(
+                NoteFolderEntity(name = folder.name, sortOrder = folder.sortOrder, createdAt = Instant.now(), isProtected = folder.isProtected),
+            )
         } else {
             noteDao.updateFolder(folder.id, folder.name, folder.sortOrder)
             folder.id
         }
 
-    /** Удаляет папку; её заметки остаются без папки. */
-    suspend fun deleteFolder(id: Long) = noteDao.deleteFolder(id)
+    /**
+     * Удаляет папку; её заметки остаются без папки. Заметки из защищённой папки при этом
+     * становятся защищёнными — чтобы скрытое не оказалось на виду.
+     */
+    suspend fun deleteFolder(id: Long) = db.withTransaction {
+        if (isFolderProtected(id)) noteDao.setProtectedInFolder(id, true)
+        noteDao.deleteFolder(id)
+    }
+
+    /**
+     * Защитить папку или снять защиту. Защищённая папка прячет свои заметки сама, поэтому
+     * их собственная защита снимается; после снятия защиты с папки они обычные.
+     */
+    suspend fun setFolderProtected(id: Long, isProtected: Boolean) = db.withTransaction {
+        noteDao.setFolderProtected(id, isProtected)
+        noteDao.setProtectedInFolder(id, false)
+    }
+}
+
+/**
+ * Своя защита заметки после переноса из папки (защищена ли [from]) в папку [to]:
+ * в защищённую — снимается (защищает папка), из защищённой в обычную — включается,
+ * между обычными — как была.
+ */
+fun protectionAfterMove(wasProtected: Boolean, from: Boolean, to: Boolean): Boolean = when {
+    to -> false
+    from -> true
+    else -> wasProtected
 }
 
 /** Сколько символов превью показывать на карточке: ~6 строк по ~23 символа. */

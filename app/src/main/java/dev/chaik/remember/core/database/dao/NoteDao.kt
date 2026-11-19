@@ -65,6 +65,15 @@ interface NoteDao {
     @Query("UPDATE note SET folder_id = :folderId WHERE id = :id")
     suspend fun setFolder(id: Long, folderId: Long?)
 
+    @Query("UPDATE note SET is_protected = :isProtected WHERE id = :id")
+    suspend fun setProtected(id: Long, isProtected: Boolean)
+
+    @Query("UPDATE note SET is_protected = :isProtected WHERE folder_id = :folderId")
+    suspend fun setProtectedInFolder(folderId: Long, isProtected: Boolean)
+
+    @Query("SELECT folder_id FROM note WHERE id = :id")
+    suspend fun folderOf(id: Long): Long?
+
     // Папки
 
     @Query("SELECT * FROM note_folder ORDER BY sort_order, name")
@@ -78,6 +87,12 @@ interface NoteDao {
 
     @Query("DELETE FROM note_folder WHERE id = :id")
     suspend fun deleteFolder(id: Long)
+
+    @Query("UPDATE note_folder SET is_protected = :isProtected WHERE id = :id")
+    suspend fun setFolderProtected(id: Long, isProtected: Boolean)
+
+    @Query("SELECT is_protected FROM note_folder WHERE id = :id")
+    suspend fun isFolderProtected(id: Long): Boolean?
 }
 
 /**

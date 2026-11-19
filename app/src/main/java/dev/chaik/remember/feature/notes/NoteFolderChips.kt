@@ -1,5 +1,7 @@
 package dev.chaik.remember.feature.notes
 
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -44,7 +46,9 @@ import dev.chaik.remember.core.ui.keepHorizontalScroll
 
 /**
  * Лента папок: «Все», «Без папки», папки, «+».
- * Тап — фильтр; долгое нажатие на папке — переименовать или удалить.
+ * Тап — фильтр; долгое нажатие на папке — переименовать, защитить или удалить.
+ * У защищённой папки — замок; переименовать, удалить и снять защиту с закрытой можно
+ * только после PIN ([onUnlockFirst]). Защитить без заданного PIN нельзя ([onNeedPin]).
  */
 @Composable
 fun NoteFolderChips(
@@ -54,8 +58,18 @@ fun NoteFolderChips(
     onCreate: (String) -> Unit,
     onRename: (NoteFolder, String) -> Unit,
     onDelete: (NoteFolder) -> Unit,
+    canProtect: Boolean,
+    isOpen: (NoteFolder) -> Boolean,
+    onSetProtected: (NoteFolder, Boolean) -> Unit,
+    onNeedPin: () -> Unit,
+    onUnlockFirst: (NoteFolder, () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
+    onCreateProtected: (String, Boolean) -> Unit = { name, _ -> onCreate(name) },
 ) {
+    // Защищённую и закрытую папку сначала открыть PIN-ом, потом действие
+    fun guarded(folder: NoteFolder, action: () -> Unit) {
+        if (folder.isProtected && !isOpen(folder)) onUnlockFirst(folder, action) else action()
+    }
     var creating by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<NoteFolder?>(null) }
     var deleting by remember { mutableStateOf<NoteFolder?>(null) }
@@ -81,7 +95,11 @@ fun NoteFolderChips(
                 FilterPill(
                     label = folder.name,
                     selected = selected == FolderFilter.Folder(folder.id),
-                    icon = Icons.Outlined.Folder,
+                    icon = when {
+                        !folder.isProtected -> Icons.Outlined.Folder
+                        isOpen(folder) -> Icons.Outlined.LockOpen
+                        else -> Icons.Outlined.Lock
+                    },
                     onClick = { onSelect(FolderFilter.Folder(folder.id)) },
                     onLongClick = { menuOpen = true },
                 )
@@ -91,7 +109,21 @@ fun NoteFolderChips(
                         leadingIcon = { Icon(Icons.Outlined.DriveFileRenameOutline, null) },
                         onClick = {
                             menuOpen = false
-                            renaming = folder
+                            guarded(folder) { renaming = folder }
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(stringResource(if (folder.isProtected) R.string.notes_unprotect_folder else R.string.notes_protect_folder))
+                        },
+                        leadingIcon = { Icon(if (folder.isProtected) Icons.Outlined.LockOpen else Icons.Outlined.Lock, null) },
+                        onClick = {
+                            menuOpen = false
+                            when {
+                                folder.isProtected -> guarded(folder) { onSetProtected(folder, false) }
+                                canProtect -> onSetProtected(folder, true)
+                                else -> onNeedPin()
+                            }
                         },
                     )
                     DropdownMenuItem(
@@ -99,7 +131,7 @@ fun NoteFolderChips(
                         leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
                         onClick = {
                             menuOpen = false
-                            deleting = folder
+                            guarded(folder) { deleting = folder }
                         },
                     )
                 }
@@ -122,6 +154,10 @@ fun NoteFolderChips(
             confirmLabel = stringResource(R.string.tags_create),
             onConfirm = onCreate,
             onDismiss = { creating = false },
+            protectLabel = stringResource(R.string.notes_folder_protected_option),
+            canProtect = canProtect,
+            protectHint = stringResource(R.string.notes_folder_need_pin),
+            onConfirmProtected = onCreateProtected,
         )
     }
     renaming?.let { folder ->
@@ -136,7 +172,7 @@ fun NoteFolderChips(
     deleting?.let { folder ->
         ConfirmDialog(
             title = stringResource(R.string.notes_delete_folder_title, folder.name),
-            text = stringResource(R.string.notes_delete_folder_text),
+            text = stringResource(if (folder.isProtected) R.string.notes_delete_folder_protected_text else R.string.notes_delete_folder_text),
             confirmLabel = stringResource(R.string.notes_delete),
             onConfirm = { onDelete(folder) },
             onDismiss = { deleting = null },

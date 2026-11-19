@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.notes.editor
 
+import dev.chaik.remember.core.data.protectionAfterMove
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -54,6 +55,10 @@ class NoteEditorViewModel(
     var isProtected by mutableStateOf(false)
         private set
 
+    /** Заметка в защищённой папке: открывается PIN-ом папки, своей защиты у неё нет. */
+    var folderProtected by mutableStateOf(false)
+        private set
+
     var isLoaded by mutableStateOf(false)
         private set
     var isImporting by mutableStateOf(false)
@@ -88,6 +93,7 @@ class NoteEditorViewModel(
                     editor.applyPhotoSizes(photos.photos(editor.photoIds))
                 }
             }
+            folderProtected = notes.isFolderProtected(folderId)
             saved = snapshot()
             isLoaded = true
             autosave()
@@ -130,7 +136,11 @@ class NoteEditorViewModel(
         isProtected = value
     }
 
+    /** Перенести в папку; защита — по [protectionAfterMove], как и при переносе из списка. */
     fun moveToFolder(folderId: Long?) {
+        val to = folders.value.firstOrNull { it.id == folderId }?.isProtected == true
+        isProtected = protectionAfterMove(isProtected, folderProtected, to)
+        folderProtected = to
         this.folderId = folderId
     }
 

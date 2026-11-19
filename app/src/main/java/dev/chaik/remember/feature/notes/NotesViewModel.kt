@@ -31,7 +31,12 @@ sealed interface FolderFilter {
 }
 
 /** Список заметок: фильтры по папке и тегу, действия над папками и заметками. */
-class NotesViewModel(private val notes: NoteRepository, settings: Flow<AppSettings>) : ViewModel() {
+class NotesViewModel(
+    private val notes: NoteRepository,
+    settings: Flow<AppSettings>,
+    private val openFolder: (Long) -> Unit,
+    private val closeFolders: () -> Unit,
+) : ViewModel() {
 
     var folderFilter by mutableStateOf<FolderFilter>(FolderFilter.All)
         private set
@@ -75,14 +80,22 @@ class NotesViewModel(private val notes: NoteRepository, settings: Flow<AppSettin
                     FolderFilter.NoFolder -> note.folderId == null
                     is FolderFilter.Folder -> note.folderId == folder.id
                 }
-                folderOk && note.tags.map { it.id }.containsAll(tags)
+                // Заметки защищённой папки видны только в ней самой — во «Все» их нет никогда,
+                // даже когда папка открыта. Одиночные защищённые заметки это не касается
+                val shown = !note.inProtectedFolder || (folder is FolderFilter.Folder && folder.id == note.folderId)
+                shown && folderOk && note.tags.map { it.id }.containsAll(tags)
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     /** Папка для новой заметки — та, что открыта в фильтре. */
     val currentFolderId: Long? get() = (folderFilter as? FolderFilter.Folder)?.id
 
+    /**
+     * Сменить папку. PIN — при каждом входе в защищённую папку: любое переключение закрывает
+     * открытые. Заметки, открытые из папки, её не закрывают — фильтр при этом не меняется.
+     */
     fun selectFolder(filter: FolderFilter) {
+        if (filter != folderFilter) closeFolders()
         folderFilter = filter
     }
 
@@ -96,12 +109,20 @@ class NotesViewModel(private val notes: NoteRepository, settings: Flow<AppSettin
 
     // Папки
 
-    fun createFolder(name: String) {
+    fun createFolder(name: String, isProtected: Boolean = false) {
         if (name.isBlank()) return
         viewModelScope.launch {
-            val id = notes.saveFolder(NoteFolder(name = name.trim(), sortOrder = folders.value.size))
+            val id = notes.saveFolder(NoteFolder(name = name.trim(), sortOrder = folders.value.size, isProtected = isProtected))
+            // Только что созданная защищённая папка открыта — PIN спросится в следующий раз
+            if (isProtected) openFolder(id)
             folderFilter = FolderFilter.Folder(id)
         }
+    }
+
+    /** Защитить папку или снять защиту (снятие экран делает только после PIN). */
+    fun setFolderProtected(folder: NoteFolder, isProtected: Boolean) {
+        if (isProtected) openFolder(folder.id)
+        viewModelScope.launch { notes.setFolderProtected(folder.id, isProtected) }
     }
 
     fun renameFolder(folder: NoteFolder, name: String) {

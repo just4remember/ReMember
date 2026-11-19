@@ -169,7 +169,8 @@ private fun MainScaffold(ready: Boolean) {
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.drop(1).collect { page ->
             session.onTabChanged()
-            // Защищённые заметки закрываются: по возвращении на вкладку будет список
+            // Защищённые заметки и папки закрываются: по возвращении на вкладку будет список
+            appContainer.appLock.closeFolders()
             val shown = latestTabs.getOrNull(page)
             latestStacks.forEach { (tab, stack) ->
                 if (tab != shown) stack.removeAll { it in appContainer.protectedScreens }

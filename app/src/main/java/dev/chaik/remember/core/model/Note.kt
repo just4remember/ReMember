@@ -19,6 +19,8 @@ data class NoteFolder(
     val id: Long = 0,
     val name: String,
     val sortOrder: Int = 0,
+    /** Защищённая: открывается по PIN или отпечатку, заметки в ней — без своей защиты. */
+    val isProtected: Boolean = false,
 )
 
 /** Заметка для списка: без полного текста, только то, что видно на карточке. */
@@ -31,11 +33,16 @@ data class NoteSummary(
     val coverPhotoId: String?,
     val folderId: Long?,
     val pinned: Boolean,
-    /** Защищена: начало текста, обложка и теги в список не попадают. */
+    /** Защищена сама: начало текста, обложка и теги в список не попадают. */
     val isProtected: Boolean,
     val tags: List<Tag>,
     val createdAt: Instant,
     val updatedAt: Instant,
     /** Место в ручном порядке: меньше — выше. */
     val sortOrder: Int = 0,
-)
+    /** Лежит в защищённой папке: на карточке, как у защищённой, только заголовок. */
+    val inProtectedFolder: Boolean = false,
+) {
+    /** Содержимое скрыто: защищена сама или лежит в защищённой папке. */
+    val isHidden: Boolean get() = isProtected || inProtectedFolder
+}

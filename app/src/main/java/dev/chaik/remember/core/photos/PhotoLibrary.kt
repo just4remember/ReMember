@@ -52,14 +52,20 @@ class PhotoLibrary(
      */
     val removed: SharedFlow<Set<String>> = removedEvents.asSharedFlow()
 
-    /** Все фото, новые сверху; фото из защищённых заметок в галерею не попадают. */
+    /** Все фото, новые сверху; фото из защищённых заметок и папок в галерею не попадают. */
     fun observe(): Flow<List<LibraryPhoto>> =
-        combine(photoDao.observeAll(), photoDao.observeRefs(), notes.observeAll()) { photos, refs, allNotes ->
+        combine(photoDao.observeAll(), photoDao.observeRefs(), notes.observeAll(), notes.observeFolders()) { photos, refs, allNotes, folders ->
             val titles = allNotes.associate { it.id to it.title }
             val byPhoto = refs.groupBy { it.photoId }
-            val hidden = allNotes.filter { it.isProtected }.map { it.id }.toSet()
+            val protectedFolders = folders.filter { it.isProtected }.map { it.id }.toSet()
+            val hiddenNotes = allNotes.filter { it.isProtected || it.folderId in protectedFolders }
+            val hidden = hiddenNotes.map { it.id }.toSet()
+            // Кроме ссылок в базе смотрим и сам текст скрытых заметок: ссылка могла не записаться
+            // (заметку не успели сохранить, старые данные) — фото всё равно не должно показаться
+            val hiddenPhotos = hiddenNotes.flatMapTo(HashSet()) { PhotoRefs.extract(it.text) }
             photos.filterNot { photo ->
-                byPhoto[photo.id].orEmpty().any { it.ownerType == PhotoOwner.NOTE && it.ownerId in hidden }
+                photo.id in hiddenPhotos ||
+                    byPhoto[photo.id].orEmpty().any { it.ownerType == PhotoOwner.NOTE && it.ownerId in hidden }
             }.map { photo ->
                 LibraryPhoto(
                     id = photo.id,
