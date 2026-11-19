@@ -105,8 +105,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object TodayRoute : NavKey
 
-/** Сколько фото можно выбрать за раз. */
-private const val MAX_PHOTOS_PER_PICK = 10
 
 /** Место под кнопками внизу, чтобы последняя строка не пряталась за ними. */
 private val FabSpace = 96.dp
@@ -138,7 +136,7 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
     // Уходим в фон — сохраняем сразу, не дожидаясь паузы в наборе
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.flush() }
 
-    val pickPhotos = rememberLauncherForActivityResult(PickMultipleVisualMedia(MAX_PHOTOS_PER_PICK)) { uris ->
+    val pickPhotos = rememberLauncherForActivityResult(PickMultipleVisualMedia()) { uris ->
         day.addPhotos(uris)
     }
     val launchPicker = {
@@ -234,6 +232,7 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
                             day = day,
                             photoFile = container.photoStorage::file,
                             onOpenPhotos = { ids, index -> openedPhotos = OpenedPhotos(ids, index) },
+                            onAddMedia = launchPicker,
                             bottomSpace = bottomSpace,
                         )
                         TodayMode.Sleep -> {
@@ -330,6 +329,7 @@ private fun DayModeContent(
     day: DayController,
     photoFile: (String) -> File,
     onOpenPhotos: (List<String>, Int) -> Unit,
+    onAddMedia: () -> Unit,
     bottomSpace: Dp,
 ) {
     if (!day.isLoaded) return
@@ -343,6 +343,7 @@ private fun DayModeContent(
         onOpenPhotos = onOpenPhotos,
         placeholder = stringResource(R.string.today_placeholder),
         modifier = Modifier.fillMaxWidth(),
+        onAddMedia = onAddMedia,
     )
     // Пустое место под текстом: тап ставит курсор в конец записи
     Spacer(

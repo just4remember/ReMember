@@ -74,6 +74,16 @@ class EditorDocumentTest {
     }
 
     @Test
+    fun `развёрнутая галерея`() {
+        val markdown = "До\n![](photo:$p1?a=left&e=1) ![](photo:$p2)\nПосле"
+        val blocks = listOf(Text("До"), Photos(listOf(p1, p2), align = PhotoAlign.Start, expanded = true), Text("После"))
+        assertEquals(blocks, EditorDocument.parse(markdown))
+        assertEquals(markdown, EditorDocument.serialize(blocks))
+        // Без e=1 — свёрнута
+        assertEquals(false, (EditorDocument.parse("![](photo:$p1) ![](photo:$p2)")[1] as Photos).expanded)
+    }
+
+    @Test
     fun `крайние случаи сохраняются без потерь`() {
         roundTrip(Text(""), Photos(listOf(p1)), Text(""))
         roundTrip(Text(""), Photos(listOf(p1)), Text(""), Photos(listOf(p2, p3), 75, PhotoAlign.End), Text(""))

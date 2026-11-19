@@ -591,6 +591,7 @@ fun BoxScope.InlineVideo(
     aspect: Float,
     paused: Boolean,
     compact: Boolean,
+    fit: Boolean = false,
     onPause: () -> Unit,
     onEnded: () -> Unit,
 ) {
@@ -618,15 +619,16 @@ fun BoxScope.InlineVideo(
     }
 
     val ratio by rememberUpdatedState(aspect)
+    val fitInside by rememberUpdatedState(fit)
     AndroidView(
         factory = { ctx ->
             // TextureView, а не SurfaceView: его обрезают скруглённые углы ячейки
             TextureView(ctx).also { view ->
                 player.setVideoTextureView(view)
-                view.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> (v as TextureView).centerCrop(ratio) }
+                view.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> (v as TextureView).scaleVideo(ratio, fitInside) }
             }
         },
-        update = { it.centerCrop(aspect) },
+        update = { it.scaleVideo(aspect, fit) },
         modifier = Modifier.matchParentSize(),
     )
 
@@ -654,14 +656,19 @@ fun BoxScope.InlineVideo(
     }
 }
 
-/** Растянутый по view кадр приводим к его настоящим пропорциям и обрезаем лишнее (как Crop у фото). */
-private fun TextureView.centerCrop(aspect: Float) {
+/**
+ * Растянутый по view кадр приводим к его настоящим пропорциям: обрезаем лишнее (как Crop
+ * у фото) или, если [fit], вписываем целиком с пустыми полями.
+ */
+private fun TextureView.scaleVideo(aspect: Float, fit: Boolean) {
     val w = width.toFloat()
     val h = height.toFloat()
     if (w <= 0f || h <= 0f || aspect <= 0f) return
     val viewAspect = w / h
-    val sx = if (aspect > viewAspect) aspect / viewAspect else 1f
-    val sy = if (aspect > viewAspect) 1f else viewAspect / aspect
+    // Обрезка тянет до краёв ту сторону, что короче; вписывание — сжимает ту, что не помещается
+    val stretchWidth = (aspect > viewAspect) != fit
+    val sx = if (stretchWidth) aspect / viewAspect else 1f
+    val sy = if (stretchWidth) 1f else viewAspect / aspect
     setTransform(Matrix().apply { setScale(sx, sy, w / 2f, h / 2f) })
 }
 

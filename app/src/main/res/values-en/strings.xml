@@ -115,6 +115,28 @@
     <string name="editor_align_center">Center</string>
     <string name="editor_align_right">Right</string>
     <string name="editor_photo_counter">%1$d of %2$d</string>
+    <string name="editor_layout_grid">Grid</string>
+    <string name="editor_layout_column">Column</string>
+    <string name="editor_layout_row">Accordion</string>
+    <string name="editor_import_waiting">Queued</string>
+    <plurals name="editor_import_left">
+        <item quantity="one">%1$d more loading</item>
+        <item quantity="other">%1$d more loading</item>
+    </plurals>
+    <string name="editor_gallery_selected">Selected: %1$d</string>
+    <string name="editor_gallery_delete_selected">Delete selected</string>
+    <plurals name="editor_gallery_delete_title">
+        <item quantity="one">Remove %1$d file from the album?</item>
+        <item quantity="other">Remove %1$d files from the album?</item>
+    </plurals>
+    <string name="editor_gallery_delete_text">They will be removed from this entry</string>
+    <string name="editor_gallery">Album</string>
+    <string name="editor_gallery_view">View</string>
+            <string name="editor_gallery_add">Add photos or videos</string>
+    <string name="editor_gallery_edit">Edit</string>
+    <string name="editor_gallery_done">Done</string>
+    <string name="editor_gallery_remove">Remove from album</string>
+    <string name="editor_gallery_delete">Delete album</string>
     <string name="video_play">Play</string>
     <string name="video_pause">Pause</string>
     <string name="video_back">Back 10 seconds</string>

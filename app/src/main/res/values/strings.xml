@@ -115,6 +115,32 @@
     <string name="editor_align_center">По центру</string>
     <string name="editor_align_right">Справа</string>
     <string name="editor_photo_counter">%1$d из %2$d</string>
+    <string name="editor_layout_grid">Сетка</string>
+    <string name="editor_layout_column">Столбик</string>
+    <string name="editor_layout_row">Аккордеон</string>
+    <string name="editor_import_waiting">В очереди</string>
+    <plurals name="editor_import_left">
+        <item quantity="one">Загружается ещё %1$d</item>
+        <item quantity="few">Загружаются ещё %1$d</item>
+        <item quantity="many">Загружаются ещё %1$d</item>
+        <item quantity="other">Загружаются ещё %1$d</item>
+    </plurals>
+    <string name="editor_gallery_selected">Выбрано: %1$d</string>
+    <string name="editor_gallery_delete_selected">Удалить выбранные</string>
+    <plurals name="editor_gallery_delete_title">
+        <item quantity="one">Убрать %1$d файл из альбома?</item>
+        <item quantity="few">Убрать %1$d файла из альбома?</item>
+        <item quantity="many">Убрать %1$d файлов из альбома?</item>
+        <item quantity="other">Убрать %1$d файла из альбома?</item>
+    </plurals>
+    <string name="editor_gallery_delete_text">Они будут убраны из этой записи</string>
+    <string name="editor_gallery">Альбом</string>
+    <string name="editor_gallery_view">Смотреть</string>
+            <string name="editor_gallery_add">Добавить фото или видео</string>
+    <string name="editor_gallery_edit">Изменить</string>
+    <string name="editor_gallery_done">Готово</string>
+    <string name="editor_gallery_remove">Убрать из альбома</string>
+    <string name="editor_gallery_delete">Удалить альбом</string>
     <string name="video_play">Воспроизвести</string>
     <string name="video_pause">Пауза</string>
     <string name="video_back">Назад на 10 секунд</string>

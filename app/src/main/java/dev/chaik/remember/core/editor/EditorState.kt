@@ -59,6 +59,8 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
         photoIds: List<String>,
         widthPercent: Int,
         align: PhotoAlign,
+        expanded: Boolean = false,
+        layout: PhotoLayout = PhotoLayout.Grid,
     ) : Block() {
         var photoIds by mutableStateOf(photoIds)
             internal set
@@ -69,10 +71,45 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
         var align by mutableStateOf(align)
             internal set
 
-        val isGrid: Boolean get() = photoIds.size > 1
+        /** Показан сеткой, хотя фото столько, что мог бы быть карточкой «Галерея». */
+        var expanded by mutableStateOf(expanded)
+            internal set
+
+        var layout by mutableStateOf(layout)
+            internal set
+
+        /**
+         * Фото и видео, которые ещё добавляются: заглушки после готовых [photoIds].
+         * В документ не попадают — только готовые.
+         */
+        val pending = mutableStateListOf<PendingMedia>()
+
+        /** Всего в блоке, вместе с теми, что ещё добавляются. */
+        val itemCount: Int get() = photoIds.size + pending.size
+
+        /** Одно фото или видео — только у него можно менять размер и положение. */
+        val isSingle: Boolean get() = itemCount == 1
+
+        val isGrid: Boolean get() = itemCount > 1
+
+        /** Много фото и видео — блок свёрнут в карточку «Галерея». */
+        val isGallery: Boolean get() = itemCount >= DocumentBlock.GALLERY_MIN && !expanded
+
+        /** Блок того размера, что может быть галереей (свёрнутой или развёрнутой). */
+        val canBeGallery: Boolean get() = itemCount >= DocumentBlock.GALLERY_MIN
     }
 
+    /** Фото или видео, которое сейчас добавляется: [progress] от 0 до 1, null — ждёт очереди. */
+    class PendingMedia internal constructor(val id: Long) {
+        var progress by mutableStateOf<Float?>(null)
+            internal set
+    }
+
+    /** Добавление нескольких фото: блок, куда они встанут, и заглушка под каждое. */
+    class ImportHandle internal constructor(val blockKey: Long, val items: List<PendingMedia>)
+
     private var nextKey = 0L
+    private var nextPendingId = 0L
 
     /**
      * Пропорции (ширина / высота) каждого фото по id. Храним у фото, а не у блока:
@@ -120,12 +157,17 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     /** Текущий документ в виде Markdown. Чтение отслеживается Compose — подходит для snapshotFlow. */
     val markdown: String
         get() = EditorDocument.serialize(
-            blocks.map {
-                when (it) {
-                    is TextBlock -> DocumentBlock.Text(it.value.text)
-                    is PhotoBlock -> DocumentBlock.Photos(it.photoIds, it.widthPercent, it.align)
-                }
-            },
+            EditorDocument.normalize(
+                blocks.mapNotNull {
+                    when (it) {
+                        is TextBlock -> DocumentBlock.Text(it.value.text)
+                        // Блок, где пока только заглушки, в документ не пишем
+                        is PhotoBlock -> it.photoIds.takeIf { ids -> ids.isNotEmpty() }?.let { ids ->
+                            DocumentBlock.Photos(ids, it.widthPercent, it.align, it.expanded, it.layout)
+                        }
+                    }
+                },
+            ),
         )
 
     val photoIds: List<String> get() = blocks.filterIsInstance<PhotoBlock>().flatMap { it.photoIds }
@@ -147,7 +189,7 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
             blocks += when (block) {
                 is DocumentBlock.Text -> textBlock(block.text)
                 is DocumentBlock.Photos ->
-                    PhotoBlock(nextKey++, block.photoIds, block.widthPercent, block.align)
+                    PhotoBlock(nextKey++, block.photoIds, block.widthPercent, block.align, block.expanded, block.layout)
             }
         }
         activeTextKey = null
@@ -228,9 +270,17 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
      * курсор — в начало текста после них. Несколько фото сразу — одной сеткой.
      */
     fun insertPhotos(photos: List<Photo>): TextBlock? {
+        val gallery = galleryTargetKey?.let(::photo)
+        galleryTargetKey = null
         if (photos.isEmpty()) return null
+        if (gallery != null) {
+            // Добавляли из окна альбома — в конец этого альбома, а не новым блоком
+            rememberSizes(photos)
+            gallery.photoIds = gallery.photoIds + photos.map { it.id }
+            return null
+        }
         val target = activeTextBlock() ?: return null
-        record(EditKind.Other, null)
+        forgetHistory()
         val index = blocks.indexOf(target)
         val value = target.value
         val cursor = value.selection.max.coerceIn(0, value.text.length)
@@ -245,16 +295,111 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
             widthPercent = DocumentBlock.FULL_WIDTH,
             align = PhotoAlign.Center,
         )
-        photos.forEach { photo ->
-            aspects[photo.id] = photo.aspect
-            photo.durationMs?.let { durations[photo.id] = it }
-        }
+        rememberSizes(photos)
         val caret = textBlock(after)
         blocks.addAll(index + 1, listOf(photoBlock, caret))
         caret.value = caret.value.copy(selection = TextRange(0))
         activeTextKey = caret.key
         focusRequestKey = caret.key
         return caret
+    }
+
+    private fun rememberSizes(photos: List<Photo>) {
+        photos.forEach { photo ->
+            aspects[photo.id] = photo.aspect
+            photo.durationMs?.let { durations[photo.id] = it }
+        }
+    }
+
+    /**
+     * Галерея, в которую попадут следующие выбранные фото (кнопка «добавить» в её окне).
+     * Сбрасывается при следующей вставке — в том числе пустой, если выбор отменили.
+     */
+    var galleryTargetKey by mutableStateOf<Long?>(null)
+        private set
+
+    fun addToGalleryNext(key: Long?) {
+        galleryTargetKey = key
+    }
+
+    /** Развернуть галерею в сетку или свернуть обратно в карточку. */
+    fun setPhotoExpanded(key: Long, expanded: Boolean) {
+        val block = photo(key) ?: return
+        if (block.expanded == expanded) return
+        block.expanded = expanded
+    }
+
+    /**
+     * Начать добавление [count] фото и видео: сразу поставить по заглушке на каждое — в галерею
+     * из [galleryTargetKey] или новым блоком после строки с курсором (как [insertPhotos]).
+     * Готовые встают на место заглушек по одному — [finishImport].
+     */
+    fun beginImport(count: Int): ImportHandle? {
+        val gallery = galleryTargetKey?.let(::photo)
+        galleryTargetKey = null
+        if (count <= 0) return null
+        val items = List(count) { PendingMedia(nextPendingId++) }
+        if (gallery != null) {
+            gallery.pending += items
+            return ImportHandle(gallery.key, items)
+        }
+        val target = activeTextBlock() ?: return null
+        forgetHistory()
+        val index = blocks.indexOf(target)
+        val value = target.value
+        val cursor = value.selection.max.coerceIn(0, value.text.length)
+        val cut = value.text.indexOf('\n', cursor).let { if (it < 0) value.text.length else it }
+        val before = value.text.substring(0, cut).removeSuffix("\n")
+        val after = value.text.substring(cut).removePrefix("\n")
+
+        target.value = TextFieldValue(before, TextRange(before.length))
+        val photoBlock = PhotoBlock(nextKey++, emptyList(), DocumentBlock.FULL_WIDTH, PhotoAlign.Center)
+        photoBlock.pending += items
+        val caret = textBlock(after)
+        blocks.addAll(index + 1, listOf(photoBlock, caret))
+        caret.value = caret.value.copy(selection = TextRange(0))
+        activeTextKey = caret.key
+        focusRequestKey = caret.key
+        return ImportHandle(photoBlock.key, items)
+    }
+
+    fun setImportProgress(item: PendingMedia, progress: Float) {
+        item.progress = progress.coerceIn(0f, 1f)
+    }
+
+    /**
+     * Заглушку [item] заменить готовым [photo] (null — добавить не вышло, заглушка просто уходит).
+     * Блок, где не осталось ни фото, ни заглушек, пропадает.
+     */
+    fun finishImport(handle: ImportHandle, item: PendingMedia, photo: Photo?) {
+        val index = blocks.indexOfFirst { it.key == handle.blockKey }
+        val block = blocks.getOrNull(index) as? PhotoBlock ?: return
+        block.pending.remove(item)
+        if (photo != null) {
+            rememberSizes(listOf(photo))
+            block.photoIds = block.photoIds + photo.id
+        }
+        if (block.itemCount == 0 && index > 0) {
+            forgetHistory()
+            dropPhotoBlock(index, block.key)
+        }
+    }
+
+    /** Раскладка блока из нескольких фото. */
+    fun setPhotoLayout(key: Long, layout: PhotoLayout) {
+        val block = photo(key) ?: return
+        if (block.layout == layout) return
+        block.layout = layout
+    }
+
+    /** Убрать из блока несколько фото сразу (выбранные в окне галереи) — одним шагом отмены. */
+    fun removePhotosAt(key: Long, indices: Set<Int>) {
+        val block = photo(key) ?: return
+        if (indices.isEmpty()) return
+        val left = block.photoIds.filterIndexed { i, _ -> i !in indices }
+        if (left.isEmpty() && block.pending.isEmpty()) return removePhoto(key)
+        block.photoIds = left
+        selectedPhotoIndex = selectedPhotoIndex.coerceAtMost((left.size - 1).coerceAtLeast(0))
     }
 
     /** Блок, в который нужно перевести фокус (выполняет RichEditor). */
@@ -312,7 +457,6 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     fun setPhotoAlign(key: Long, align: PhotoAlign) {
         val block = photo(key) ?: return
         if (block.align == align) return
-        record(EditKind.Other, key)
         block.align = align
     }
 
@@ -320,16 +464,13 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
         val block = photo(key) ?: return
         val width = percent.coerceIn(DocumentBlock.MIN_WIDTH, DocumentBlock.FULL_WIDTH)
         if (block.widthPercent == width) return
-        // Ползунок шлёт ширину непрерывно — вся протяжка одним шагом
-        record(EditKind.PhotoWidth, key)
         block.widthPercent = width
     }
 
     /** Удалить одно фото из блока; если оно было последним — весь блок. */
     fun removePhotoAt(key: Long, index: Int) {
         val block = photo(key) ?: return
-        if (block.photoIds.size <= 1) return removePhoto(key)
-        record(EditKind.Other, key)
+        if (block.photoIds.size <= 1 && block.pending.isEmpty()) return removePhoto(key)
         block.photoIds = block.photoIds.filterIndexed { i, _ -> i != index }
         selectedPhotoIndex = selectedPhotoIndex.coerceAtMost(block.photoIds.lastIndex)
     }
@@ -338,7 +479,7 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     fun removePhoto(key: Long) {
         val index = blocks.indexOfFirst { it.key == key }
         if (index <= 0) return
-        record(EditKind.Other, key)
+        forgetHistory()
         dropPhotoBlock(index, key)
     }
 
@@ -357,12 +498,7 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     /** Убрать фото [ids] из документа — их удалили из галереи. Опустевшие блоки пропадают. */
     fun removePhotos(ids: Set<String>) {
         // Шаги истории ссылаются на эти фото — вернуть их было бы нечем
-        if (photoIds.any(ids::contains)) {
-            undoStack.clear()
-            redoStack.clear()
-            lastEdit = null
-            updateHistoryFlags()
-        }
+        if (photoIds.any(ids::contains)) forgetHistory()
         blocks.filterIsInstance<PhotoBlock>()
             .filter { block -> block.photoIds.any(ids::contains) }
             .forEach { block ->
@@ -387,7 +523,7 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     fun movePhoto(key: Long, up: Boolean) {
         val index = blocks.indexOfFirst { it.key == key }
         if (index <= 0 || !canMovePhoto(key, up)) return
-        record(EditKind.Other, key)
+        forgetHistory()
         val above = blocks[index - 1] as TextBlock
         val below = blocks[index + 1] as TextBlock
 
@@ -419,9 +555,14 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     // Отмена и повтор
 
     /** Состояние документа для истории: текст, в каком текстовом блоке курсор и где. */
-    private class Snapshot(val markdown: String, val blockIndex: Int, val selection: TextRange)
+    /**
+     * Шаг истории — только текст: тексты блоков по порядку и где был курсор. Фото и видео
+     * отмена не трогает (не возвращает удалённые и не меняет вид) — поэтому, когда меняется
+     * сам порядок блоков (фото вставили, убрали, передвинули), история начинается заново.
+     */
+    private class Snapshot(val keys: List<Long>, val texts: List<String>, val blockIndex: Int, val selection: TextRange)
 
-    private enum class EditKind { Insert, Delete, PhotoWidth, Other }
+    private enum class EditKind { Insert, Delete, Other }
 
     /** Последняя правка: следующая той же природы в том же блоке вскоре после неё — тот же шаг. */
     private class LastEdit(val kind: EditKind, val blockKey: Long?, val at: Long)
@@ -473,6 +614,14 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
         updateHistoryFlags()
     }
 
+    /** Порядок блоков изменился — прежние шаги к нему уже не подходят. */
+    private fun forgetHistory() {
+        undoStack.clear()
+        redoStack.clear()
+        lastEdit = null
+        updateHistoryFlags()
+    }
+
     fun undo() = step(from = undoStack, to = redoStack)
 
     fun redo() = step(from = redoStack, to = undoStack)
@@ -487,12 +636,22 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
 
     private fun capture(): Snapshot {
         val block = activeTextBlock()
-        return Snapshot(markdown, block?.let(blocks::indexOf) ?: -1, block?.value?.selection ?: TextRange.Zero)
+        return Snapshot(
+            keys = blocks.map { it.key },
+            texts = blocks.filterIsInstance<TextBlock>().map { it.value.text },
+            blockIndex = block?.let(blocks::indexOf) ?: -1,
+            selection = block?.value?.selection ?: TextRange.Zero,
+        )
     }
 
     private fun restore(snapshot: Snapshot) {
         val hadFocus = hasFocus
-        if (!restoreInPlace(snapshot.markdown)) replaceDocument(snapshot.markdown)
+        // Порядок блоков мог стать другим только вместе со сбросом истории — на всякий случай
+        // текст возвращаем, лишь если блоки те же
+        if (snapshot.keys != blocks.map { it.key }) return
+        blocks.filterIsInstance<TextBlock>().zip(snapshot.texts).forEach { (block, text) ->
+            if (block.value.text != text) block.value = TextFieldValue(text)
+        }
         val block = blocks.getOrNull(snapshot.blockIndex) as? TextBlock ?: blocks.lastOrNull() as? TextBlock ?: return
         val length = block.value.text.length
         block.value = block.value.copy(
@@ -504,30 +663,6 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
             focusedKey = block.key
             focusRequestKey = block.key
         }
-    }
-
-    /**
-     * Те же блоки в том же порядке (обычная правка текста) — обновить их значения, не пересоздавая.
-     * Поле с курсором остаётся тем же, и клавиатура не закрывается. Иначе — false.
-     */
-    private fun restoreInPlace(markdown: String): Boolean {
-        val parsed = EditorDocument.parse(markdown)
-        if (parsed.size != blocks.size) return false
-        val same = parsed.indices.all { i ->
-            (parsed[i] is DocumentBlock.Text && blocks[i] is TextBlock) || (parsed[i] is DocumentBlock.Photos && blocks[i] is PhotoBlock)
-        }
-        if (!same) return false
-        parsed.forEachIndexed { i, block ->
-            when (block) {
-                is DocumentBlock.Text -> (blocks[i] as TextBlock).let { if (it.value.text != block.text) it.value = TextFieldValue(block.text) }
-                is DocumentBlock.Photos -> (blocks[i] as PhotoBlock).let {
-                    it.photoIds = block.photoIds
-                    it.widthPercent = block.widthPercent
-                    it.align = block.align
-                }
-            }
-        }
-        return true
     }
 
     private fun updateHistoryFlags() {

@@ -12,6 +12,18 @@ enum class PhotoAlign(val code: String) {
     }
 }
 
+/** Как показан блок из нескольких фото: сеткой, столбиком одно под другим или лентой со свайпом. */
+enum class PhotoLayout(val code: String) {
+    Grid("grid"),
+    Column("column"),
+    Row("row"),
+    ;
+
+    companion object {
+        fun fromCode(code: String?): PhotoLayout = entries.firstOrNull { it.code == code } ?: Grid
+    }
+}
+
 /**
  * Документ редактора — чередование текста и фото:
  * `текст, фото, текст, фото, …, текст`. Текстовый блок может быть пустым,
@@ -21,7 +33,9 @@ enum class PhotoAlign(val code: String) {
  *
  * В базе документ хранится как Markdown. Фото-блок — отдельная строка из картинок:
  * `![](photo:<id>?w=75&a=left) ![](photo:<id2>)`. Параметры — у первой картинки:
- * `w` — ширина в процентах, `a` — положение (left / center / right).
+ * `w` — ширина в процентах, `a` — положение (left / center / right),
+ * `e=1` — блок из [GALLERY_MIN] и больше фото показан сеткой, а не свёрнут в карточку «Галерея»,
+ * `l` — раскладка нескольких фото ([PhotoLayout]: grid / column / row).
  */
 sealed interface DocumentBlock {
     data class Text(val text: String) : DocumentBlock
@@ -30,6 +44,9 @@ sealed interface DocumentBlock {
         val photoIds: List<String>,
         val widthPercent: Int = FULL_WIDTH,
         val align: PhotoAlign = PhotoAlign.Center,
+        /** Развёрнут в сетку; иначе блок из [GALLERY_MIN]+ фото — карточка «Галерея». */
+        val expanded: Boolean = false,
+        val layout: PhotoLayout = PhotoLayout.Grid,
     ) : DocumentBlock {
         init {
             require(photoIds.isNotEmpty()) { "Фото-блок без фото" }
@@ -39,6 +56,9 @@ sealed interface DocumentBlock {
     companion object {
         const val FULL_WIDTH = 100
         const val MIN_WIDTH = 30
+
+        /** С какого числа фото и видео блок сворачивается в карточку «Галерея». */
+        const val GALLERY_MIN = 4
     }
 }
 
@@ -137,6 +157,8 @@ object EditorDocument {
                 ?.coerceIn(DocumentBlock.MIN_WIDTH, DocumentBlock.FULL_WIDTH)
                 ?: DocumentBlock.FULL_WIDTH,
             align = PhotoAlign.fromCode(params["a"]),
+            expanded = params["e"] == "1",
+            layout = PhotoLayout.fromCode(params["l"]),
         )
     }
 
@@ -144,6 +166,8 @@ object EditorDocument {
         val list = buildList {
             if (block.widthPercent != DocumentBlock.FULL_WIDTH) add("w=${block.widthPercent}")
             if (block.align != PhotoAlign.Center) add("a=${block.align.code}")
+            if (block.expanded) add("e=1")
+            if (block.layout != PhotoLayout.Grid) add("l=${block.layout.code}")
         }
         return if (list.isEmpty()) "" else list.joinToString("&", prefix = "?")
     }

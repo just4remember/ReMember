@@ -136,17 +136,25 @@ class NoteEditorViewModel(
 
     // Фото
 
+    /**
+     * Добавить выбранные фото и видео: под каждое сразу встаёт заглушка с ходом загрузки,
+     * готовые появляются по одному, не дожидаясь остальных.
+     */
     fun addPhotos(uris: List<Uri>) {
-        if (uris.isEmpty()) return
+        // Выбор отменили — beginImport сбросит и цель «добавить в галерею»
+        val handle = editor.beginImport(uris.size) ?: return
         viewModelScope.launch {
             isImporting = true
-            val imported = uris.mapNotNull { uri ->
-                runCatching { photos.import(uri) }
+            var failed = 0
+            uris.zip(handle.items).forEach { (uri, item) ->
+                editor.setImportProgress(item, 0f)
+                val photo = runCatching { photos.import(uri) { editor.setImportProgress(item, it) } }
                     .onFailure { Log.w(TAG, "Не удалось добавить фото $uri", it) }
                     .getOrNull()
+                if (photo == null) failed++
+                editor.finishImport(handle, item, photo)
             }
-            failedImports = uris.size - imported.size
-            editor.insertPhotos(imported)
+            failedImports = failed
             isImporting = false
         }
     }

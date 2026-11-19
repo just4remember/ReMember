@@ -1,5 +1,23 @@
 package dev.chaik.remember.core.editor
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.graphics.nativeCanvas
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.outlined.ViewCarousel
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.GridView
 import dev.chaik.remember.core.ui.components.BackGestureLock
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.BackHandler
@@ -36,7 +54,6 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FormatAlignCenter
 import androidx.compose.material.icons.outlined.Fullscreen
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -119,8 +136,27 @@ import kotlin.math.roundToInt
 private val WidthPresets = listOf(50, 75, 100)
 
 private val GridSpacing = 4.dp
-private val PhotoShape = RoundedCornerShape(16.dp)
-private val CellShape = RoundedCornerShape(8.dp)
+private val PhotoRadius = 16.dp
+private val CellRadius = 8.dp
+private val PhotoShape = RoundedCornerShape(PhotoRadius)
+private val CellShape = RoundedCornerShape(CellRadius)
+
+/**
+ * Тень выделенного блока: густая и широкая, заметная и на светлой, и на тёмной теме.
+ * Обычная shadow() даёт слишком бледную тень — рисуем свою, размытым прямоугольником.
+ */
+private fun Modifier.focusShadow(radius: Dp): Modifier = drawBehind {
+    val blur = 22.dp.toPx()
+    val paint = android.graphics.Paint().apply {
+        isAntiAlias = true
+        color = android.graphics.Color.argb(150, 0, 0, 0)
+        maskFilter = android.graphics.BlurMaskFilter(blur, android.graphics.BlurMaskFilter.Blur.NORMAL)
+    }
+    val r = radius.toPx()
+    val dy = 4.dp.toPx()
+    drawContext.canvas.nativeCanvas.drawRoundRect(0f, dy, size.width, size.height + dy, r, r, paint)
+}
+private val NoCorners = RoundedCornerShape(0.dp)
 
 /** Сколько места держать под строкой с курсором: панель форматирования и немного воздуха. */
 private val CursorClearance = EditorToolbarHeight + 24.dp
@@ -130,6 +166,8 @@ private val CursorClearance = EditorToolbarHeight + 24.dp
  *
  * @param photoFile файл фото по id (полноразмерный — Coil сам уменьшит под размер на экране)
  * @param onOpenPhotos открыть фото на весь экран: все фото блока и с какого начать
+ * @param onAddMedia открыть выбор фото и видео — для кнопки «добавить» в окне галереи
+ *   (выбранное уйдёт в эту галерею: [EditorState.addToGalleryNext]); null — кнопки нет
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -140,6 +178,7 @@ fun RichEditor(
     placeholder: String,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    onAddMedia: (() -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val style = textStyle.copy(color = colors.onSurface)
@@ -178,11 +217,31 @@ fun RichEditor(
         }
     }
 
-    // «Назад» сначала снимает выделение с фото, а не закрывает экран
+    // «Назад» сначала снимает выделение с фото, а не закрывает экран. Свайпы «назад» и между
+    // вкладками при этом работают — их запрещает только щипок по фото (pinchToResize)
     BackHandler(enabled = state.selectedPhotoKey != null) { state.selectPhoto(null) }
-    // …а свайпы «назад» и между вкладками, пока фото выделено, не работают: настраивая размер,
-    // легко случайно смахнуть страницу
-    BackGestureLock.Hold(state.selectedPhotoKey != null)
+
+    // Открытое окно галереи — по ключу блока; блок удалили — окно закрывается само
+    var galleryKey by remember { mutableStateOf<Long?>(null) }
+    val galleryBlock = state.blocks.firstOrNull { it.key == galleryKey } as? EditorState.PhotoBlock
+    if (galleryBlock != null) {
+        MediaGalleryDialog(
+            block = galleryBlock,
+            state = state,
+            photoFile = photoFile,
+            onOpen = { i ->
+                state.stopVideo()
+                onOpenPhotos(galleryBlock.photoIds, i)
+            },
+            onAdd = onAddMedia?.let { add ->
+                {
+                    state.addToGalleryNext(galleryBlock.key)
+                    add()
+                }
+            },
+            onDismiss = { galleryKey = null },
+        )
+    }
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         state.blocks.forEachIndexed { index, block ->
@@ -204,6 +263,10 @@ fun RichEditor(
                         onOpen = { i ->
                             state.stopVideo()
                             onOpenPhotos(block.photoIds, i)
+                        },
+                        onOpenGallery = {
+                            state.stopVideo()
+                            galleryKey = block.key
                         },
                     )
                 }
@@ -514,54 +577,104 @@ private class AboveWordPosition(private val word: IntRect, private val gap: Int)
     }
 }
 
-/** Фото-блок: одно фото или сетка, с выравниванием, щипком и панелью действий. */
+/** Ячейка блока: готовое фото (с номером среди готовых) или заглушка того, что ещё добавляется. */
+private sealed interface Cell {
+    data class Ready(val index: Int, val id: String) : Cell
+    data class Waiting(val item: EditorState.PendingMedia) : Cell
+}
+
+private fun EditorState.PhotoBlock.cells(): List<Cell> =
+    photoIds.mapIndexed { i, id -> Cell.Ready(i, id) } + pending.map { Cell.Waiting(it) }
+
+/**
+ * Фото-блок: одно фото, несколько (сеткой, столбиком или лентой) или свёрнутая галерея —
+ * с панелью действий. Размер и положение в строке — только у одиночного фото или видео.
+ */
 @Composable
 private fun PhotoBlockView(
     block: EditorState.PhotoBlock,
     state: EditorState,
     photoFile: (String) -> File,
     onOpen: (index: Int) -> Unit,
+    onOpenGallery: () -> Unit,
 ) {
     val selected = state.selectedPhotoKey == block.key
     val colors = MaterialTheme.colorScheme
+    val single = block.isSingle
 
     // Ширина во время щипка — плавная; в документ записывается при отпускании
     var pinchWidth by remember { mutableFloatStateOf(-1f) }
     val animatedWidth by animateFloatAsState(block.widthPercent.toFloat(), label = "photoWidth")
-    val width = if (pinchWidth > 0) pinchWidth else animatedWidth
+    val width = when {
+        !single -> DocumentBlock.FULL_WIDTH.toFloat()
+        pinchWidth > 0 -> pinchWidth
+        else -> animatedWidth
+    }
 
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = block.align.toAlignment()) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = if (single) block.align.toAlignment() else Alignment.Center) {
             Box(
                 Modifier
                     .fillMaxWidth(width / 100f)
-                    .then(if (selected) Modifier.border(3.dp, colors.primary, PhotoShape) else Modifier)
-                    .padding(if (selected) 3.dp else 0.dp)
-                    .pinchToResize(block, state) { pinchWidth = it },
+                    // Выделенный блок — тенью вокруг; выбранное в нём фото — обводкой
+                    // Скругление тени — как у самих фото: у сетки, столбика и аккордеона углы мельче
+                    .then(if (selected) Modifier.focusShadow(if (block.isGrid && !block.isGallery) CellRadius else PhotoRadius) else Modifier)
+                    .then(if (single) Modifier.pinchToResize(block, state) { pinchWidth = it } else Modifier),
             ) {
-                if (block.isGrid) {
-                    PhotoGrid(block, state, photoFile, onOpen)
-                } else {
-                    val id = block.photoIds.first()
-                    PhotoCell(
-                        id = id,
-                        file = photoFile(id),
+                when {
+                    block.isGallery -> GalleryCard(
+                        block = block,
                         state = state,
+                        photoFile = photoFile,
                         shape = PhotoShape,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(state.aspectOf(id))
-                            .photoTaps(block, 0, id, compact = false, state, onOpen),
+                        onView = onOpenGallery,
+                        // id "" — у карточки нет своей кнопки ▶; двойной тап открывает окно галереи
+                        modifier = Modifier.photoTaps(block, 0, "", compact = false, state) { onOpenGallery() },
                     )
+                    block.isGrid -> when (block.layout) {
+                        PhotoLayout.Grid -> PhotoGrid(block, state, photoFile, onOpen)
+                        PhotoLayout.Column -> PhotoColumn(block, state, photoFile, onOpen)
+                        PhotoLayout.Row -> PhotoAccordion(block, state, photoFile, onOpen)
+                    }
+                    block.photoIds.isEmpty() -> block.pending.firstOrNull()?.let {
+                        PendingCell(it, PhotoShape, Modifier.fillMaxWidth().aspectRatio(4f / 3f))
+                    }
+                    else -> {
+                        val id = block.photoIds.first()
+                        PhotoCell(
+                            id = id,
+                            file = photoFile(id),
+                            state = state,
+                            shape = PhotoShape,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(state.aspectOf(id))
+                                .then(if (selected) Modifier.border(2.dp, colors.primary, PhotoShape) else Modifier)
+                                .photoTaps(block, 0, id, compact = false, state, onOpen = onOpen),
+                        )
+                    }
                 }
             }
         }
 
         AnimatedVisibility(selected) {
-            PhotoActions(block, state, onOpen = { onOpen(state.selectedPhotoIndex) })
+            PhotoActions(
+                block = block,
+                state = state,
+                onOpen = { if (block.isGallery) onOpenGallery() else onOpen(state.selectedPhotoIndex) },
+            )
         }
     }
 }
+
+/** Отметка фото, к которому относятся «корзина» и «на весь экран» в выделенном блоке. */
+@Composable
+private fun Modifier.selectedCell(block: EditorState.PhotoBlock, state: EditorState, index: Int, shape: RoundedCornerShape): Modifier =
+    if (state.selectedPhotoKey == block.key && state.selectedPhotoIndex == index) {
+        border(2.dp, MaterialTheme.colorScheme.primary, shape)
+    } else {
+        this
+    }
 
 /** Сетка: 2 фото — в ряд, 3 — в ряд, 4 — квадрат 2×2, больше — по 3 в ряд. */
 @Composable
@@ -571,41 +684,163 @@ private fun PhotoGrid(
     photoFile: (String) -> File,
     onOpen: (index: Int) -> Unit,
 ) {
-    val ids = block.photoIds
-    val columns = if (ids.size == 2 || ids.size == 4) 2 else 3
-    val markSelected = state.selectedPhotoKey == block.key
+    val cells = block.cells()
+    val columns = if (cells.size == 2 || cells.size == 4) 2 else 3
 
     Column(verticalArrangement = Arrangement.spacedBy(GridSpacing)) {
-        ids.chunked(columns).forEachIndexed { row, rowIds ->
+        cells.chunked(columns).forEach { rowCells ->
             Row(horizontalArrangement = Arrangement.spacedBy(GridSpacing)) {
-                rowIds.forEachIndexed { column, id ->
-                    val index = row * columns + column
-                    PhotoCell(
-                        id = id,
-                        file = photoFile(id),
-                        state = state,
-                        compact = true,
-                        shape = CellShape,
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .then(
-                                // В выделенной сетке отмечаем фото, к которому относятся «корзина» и «на весь экран»
-                                if (markSelected && state.selectedPhotoIndex == index) {
-                                    Modifier.border(2.dp, MaterialTheme.colorScheme.tertiary, CellShape)
-                                } else {
-                                    Modifier
-                                },
-                            )
-                            .photoTaps(block, index, id, compact = true, state, onOpen),
-                    )
+                rowCells.forEach { cell ->
+                    val cellModifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
+                    when (cell) {
+                        is Cell.Ready -> PhotoCell(
+                            id = cell.id,
+                            file = photoFile(cell.id),
+                            state = state,
+                            compact = true,
+                            shape = CellShape,
+                            modifier = cellModifier
+                                .selectedCell(block, state, cell.index, CellShape)
+                                .photoTaps(block, cell.index, cell.id, compact = true, state, onOpen = onOpen),
+                        )
+                        is Cell.Waiting -> PendingCell(cell.item, CellShape, cellModifier, compact = true)
+                    }
                 }
                 // Неполный последний ряд: пустые места, чтобы ячейки были того же размера
-                repeat(columns - rowIds.size) { Spacer(Modifier.weight(1f)) }
+                repeat(columns - rowCells.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
 }
+
+/** Столбик: каждое фото на всю ширину, в своих пропорциях, одно под другим. */
+@Composable
+private fun PhotoColumn(
+    block: EditorState.PhotoBlock,
+    state: EditorState,
+    photoFile: (String) -> File,
+    onOpen: (index: Int) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(GridSpacing)) {
+        block.cells().forEach { cell ->
+            when (cell) {
+                is Cell.Ready -> PhotoCell(
+                    id = cell.id,
+                    file = photoFile(cell.id),
+                    state = state,
+                    shape = CellShape,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(state.aspectOf(cell.id))
+                        .photoTaps(block, cell.index, cell.id, compact = false, state, selectItem = false, onOpen = onOpen),
+                )
+                is Cell.Waiting -> PendingCell(cell.item, CellShape, Modifier.fillMaxWidth().aspectRatio(4f / 3f))
+            }
+        }
+    }
+}
+
+/**
+ * Аккордеон: на виду одно фото или видео во всю ширину, свайп вбок — следующее, внизу
+ * точки (не больше 7). Каждые 2 секунды само листается дальше — кроме моментов, когда
+ * его листают пальцем или в нём играет видео. Видео сами не запускаются.
+ */
+@Composable
+private fun PhotoAccordion(
+    block: EditorState.PhotoBlock,
+    state: EditorState,
+    photoFile: (String) -> File,
+    onOpen: (index: Int) -> Unit,
+) {
+    val cells = block.cells()
+    val pager = rememberPagerState { block.itemCount }
+    val dragged by pager.interactionSource.collectIsDraggedAsState()
+    val playingHere = state.playingVideoId != null && state.playingVideoId in block.photoIds
+    // Ключ — устоявшаяся страница: currentPage меняется на полпути анимации, и перезапуск
+    // эффекта обрывал её — на экране оставались половинки двух фото
+    LaunchedEffect(pager.settledPage, dragged, playingHere, cells.size) {
+        if (dragged || playingHere || cells.size < 2) return@LaunchedEffect
+        delay(ACCORDION_STEP_MS)
+        pager.animateScrollToPage(
+            page = (pager.settledPage + 1) % cells.size,
+            animationSpec = tween(ACCORDION_SCROLL_MS, easing = FastOutSlowInEasing),
+        )
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .aspectRatio(4f / 3f)
+            .clip(CellShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+            when (val cell = cells.getOrNull(page)) {
+                is Cell.Ready -> PhotoCell(
+                    id = cell.id,
+                    file = photoFile(cell.id),
+                    state = state,
+                    shape = NoCorners,
+                    // Целиком, без обрезки: свободное место по краям остаётся пустым
+                    fit = true,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .photoTaps(block, cell.index, cell.id, compact = false, state, selectItem = false, onOpen = onOpen),
+                )
+                is Cell.Waiting -> PendingCell(cell.item, NoCorners, Modifier.fillMaxSize())
+                null -> Unit
+            }
+        }
+        if (cells.size > 1) {
+            PagerDots(
+                count = cells.size,
+                current = pager.currentPage,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Точки страниц: не больше [MAX_DOTS]; если страниц больше, окно точек едет за текущей,
+ * а крайние точки меньше — видно, что дальше есть ещё. Не нажимаются.
+ */
+@Composable
+private fun PagerDots(count: Int, current: Int, modifier: Modifier = Modifier) {
+    val start = (current - MAX_DOTS / 2).coerceIn(0, (count - MAX_DOTS).coerceAtLeast(0))
+    val end = minOf(count, start + MAX_DOTS)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+    ) {
+        for (i in start until end) {
+            val edge = (i == start && start > 0) || (i == end - 1 && end < count)
+            val size by animateDpAsState(
+                when {
+                    i == current -> 7.dp
+                    edge -> 4.dp
+                    else -> 5.dp
+                },
+                label = "dot",
+            )
+            Box(
+                Modifier
+                    .size(size)
+                    .background(if (i == current) Color.White else Color.White.copy(alpha = 0.5f), CircleShape),
+            )
+        }
+    }
+}
+
+private const val ACCORDION_STEP_MS = 2_000L
+private const val ACCORDION_SCROLL_MS = 650
+private const val MAX_DOTS = 7
 
 /**
  * Фото или кадр-обложка видео; у видео поверх — ▶ и длительность, а после нажатия на ▶ —
@@ -619,13 +854,14 @@ private fun PhotoCell(
     shape: RoundedCornerShape,
     modifier: Modifier,
     compact: Boolean = false,
+    fit: Boolean = false,
 ) {
     val durationMs = state.durationOf(id)
     Box(modifier.clip(shape)) {
         AsyncImage(
             model = file,
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            contentScale = if (fit) ContentScale.Fit else ContentScale.Crop,
             modifier = Modifier.matchParentSize(),
         )
         if (durationMs != null) {
@@ -636,6 +872,7 @@ private fun PhotoCell(
                     aspect = state.aspectOf(id),
                     paused = state.videoPaused,
                     compact = compact,
+                    fit = fit,
                     onPause = state::pauseVideo,
                     onEnded = state::stopVideo,
                 )
@@ -658,9 +895,12 @@ private fun Modifier.photoTaps(
     id: String,
     compact: Boolean,
     state: EditorState,
+    selectItem: Boolean = true,
     onOpen: (Int) -> Unit,
 ): Modifier {
     val haptics = LocalHapticFeedback.current
+    // В столбике и аккордеоне выделяется весь блок, а не отдельное фото
+    val selectIndex = if (selectItem) index else 0
     return pointerInput(block.key, index, id, compact) {
         // Зона кнопки ▶ — сам круг и немного вокруг, чтобы попадать не целясь
         val playRadius = playCircleSize(compact).toPx() / 2 + 16.dp.toPx()
@@ -672,13 +912,13 @@ private fun Modifier.photoTaps(
                 if (state.durationOf(id) != null && (position - center).getDistance() <= playRadius) {
                     state.tapPlay(id)
                 } else {
-                    state.togglePhoto(block.key, index)
+                    state.togglePhoto(block.key, selectIndex)
                 }
             },
             onDoubleTap = { onOpen(index) },
             onLongPress = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                state.selectPhoto(block.key, index)
+                state.selectPhoto(block.key, selectIndex)
             },
         )
     }
@@ -694,16 +934,22 @@ private fun Modifier.pinchToResize(
         awaitFirstDown(requireUnconsumed = false)
         var current = block.widthPercent.toFloat()
         var pinched = false
-        do {
-            val event = awaitPointerEvent()
-            if (event.changes.count { it.pressed } >= 2) {
-                current = (current * event.calculateZoom())
-                    .coerceIn(DocumentBlock.MIN_WIDTH.toFloat(), DocumentBlock.FULL_WIDTH.toFloat())
-                pinched = true
-                onPinch(current)
-                event.changes.forEach { it.consume() }
-            }
-        } while (event.changes.any { it.pressed })
+        try {
+            do {
+                val event = awaitPointerEvent()
+                if (event.changes.count { it.pressed } >= 2) {
+                    // Пока два пальца меняют размер, свайп не уводит со страницы и не листает вкладки
+                    if (!pinched) BackGestureLock.acquire()
+                    current = (current * event.calculateZoom())
+                        .coerceIn(DocumentBlock.MIN_WIDTH.toFloat(), DocumentBlock.FULL_WIDTH.toFloat())
+                    pinched = true
+                    onPinch(current)
+                    event.changes.forEach { it.consume() }
+                }
+            } while (event.changes.any { it.pressed })
+        } finally {
+            if (pinched) BackGestureLock.release()
+        }
         if (pinched) {
             // Округляем до 5 %, чтобы размеры не были «кривыми»
             state.setPhotoWidth(block.key, (current / 5).roundToInt() * 5)
@@ -729,26 +975,56 @@ private fun PhotoActions(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            SingleChoiceSegmentedButtonRow {
-                WidthPresets.forEachIndexed { i, preset ->
-                    SegmentedButton(
-                        selected = block.widthPercent == preset,
-                        onClick = { state.setPhotoWidth(block.key, preset) },
-                        shape = SegmentedButtonDefaults.itemShape(i, WidthPresets.size),
-                        icon = {},
-                        label = { Text("$preset%") },
-                    )
+            if (block.isSingle) {
+                // Размер и положение — только у одиночного фото или видео
+                SingleChoiceSegmentedButtonRow {
+                    WidthPresets.forEachIndexed { i, preset ->
+                        SegmentedButton(
+                            selected = block.widthPercent == preset,
+                            onClick = { state.setPhotoWidth(block.key, preset) },
+                            shape = SegmentedButtonDefaults.itemShape(i, WidthPresets.size),
+                            icon = {},
+                            label = { Text("$preset%") },
+                        )
+                    }
                 }
-            }
-            SingleChoiceSegmentedButtonRow {
-                AlignOptions.forEachIndexed { i, (align, icon, label) ->
-                    SegmentedButton(
-                        selected = block.align == align,
-                        onClick = { state.setPhotoAlign(block.key, align) },
-                        shape = SegmentedButtonDefaults.itemShape(i, AlignOptions.size),
-                        icon = {},
-                        label = { Icon(icon, stringResource(label)) },
-                    )
+                SingleChoiceSegmentedButtonRow {
+                    AlignOptions.forEachIndexed { i, (align, icon, label) ->
+                        SegmentedButton(
+                            selected = block.align == align,
+                            onClick = { state.setPhotoAlign(block.key, align) },
+                            shape = SegmentedButtonDefaults.itemShape(i, AlignOptions.size),
+                            icon = {},
+                            label = { Icon(icon, stringResource(label)) },
+                        )
+                    }
+                }
+            } else {
+                // Несколько фото: альбомом (если их много), сеткой, столбиком или аккордеоном
+                val options = if (block.canBeGallery) listOf(null) + LayoutOptions else LayoutOptions
+                SingleChoiceSegmentedButtonRow {
+                    options.forEachIndexed { i, option ->
+                        SegmentedButton(
+                            selected = if (option == null) block.isGallery else !block.isGallery && block.layout == option.layout,
+                            onClick = {
+                                if (option == null) {
+                                    state.setPhotoExpanded(block.key, false)
+                                } else {
+                                    state.setPhotoLayout(block.key, option.layout)
+                                    state.setPhotoExpanded(block.key, true)
+                                }
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                            icon = {},
+                            label = {
+                                if (option == null) {
+                                    Icon(Icons.Outlined.PhotoLibrary, stringResource(R.string.editor_gallery))
+                                } else {
+                                    Icon(option.icon, stringResource(option.label))
+                                }
+                            },
+                        )
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -767,13 +1043,31 @@ private fun PhotoActions(
                 IconButton(onClick = onOpen) {
                     Icon(Icons.Outlined.Fullscreen, stringResource(R.string.editor_photo_open))
                 }
-                FilledTonalIconButton(onClick = { state.removePhotoAt(block.key, state.selectedPhotoIndex) }) {
-                    Icon(Icons.Outlined.Delete, stringResource(R.string.editor_photo_delete), tint = MaterialTheme.colorScheme.error)
+                // У альбома «корзина» удаляет его целиком, у сетки — выбранное фото. В столбике
+                // и аккордеоне отдельное фото не выбирается — и удалять там нечего
+                if (block.isSingle || block.isGallery || block.layout == PhotoLayout.Grid) IconButton(
+                    onClick = {
+                        if (block.isGallery) state.removePhoto(block.key) else state.removePhotoAt(block.key, state.selectedPhotoIndex)
+                    },
+                ) {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        stringResource(if (block.isGallery) R.string.editor_gallery_delete else R.string.editor_photo_delete),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
         }
     }
 }
+
+private data class LayoutOption(val layout: PhotoLayout, val icon: ImageVector, val label: Int)
+
+private val LayoutOptions = listOf(
+    LayoutOption(PhotoLayout.Grid, Icons.Outlined.GridView, R.string.editor_layout_grid),
+    LayoutOption(PhotoLayout.Column, Icons.Outlined.ViewAgenda, R.string.editor_layout_column),
+    LayoutOption(PhotoLayout.Row, Icons.Outlined.ViewCarousel, R.string.editor_layout_row),
+)
 
 private data class AlignOption(val align: PhotoAlign, val icon: ImageVector, val label: Int)
 

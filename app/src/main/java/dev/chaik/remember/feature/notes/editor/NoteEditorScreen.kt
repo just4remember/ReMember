@@ -100,7 +100,6 @@ data class NoteEditorRoute(
     val opening: Long = 0,
 ) : NavKey
 
-private const val MAX_PHOTOS_PER_PICK = 10
 
 /** Вход в защищённую заметку: тот же PIN и отпечаток, что у приложения; окно отпечатка — сразу. */
 @Composable
@@ -180,7 +179,7 @@ fun NoteEditorScreen(
     }
     LifecycleEventEffect(Lifecycle.Event.ON_START) { openingPicker = false }
 
-    val pickPhotos = rememberLauncherForActivityResult(PickMultipleVisualMedia(MAX_PHOTOS_PER_PICK)) {
+    val pickPhotos = rememberLauncherForActivityResult(PickMultipleVisualMedia()) {
         viewModel.addPhotos(it)
     }
     val launchPicker = {
@@ -301,6 +300,7 @@ fun NoteEditorScreen(
                         onOpenPhotos = { ids, index -> openedPhotos = ids to index },
                         placeholder = stringResource(R.string.notes_text_hint),
                         modifier = Modifier.fillMaxWidth(),
+                        onAddMedia = launchPicker,
                     )
                     // Пустое место под текстом: тап ставит курсор в конец заметки
                     Spacer(

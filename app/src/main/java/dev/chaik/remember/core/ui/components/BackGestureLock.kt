@@ -9,13 +9,22 @@ import androidx.compose.runtime.setValue
 /**
  * Запрет жестов, уводящих со страницы: свайпа «назад» (SwipeBackHost) и листания вкладок.
  * Нужен, пока идёт тонкая работа, где палец легко съезжает вбок, — например, пока
- * настраиваешь размер выделенного фото в заметке.
+ * двумя пальцами меняешь размер фото в заметке.
  */
 object BackGestureLock {
     private var holders by mutableIntStateOf(0)
 
     /** Сейчас кто-то держит запрет. */
     val isHeld: Boolean get() = holders > 0
+
+    /** Взять запрет из жеста; каждому [acquire] — свой [release]. */
+    fun acquire() {
+        holders++
+    }
+
+    fun release() {
+        holders = (holders - 1).coerceAtLeast(0)
+    }
 
     /** Держать запрет, пока [hold] и этот элемент на экране. */
     @Composable

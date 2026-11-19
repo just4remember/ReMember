@@ -61,23 +61,36 @@ class PhotoStorage(
     suspend fun photos(ids: Collection<String>): Map<String, Photo> =
         if (ids.isEmpty()) emptyMap() else photoDao.getMany(ids).associate { it.id to Photo(it.id, it.width, it.height, it.durationMs) }
 
-    /** Скопировать фото или видео (из галереи, камеры и т. п.) к себе. */
-    suspend fun import(source: Uri): Photo {
+    /**
+     * Скопировать фото или видео (из галереи, камеры и т. п.) к себе.
+     * [onProgress] — доля готового от 0 до 1, на потоке вызывающего.
+     */
+    suspend fun import(source: Uri, onProgress: (Float) -> Unit = {}): Photo {
         val type = context.contentResolver.getType(source).orEmpty()
-        return if (type.startsWith("video/")) importVideo(source) else importImage(source)
+        val photo = if (type.startsWith("video/")) {
+            importVideo(source) { onProgress(it * 0.95f) }
+        } else {
+            onProgress(0.15f)
+            importImage(source)
+        }
+        onProgress(1f)
+        return photo
     }
 
     /**
      * Видео: сжать до 720p, взять кадр-обложку и записать как фото с длительностью.
      * Ход сжатия — в [videoProgress].
      */
-    private suspend fun importVideo(source: Uri): Photo {
+    private suspend fun importVideo(source: Uri, onProgress: (Float) -> Unit): Photo {
         val id = UUID.randomUUID().toString()
         thumbsDir.mkdirs()
         val temp = File(photosDir, "$id.mp4.tmp")
         try {
             _videoProgress.value = 0f
-            VideoImport.compress(context, source, temp) { _videoProgress.value = it }
+            VideoImport.compress(context, source, temp) {
+                _videoProgress.value = it
+                onProgress(it)
+            }
         } finally {
             _videoProgress.value = null
         }
