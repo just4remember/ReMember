@@ -1,5 +1,6 @@
 package dev.chaik.remember.app
 
+import dev.chaik.remember.core.ui.components.BackGestureLock
 import dev.chaik.remember.core.backup.RestoreNoticeDialog
 import dev.chaik.remember.R
 import androidx.compose.ui.res.stringResource
@@ -236,7 +237,7 @@ private fun MainScaffold(ready: Boolean) {
                 // Во вложенной странице горизонтальный свайп отдан жесту «назад». Пока открыта клавиатура,
                 // вкладки тоже не листаются: иначе свайп по панели форматирования, докрученной до края,
                 // уходил вкладкам, а начало их листания убирает клавиатуру
-                userScrollEnabled = currentStack.size == 1 && !WindowInsets.isImeVisible,
+                userScrollEnabled = currentStack.size == 1 && !WindowInsets.isImeVisible && !BackGestureLock.isHeld,
                 key = { tabs.getOrNull(it)?.name ?: it },
                 // Соседние вкладки держим готовыми: иначе после паузы страница строилась заново
                 // прямо во время свайпа, и первые кадры анимации подтормаживали

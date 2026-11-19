@@ -3,9 +3,6 @@ package dev.chaik.remember.core.backup
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.app.usage.StorageStatsManager
-import android.os.Process
-import android.os.storage.StorageManager
 import dev.chaik.remember.core.database.DatabaseFactory
 import dev.chaik.remember.core.database.ReMemberDatabase
 import dev.chaik.remember.core.security.DatabaseKeyManager
@@ -30,12 +27,14 @@ data class StorageUsage(
     val databaseBytes: Long,
     val photoBytes: Long,
     val photoCount: Int,
+    /** Видео: ролики вместе с их кадрами-обложками. */
+    val videoBytes: Long = 0,
+    val videoCount: Int = 0,
     /** Скачанные города и то, что карта запомнила сама. */
     val mapBytes: Long = 0,
-    /** Само приложение: код и ресурсы. */
-    val appBytes: Long = 0,
 ) {
-    val totalBytes: Long get() = databaseBytes + photoBytes + mapBytes + appBytes
+    /** Всё, что занимают данные; само приложение (код и ресурсы) не считаем. */
+    val totalBytes: Long get() = databaseBytes + photoBytes + videoBytes + mapBytes
 }
 
 /** Проверенная копия, готовая заменить данные: когда сделана и сколько в ней фото. */
@@ -83,21 +82,22 @@ class BackupManager(
 
     suspend fun usage(): StorageUsage = withContext(Dispatchers.IO) {
         val dbBytes = listOf("", "-wal", "-shm").sumOf { File(dbFile.path + it).takeIf(File::exists)?.length() ?: 0L }
-        val photos = photosDir.walkTopDown().filter { it.isFile && it.parentFile == photosDir && it.extension == "webp" }.toList()
-        val photoBytes = photosDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        // У видео рядом с роликом <id>.mp4 лежат кадр-обложка <id>.webp и его миниатюра —
+        // всё это считаем видео, остальное в папке — фото
+        val files = photosDir.walkTopDown().filter { it.isFile }.toList()
+        val videoIds = files.filter { it.parentFile == photosDir && it.extension == "mp4" }.map { it.nameWithoutExtension }.toSet()
+        val (videoFiles, photoFiles) = files.partition { it.nameWithoutExtension in videoIds }
+        val photoCount = photoFiles.count { it.parentFile == photosDir && it.extension == "webp" }
         // База карт MapLibre лежит рядом с фото; в копию она не входит
         val mapBytes = listOf("", "-wal", "-shm", "-journal").sumOf { File(filesRoot, MAP_DATABASE + it).takeIf(File::exists)?.length() ?: 0L }
-        StorageUsage(dbBytes, photoBytes, photos.size, mapBytes, appBytes())
-    }
-
-    /** Размер самого приложения по данным системы; если она не ответила — размер установленного файла. */
-    private fun appBytes(): Long = runCatching {
-        context.getSystemService(StorageStatsManager::class.java)
-            .queryStatsForUid(StorageManager.UUID_DEFAULT, Process.myUid())
-            .appBytes
-    }.getOrElse {
-        val info = context.applicationInfo
-        (listOf(info.sourceDir) + info.splitSourceDirs.orEmpty()).sumOf { File(it).length() }
+        StorageUsage(
+            databaseBytes = dbBytes,
+            photoBytes = photoFiles.sumOf { it.length() },
+            photoCount = photoCount,
+            videoBytes = videoFiles.sumOf { it.length() },
+            videoCount = videoIds.size,
+            mapBytes = mapBytes,
+        )
     }
 
     /**

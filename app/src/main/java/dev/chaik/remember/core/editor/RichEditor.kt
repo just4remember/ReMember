@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.editor
 
+import dev.chaik.remember.core.ui.components.BackGestureLock
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -179,6 +180,9 @@ fun RichEditor(
 
     // «Назад» сначала снимает выделение с фото, а не закрывает экран
     BackHandler(enabled = state.selectedPhotoKey != null) { state.selectPhoto(null) }
+    // …а свайпы «назад» и между вкладками, пока фото выделено, не работают: настраивая размер,
+    // легко случайно смахнуть страницу
+    BackGestureLock.Hold(state.selectedPhotoKey != null)
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         state.blocks.forEachIndexed { index, block ->
@@ -197,7 +201,10 @@ fun RichEditor(
                         block = block,
                         state = state,
                         photoFile = photoFile,
-                        onOpen = { i -> onOpenPhotos(block.photoIds, i) },
+                        onOpen = { i ->
+                            state.stopVideo()
+                            onOpenPhotos(block.photoIds, i)
+                        },
                     )
                 }
             }
@@ -535,14 +542,16 @@ private fun PhotoBlockView(
                 if (block.isGrid) {
                     PhotoGrid(block, state, photoFile, onOpen)
                 } else {
+                    val id = block.photoIds.first()
                     PhotoCell(
-                        file = photoFile(block.photoIds.first()),
-                        durationMs = state.durationOf(block.photoIds.first()),
+                        id = id,
+                        file = photoFile(id),
+                        state = state,
                         shape = PhotoShape,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(state.aspectOf(block.photoIds.first()))
-                            .photoTaps(block, 0, state, onOpen),
+                            .aspectRatio(state.aspectOf(id))
+                            .photoTaps(block, 0, id, compact = false, state, onOpen),
                     )
                 }
             }
@@ -572,8 +581,9 @@ private fun PhotoGrid(
                 rowIds.forEachIndexed { column, id ->
                     val index = row * columns + column
                     PhotoCell(
+                        id = id,
                         file = photoFile(id),
-                        durationMs = state.durationOf(id),
+                        state = state,
                         compact = true,
                         shape = CellShape,
                         modifier = Modifier
@@ -587,7 +597,7 @@ private fun PhotoGrid(
                                     Modifier
                                 },
                             )
-                            .photoTaps(block, index, state, onOpen),
+                            .photoTaps(block, index, id, compact = true, state, onOpen),
                     )
                 }
                 // Неполный последний ряд: пустые места, чтобы ячейки были того же размера
@@ -597,9 +607,20 @@ private fun PhotoGrid(
     }
 }
 
-/** Фото или кадр-обложка видео; у видео поверх — ▶ и длительность. */
+/**
+ * Фото или кадр-обложка видео; у видео поверх — ▶ и длительность, а после нажатия на ▶ —
+ * мини-плеер прямо в ячейке.
+ */
 @Composable
-private fun PhotoCell(file: File, durationMs: Long?, shape: RoundedCornerShape, modifier: Modifier, compact: Boolean = false) {
+private fun PhotoCell(
+    id: String,
+    file: File,
+    state: EditorState,
+    shape: RoundedCornerShape,
+    modifier: Modifier,
+    compact: Boolean = false,
+) {
+    val durationMs = state.durationOf(id)
     Box(modifier.clip(shape)) {
         AsyncImage(
             model = file,
@@ -607,27 +628,53 @@ private fun PhotoCell(file: File, durationMs: Long?, shape: RoundedCornerShape, 
             contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize(),
         )
-        if (durationMs != null) VideoBadge(durationMs, compact)
+        if (durationMs != null) {
+            val video = if (state.playingVideoId == id) file.videoSibling() else null
+            if (video != null) {
+                InlineVideo(
+                    file = video,
+                    aspect = state.aspectOf(id),
+                    paused = state.videoPaused,
+                    compact = compact,
+                    onPause = state::pauseVideo,
+                    onEnded = state::stopVideo,
+                )
+            } else {
+                VideoBadge(durationMs, compact)
+            }
+        }
     }
 }
 
 /**
- * Тап — открыть/закрыть панель (повторный тап по тому же фото закрывает),
- * двойной тап — на весь экран, долгое нажатие — открыть панель.
+ * Тап — открыть/закрыть панель (повторный тап по тому же фото закрывает), у видео тап по
+ * кнопке ▶ — запустить/приостановить мини-плеер. Двойной тап — на весь экран,
+ * долгое нажатие — открыть панель.
  */
 @Composable
 private fun Modifier.photoTaps(
     block: EditorState.PhotoBlock,
     index: Int,
+    id: String,
+    compact: Boolean,
     state: EditorState,
     onOpen: (Int) -> Unit,
 ): Modifier {
     val haptics = LocalHapticFeedback.current
-    return pointerInput(block.key, index) {
+    return pointerInput(block.key, index, id, compact) {
+        // Зона кнопки ▶ — сам круг и немного вокруг, чтобы попадать не целясь
+        val playRadius = playCircleSize(compact).toPx() / 2 + 16.dp.toPx()
         detectTapGestures(
             // Состояние читается в момент тапа, а не при создании обработчика —
             // иначе повторный тап «не видел» бы, что панель уже открыта
-            onTap = { state.togglePhoto(block.key, index) },
+            onTap = { position ->
+                val center = Offset(size.width / 2f, size.height / 2f)
+                if (state.durationOf(id) != null && (position - center).getDistance() <= playRadius) {
+                    state.tapPlay(id)
+                } else {
+                    state.togglePhoto(block.key, index)
+                }
+            },
             onDoubleTap = { onOpen(index) },
             onLongPress = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)

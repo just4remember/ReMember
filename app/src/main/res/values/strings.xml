@@ -115,6 +115,17 @@
     <string name="editor_align_center">По центру</string>
     <string name="editor_align_right">Справа</string>
     <string name="editor_photo_counter">%1$d из %2$d</string>
+    <string name="video_play">Воспроизвести</string>
+    <string name="video_pause">Пауза</string>
+    <string name="video_back">Назад на 10 секунд</string>
+    <string name="video_forward">Вперёд на 10 секунд</string>
+    <string name="video_rotate">Повернуть экран</string>
+    <plurals name="video_seek_seconds">
+        <item quantity="one">%1$d секунда</item>
+        <item quantity="few">%1$d секунды</item>
+        <item quantity="many">%1$d секунд</item>
+        <item quantity="other">%1$d секунды</item>
+    </plurals>
     <string name="editor_photo_import_failed">Не удалось добавить фото</string>
 
     <!-- Сегодня -->
@@ -681,7 +692,7 @@
     <string name="about_search">Поиск по дням, снам, заметкам, задачам, событиям, тратам, тренировкам и местам с отбором по периоду и тегам</string>
     <string name="about_map">Места, где вы бывали, с категориями. Город можно скачать, чтобы карта работала без интернета</string>
     <string name="about_widgets">Часы со стрелками, цифровые часы и кольца здоровья на рабочем столе</string>
-    <string name="about_data">Галерея всех фото и расход памяти. Резервная копия с записями, фото, будильниками и настройками, в том числе автоматическая отправка на свой сервер</string>
+    <string name="about_data">Галерея фото и видео и расход памяти. Резервная копия с записями, фото, будильниками и настройками, в том числе автоматическая отправка на свой сервер</string>
     <string name="about_author">created by 4aik</string>
     <string name="about_reminders">Отчёт за день, сон, события, задачи, утренняя сводка, тихие часы</string>
     <string name="about_privacy_title">Приватность</string>
@@ -697,26 +708,37 @@
         <item quantity="many">%1$d фото</item>
         <item quantity="other">%1$d фото</item>
     </plurals>
+    <plurals name="data_videos">
+        <item quantity="one">%1$d видео</item>
+        <item quantity="few">%1$d видео</item>
+        <item quantity="many">%1$d видео</item>
+        <item quantity="other">%1$d видео</item>
+    </plurals>
+    <string name="data_videos_title">Видео</string>
     <string name="data_maps">Карты</string>
-    <string name="data_app">Приложение</string>
     <string name="data_total">Всего</string>
-    <string name="data_gallery">Все фото</string>
-    <string name="data_gallery_hint">Галерея фото из записей и заметок</string>
-    <string name="gallery_empty">Фото пока нет. Они появятся здесь, когда вы добавите их в запись или заметку</string>
+    <string name="data_gallery">Галерея</string>
+    <string name="data_gallery_hint">Фото и видео из записей и заметок</string>
+    <string name="gallery_empty">Здесь пока пусто. Фото и видео появятся, когда вы добавите их в запись или заметку</string>
     <string name="gallery_added">Добавлено %1$s</string>
     <string name="gallery_unused">Фото не используется ни в одной записи и скоро будет удалено автоматически</string>
+    <string name="gallery_unused_video">Видео не используется ни в одной записи и скоро будет удалено автоматически</string>
     <string name="gallery_day">Запись дня · %1$s</string>
     <string name="gallery_note">Заметка · %1$s</string>
     <string name="gallery_untitled">Без названия</string>
     <string name="gallery_save">В галерею</string>
     <string name="gallery_saved">Сохранено в галерею телефона (Pictures/ReMember)</string>
-    <string name="gallery_save_failed">Не удалось сохранить фото</string>
+    <string name="gallery_saved_video">Сохранено в галерею телефона (Movies/ReMember)</string>
+    <string name="gallery_save_failed">Не удалось сохранить</string>
     <string name="gallery_delete">Удалить</string>
     <string name="gallery_delete_title">Удалить фото?</string>
     <string name="gallery_delete_text">Фото будет удалено из приложения. Это действие нельзя отменить</string>
     <string name="gallery_delete_text_used">Фото будет удалено и из записей, в которых оно используется. Это действие нельзя отменить</string>
+    <string name="gallery_delete_title_video">Удалить видео?</string>
+    <string name="gallery_delete_text_video">Видео будет удалено из приложения. Это действие нельзя отменить</string>
+    <string name="gallery_delete_text_used_video">Видео будет удалено и из записей, в которых оно используется. Это действие нельзя отменить</string>
     <string name="data_backup">Резервная копия</string>
-    <string name="data_backup_text">Записи, сны, заметки, задачи, события, траты, тренировки, места и фото, а также будильники, настройки и прогресс игр сохраняются в один файл, зашифрованный вашим паролем. Из этого файла данные можно восстановить на этом или другом телефоне</string>
+    <string name="data_backup_text">Записи, сны, заметки, задачи, события, траты, тренировки, места, фото и видео, а также будильники, настройки и прогресс игр сохраняются в один файл, зашифрованный вашим паролем. Из этого файла данные можно восстановить на этом или другом телефоне</string>
     <string name="data_backup_hint">Храните копию не на этом телефоне, а на компьютере, NAS или в облаке. PIN-код, вход в Ра[скобки] и настройки копий на сервер в копию не входят, их нужно задать заново</string>
     <string name="server_backup">Копии на сервер</string>
     <string name="server_backup_text">Тот же зашифрованный файл, что и при экспорте, отправляется на ваш сервер POST-запросом. Восстановить его можно обычным импортом</string>

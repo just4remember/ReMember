@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.data.gallery
 
+import dev.chaik.remember.core.model.formatVideoDuration
 import dev.chaik.remember.core.editor.VideoBadge
 import android.text.format.Formatter
 import android.widget.Toast
@@ -116,15 +117,14 @@ fun GalleryScreen(onBack: () -> Unit, onOpenNote: (Long) -> Unit, modifier: Modi
     val opened = openedAt
     if (opened != null && list.isNotEmpty()) {
         val savedText = stringResource(R.string.gallery_saved)
+        val savedVideoText = stringResource(R.string.gallery_saved_video)
         val failedText = stringResource(R.string.gallery_save_failed)
-        PhotoViewer(
-            files = list.map { container.photoStorage.file(it.id) },
-            initialIndex = opened,
-            onDismiss = { openedAt = null },
-        ) { page ->
+        val info: @Composable BoxScope.(Int, Modifier, Boolean) -> Unit = { page, bottomBlock, sheet ->
             val photo = list[page]
             PhotoInfo(
                 photo = photo,
+                modifier = bottomBlock,
+                sheet = sheet,
                 onOpenUsage = { usage ->
                     openedAt = null
                     when (usage) {
@@ -134,20 +134,33 @@ fun GalleryScreen(onBack: () -> Unit, onOpenNote: (Long) -> Unit, modifier: Modi
                 },
                 onSave = {
                     viewModel.exportToGallery(photo.id) { ok ->
-                        Toast.makeText(context, if (ok) savedText else failedText, Toast.LENGTH_SHORT).show()
+                        val saved = if (photo.durationMs != null) savedVideoText else savedText
+                        Toast.makeText(context, if (ok) saved else failedText, Toast.LENGTH_SHORT).show()
                     }
                 },
                 onDelete = { deleting = photo },
             )
         }
+        PhotoViewer(
+            files = list.map { container.photoStorage.file(it.id) },
+            initialIndex = opened,
+            onDismiss = { openedAt = null },
+            overlay = { page, bottomBlock -> info(page, bottomBlock, false) },
+            // У видео сведения не висят поверх ролика, а выезжают по свайпу вверх
+            videoSheet = { page -> info(page, Modifier, true) },
+        )
     }
 
     deleting?.let { photo ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text(stringResource(R.string.gallery_delete_title)) },
+            title = { Text(stringResource(if (photo.durationMs != null) R.string.gallery_delete_title_video else R.string.gallery_delete_title)) },
             text = {
-                Text(stringResource(if (photo.usages.isEmpty()) R.string.gallery_delete_text else R.string.gallery_delete_text_used))
+                val text = when {
+                    photo.durationMs == null -> if (photo.usages.isEmpty()) R.string.gallery_delete_text else R.string.gallery_delete_text_used
+                    else -> if (photo.usages.isEmpty()) R.string.gallery_delete_text_video else R.string.gallery_delete_text_used_video
+                }
+                Text(stringResource(text))
             },
             confirmButton = {
                 TextButton(
@@ -223,6 +236,9 @@ private fun BoxScope.PhotoInfo(
     onOpenUsage: (PhotoUsage) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** Шторка у видео: сплошная подложка со скруглённым верхом и «ручкой». */
+    sheet: Boolean = false,
 ) {
     val context = LocalContext.current
     val dateFormat = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT) }
@@ -232,21 +248,40 @@ private fun BoxScope.PhotoInfo(
 
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier
+        modifier = modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
+            .then(
+                if (sheet) {
+                    Modifier.background(Color(0xF2202124), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                } else {
+                    Modifier.background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))))
+                },
+            )
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 40.dp, bottom = 8.dp),
+            .padding(start = 16.dp, end = 16.dp, top = if (sheet) 10.dp else 40.dp, bottom = 8.dp),
     ) {
+        if (sheet) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 12.dp)
+                    .size(width = 36.dp, height = 4.dp)
+                    .background(Color.White.copy(alpha = 0.4f), RoundedCornerShape(50)),
+            )
+        }
         Text(stringResource(R.string.gallery_added, added), color = Color.White, style = MaterialTheme.typography.bodyLarge)
         Text(
-            text = "${photo.width} × ${photo.height} · ${Formatter.formatShortFileSize(context, photo.sizeBytes)}",
+            text = listOfNotNull(
+                "${photo.width} × ${photo.height}",
+                photo.durationMs?.let(::formatVideoDuration),
+                Formatter.formatShortFileSize(context, photo.sizeBytes),
+            ).joinToString(" · "),
             color = muted,
             style = MaterialTheme.typography.bodyMedium,
         )
         if (photo.usages.isEmpty()) {
-            Text(stringResource(R.string.gallery_unused), color = muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
+            Text(stringResource(if (photo.durationMs != null) R.string.gallery_unused_video else R.string.gallery_unused), color = muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
         } else {
             photo.usages.forEach { usage ->
                 val (icon, label) = when (usage) {

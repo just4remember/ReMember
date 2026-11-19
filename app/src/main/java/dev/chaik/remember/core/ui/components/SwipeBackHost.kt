@@ -54,7 +54,8 @@ fun SwipeBackHost(
         dispatcher?.addInput(input)
         onDispose { dispatcher?.removeInput(input) }
     }
-    val isEnabled by rememberUpdatedState(enabled)
+    // Пока держат запрет (например, настраивают фото), свайп не уводит со страницы
+    val isEnabled by rememberUpdatedState(enabled && !BackGestureLock.isHeld)
     // Направление жеста: −1 — справа налево (палец идёт влево), +1 — слева направо
     val mode by rememberUpdatedState(LocalAppSettings.current.backSwipe)
     // −1 — справа налево (палец идёт влево), +1 — слева направо

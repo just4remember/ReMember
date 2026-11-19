@@ -274,6 +274,36 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
         }
     }
 
+    /**
+     * Видео, которое играет прямо в тексте (мини-плеер); null — ни одно.
+     * В документ и историю правок не входит.
+     */
+    var playingVideoId by mutableStateOf<String?>(null)
+        private set
+
+    /** Мини-плеер на паузе. */
+    var videoPaused by mutableStateOf(false)
+        private set
+
+    /** Нажали ▶ на видео: запустить его (другое остановится), а у играющего — пауза/дальше. */
+    fun tapPlay(photoId: String) {
+        if (playingVideoId == photoId) {
+            videoPaused = !videoPaused
+        } else {
+            playingVideoId = photoId
+            videoPaused = false
+        }
+    }
+
+    fun pauseVideo() {
+        videoPaused = true
+    }
+
+    fun stopVideo() {
+        playingVideoId = null
+        videoPaused = false
+    }
+
     fun selectPhoto(key: Long?, index: Int = 0) {
         selectedPhotoKey = key
         selectedPhotoIndex = index
