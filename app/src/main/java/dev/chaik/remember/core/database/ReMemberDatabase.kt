@@ -44,7 +44,7 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
  * (`autoMigrations` — для простых случаев). Схемы лежат в app/schemas.
  */
 @Database(
-    version = 13,
+    version = 14,
     entities = [
         DayEntryEntity::class,
         SleepEntryEntity::class,
@@ -94,6 +94,8 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
         AutoMigration(from = 11, to = 12),
         // 13: какие шаблоны использованы в тренировке
         AutoMigration(from = 12, to = 13),
+        // 14: видео в записях — длительность у фото
+        AutoMigration(from = 13, to = 14),
     ],
     exportSchema = true,
 )

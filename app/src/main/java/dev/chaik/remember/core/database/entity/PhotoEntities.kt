@@ -15,6 +15,11 @@ data class PhotoEntity(
     val height: Int,
     @ColumnInfo(name = "size_bytes") val sizeBytes: Long,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
+    /**
+     * Длительность видео, мс; null — это фото. У видео рядом с кадром-обложкой (как у фото)
+     * лежит сам ролик `<id>.mp4`. Появилось в версии 14 базы.
+     */
+    @ColumnInfo(name = "duration_ms") val durationMs: Long? = null,
 )
 
 /**

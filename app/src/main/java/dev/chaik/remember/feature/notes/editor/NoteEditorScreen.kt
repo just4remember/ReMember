@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.notes.editor
 
+import dev.chaik.remember.core.editor.MediaImportProgress
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -186,7 +187,7 @@ fun NoteEditorScreen(
         // Выбор фото — системное окно: блокировка по возвращении не нужна
         container.appLock.allowExternal()
         openingPicker = true
-        pickPhotos.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+        pickPhotos.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
     }
     val failedImport = stringResource(R.string.editor_photo_import_failed)
     LaunchedEffect(viewModel.failedImports) {
@@ -319,7 +320,7 @@ fun NoteEditorScreen(
             ) {
                 FloatingActionButton(onClick = { if (!viewModel.isImporting) launchPicker() }) {
                     if (viewModel.isImporting) {
-                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                        MediaImportProgress()
                     } else {
                         Icon(Icons.Outlined.AddPhotoAlternate, stringResource(R.string.editor_add_photo))
                     }

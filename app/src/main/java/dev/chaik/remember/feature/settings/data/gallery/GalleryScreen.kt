@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.settings.data.gallery
 
+import dev.chaik.remember.core.editor.VideoBadge
 import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -195,16 +196,21 @@ private fun PhotoGrid(photos: List<LibraryPhoto>, contentPadding: PaddingValues,
                 }
             }
             items(items, key = { it.value.id }) { (index, photo) ->
-                AsyncImage(
-                    model = storage.thumbnailFile(photo.id),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
+                Box(
+                    Modifier
                         .aspectRatio(1f)
                         .clip(ThumbShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .clickable { onOpen(index) },
-                )
+                ) {
+                    AsyncImage(
+                        model = storage.thumbnailFile(photo.id),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                    if (photo.durationMs != null) VideoBadge(photo.durationMs, compact = true)
+                }
             }
         }
     }

@@ -1,5 +1,8 @@
 package dev.chaik.remember.core.photos
 
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -25,7 +28,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 /**
- * Хранилище фото во внутренней памяти приложения.
+ * Хранилище фото и видео во внутренней памяти приложения.
+ *
+ * Видео сжимается до 720p и лежит рядом как `<id>.mp4`; его кадр-обложка — обычное «фото»
+ * `<id>.webp` с миниатюрой, поэтому сетки, галерея и ссылки `photo:<id>` работают как с фото.
  *
  * При добавлении фото копируется к себе (оригинал в галерее можно удалить),
  * уменьшается до [MAX_SIDE] по длинной стороне и сохраняется в WebP.
@@ -44,12 +50,72 @@ class PhotoStorage(
 
     fun thumbnailFile(photoId: String): File = File(thumbsDir, "$photoId.webp")
 
+    /** Ролик видео; у фото такого файла нет. */
+    fun videoFile(photoId: String): File = File(photosDir, "$photoId.mp4")
+
+    /** Сжатие видео при вставке: доля от 0 до 1; null — сейчас ничего не сжимается. */
+    private val _videoProgress = MutableStateFlow<Float?>(null)
+    val videoProgress: StateFlow<Float?> = _videoProgress.asStateFlow()
+
     /** Сведения о фото (размеры) по id; отсутствующих в ответе нет. */
     suspend fun photos(ids: Collection<String>): Map<String, Photo> =
-        if (ids.isEmpty()) emptyMap() else photoDao.getMany(ids).associate { it.id to Photo(it.id, it.width, it.height) }
+        if (ids.isEmpty()) emptyMap() else photoDao.getMany(ids).associate { it.id to Photo(it.id, it.width, it.height, it.durationMs) }
 
-    /** Скопировать фото (из галереи, камеры и т. п.) к себе. */
-    suspend fun import(source: Uri): Photo = withContext(Dispatchers.IO) {
+    /** Скопировать фото или видео (из галереи, камеры и т. п.) к себе. */
+    suspend fun import(source: Uri): Photo {
+        val type = context.contentResolver.getType(source).orEmpty()
+        return if (type.startsWith("video/")) importVideo(source) else importImage(source)
+    }
+
+    /**
+     * Видео: сжать до 720p, взять кадр-обложку и записать как фото с длительностью.
+     * Ход сжатия — в [videoProgress].
+     */
+    private suspend fun importVideo(source: Uri): Photo {
+        val id = UUID.randomUUID().toString()
+        thumbsDir.mkdirs()
+        val temp = File(photosDir, "$id.mp4.tmp")
+        try {
+            _videoProgress.value = 0f
+            VideoImport.compress(context, source, temp) { _videoProgress.value = it }
+        } finally {
+            _videoProgress.value = null
+        }
+        return withContext(Dispatchers.IO) {
+            try {
+                check(temp.renameTo(videoFile(id))) { "Не удалось сохранить видео" }
+                val info = VideoImport.info(videoFile(id))
+                val poster = VideoImport.poster(videoFile(id))
+                try {
+                    val frame = poster.fitInto(MAX_SIDE)
+                    writeWebp(frame, file(id), PHOTO_QUALITY)
+                    frame.fitInto(THUMB_SIDE).let { thumb ->
+                        writeWebp(thumb, thumbnailFile(id), THUMB_QUALITY)
+                        if (thumb !== frame) thumb.recycle()
+                    }
+                    if (frame !== poster) frame.recycle()
+                    val entity = PhotoEntity(
+                        id = id,
+                        width = poster.width,
+                        height = poster.height,
+                        sizeBytes = file(id).length() + videoFile(id).length(),
+                        createdAt = Instant.now(),
+                        durationMs = info.durationMs.coerceAtLeast(1),
+                    )
+                    photoDao.insert(entity)
+                    Photo(id, entity.width, entity.height, entity.durationMs)
+                } finally {
+                    poster.recycle()
+                }
+            } catch (e: Exception) {
+                temp.delete()
+                deleteFiles(id)
+                throw e
+            }
+        }
+    }
+
+    private suspend fun importImage(source: Uri): Photo = withContext(Dispatchers.IO) {
         val bitmap = decodeScaled(source)
         try {
             val id = UUID.randomUUID().toString()
@@ -104,6 +170,7 @@ class PhotoStorage(
      * любое приложение. Разрешения не нужны: своё приложение пишет туда свободно.
      */
     suspend fun exportToGallery(photoId: String): Boolean = withContext(Dispatchers.IO) {
+        if (videoFile(photoId).exists()) return@withContext exportVideo(photoId)
         val bitmap = BitmapFactory.decodeFile(file(photoId).path) ?: return@withContext false
         val resolver = context.contentResolver
         val values = ContentValues().apply {
@@ -129,9 +196,34 @@ class PhotoStorage(
         }
     }
 
+    /** Видео — в Movies/ReMember как есть (MP4 открывает любой плеер). */
+    private fun exportVideo(photoId: String): Boolean {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Video.Media.DISPLAY_NAME, "ReMember_${photoId.take(8)}.mp4")
+            put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/ReMember")
+            put(MediaStore.Video.Media.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+        return try {
+            val written = resolver.openOutputStream(uri)?.use { out -> videoFile(photoId).inputStream().use { it.copyTo(out) } } != null
+            if (!written) {
+                resolver.delete(uri, null, null)
+                return false
+            }
+            resolver.update(uri, ContentValues().apply { put(MediaStore.Video.Media.IS_PENDING, 0) }, null, null)
+            true
+        } catch (e: Exception) {
+            resolver.delete(uri, null, null)
+            false
+        }
+    }
+
     private fun deleteFiles(photoId: String) {
         file(photoId).delete()
         thumbnailFile(photoId).delete()
+        videoFile(photoId).delete()
     }
 
     /** Декодирует сразу в уменьшенном размере — полноразмерный снимок в память не грузится. */

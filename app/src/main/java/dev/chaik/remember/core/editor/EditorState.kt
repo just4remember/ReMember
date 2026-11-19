@@ -84,6 +84,11 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
     /** Пропорции фото; пока размеры не загружены — 4:3, чтобы место под фото не прыгало сильно. */
     fun aspectOf(photoId: String): Float = aspects[photoId] ?: DEFAULT_ASPECT
 
+    /** Длительность видео по id; у фото — null. */
+    private val durations = mutableStateMapOf<String, Long>()
+
+    fun durationOf(photoId: String): Long? = durations[photoId]
+
     val blocks = mutableStateListOf<Block>()
 
     /** Текстовый блок, где последним стоял курсор; null — ещё нигде (вставка пойдёт в конец). */
@@ -152,7 +157,10 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
 
     /** Подставить реальные пропорции фото, когда они загрузились из базы. */
     fun applyPhotoSizes(photos: Map<String, Photo>) {
-        photos.forEach { (id, photo) -> aspects[id] = photo.aspect }
+        photos.forEach { (id, photo) ->
+            aspects[id] = photo.aspect
+            photo.durationMs?.let { durations[id] = it }
+        }
     }
 
     // Текст
@@ -237,7 +245,10 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
             widthPercent = DocumentBlock.FULL_WIDTH,
             align = PhotoAlign.Center,
         )
-        photos.forEach { aspects[it.id] = it.aspect }
+        photos.forEach { photo ->
+            aspects[photo.id] = photo.aspect
+            photo.durationMs?.let { durations[photo.id] = it }
+        }
         val caret = textBlock(after)
         blocks.addAll(index + 1, listOf(photoBlock, caret))
         caret.value = caret.value.copy(selection = TextRange(0))

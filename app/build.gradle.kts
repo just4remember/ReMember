@@ -86,6 +86,11 @@ dependencies {
     implementation(libs.coil.compose)
     // Картинки выпусков «Ра[скобок]» — SVG
     implementation(libs.coil.svg)
+    // Видео в записях: сжатие до 720p при вставке и плеер
+    implementation(libs.androidx.media3.transformer)
+    implementation(libs.androidx.media3.effect)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.biometric)
     // biometric тянет старый Fragment, с которым запросы разрешений работают неправильно
     implementation(libs.androidx.fragment)

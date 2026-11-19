@@ -44,7 +44,8 @@ import dev.chaik.remember.R
 import java.io.File
 
 /**
- * Фото на весь экран. Если фото несколько (сетка) — листаются свайпом.
+ * Фото и видео на весь экран. Если их несколько (сетка) — листаются свайпом; видео играет
+ * в плеере, пока открыта его страница.
  * Щипок — масштаб, двойной тап — приблизить/отдалить, крестик или «назад» — закрыть.
  * [overlay] — своё поверх фото (сведения и кнопки в галерее), получает номер открытого фото.
  */
@@ -73,10 +74,15 @@ fun PhotoViewer(
                 userScrollEnabled = !zoomed,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
-                ZoomablePhoto(
-                    file = files[page],
-                    onZoomChange = { if (page == pager.currentPage) zoomed = it },
-                )
+                val video = files[page].videoSibling()
+                if (video != null) {
+                    VideoPage(video, active = page == pager.currentPage)
+                } else {
+                    ZoomablePhoto(
+                        file = files[page],
+                        onZoomChange = { if (page == pager.currentPage) zoomed = it },
+                    )
+                }
             }
 
             if (files.isNotEmpty()) overlay(pager.currentPage.coerceAtMost(files.lastIndex))

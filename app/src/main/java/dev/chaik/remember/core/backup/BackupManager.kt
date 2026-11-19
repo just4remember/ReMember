@@ -83,7 +83,7 @@ class BackupManager(
 
     suspend fun usage(): StorageUsage = withContext(Dispatchers.IO) {
         val dbBytes = listOf("", "-wal", "-shm").sumOf { File(dbFile.path + it).takeIf(File::exists)?.length() ?: 0L }
-        val photos = photosDir.walkTopDown().filter { it.isFile && it.parentFile == photosDir }.toList()
+        val photos = photosDir.walkTopDown().filter { it.isFile && it.parentFile == photosDir && it.extension == "webp" }.toList()
         val photoBytes = photosDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
         // База карт MapLibre лежит рядом с фото; в копию она не входит
         val mapBytes = listOf("", "-wal", "-shm", "-journal").sumOf { File(filesRoot, MAP_DATABASE + it).takeIf(File::exists)?.length() ?: 0L }
@@ -113,7 +113,7 @@ class BackupManager(
             format = FORMAT,
             createdAt = Instant.now().toString(),
             databaseVersion = db.version,
-            photos = photos.count { it.parentFile == photosDir },
+            photos = photos.count { it.parentFile == photosDir && it.extension == "webp" },
         )
         val wal = File(dbFile.path + "-wal")
         val progress = Progress(

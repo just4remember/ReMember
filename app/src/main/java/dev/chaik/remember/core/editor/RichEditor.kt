@@ -537,6 +537,7 @@ private fun PhotoBlockView(
                 } else {
                     PhotoCell(
                         file = photoFile(block.photoIds.first()),
+                        durationMs = state.durationOf(block.photoIds.first()),
                         shape = PhotoShape,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -572,6 +573,8 @@ private fun PhotoGrid(
                     val index = row * columns + column
                     PhotoCell(
                         file = photoFile(id),
+                        durationMs = state.durationOf(id),
+                        compact = true,
                         shape = CellShape,
                         modifier = Modifier
                             .weight(1f)
@@ -594,8 +597,9 @@ private fun PhotoGrid(
     }
 }
 
+/** Фото или кадр-обложка видео; у видео поверх — ▶ и длительность. */
 @Composable
-private fun PhotoCell(file: File, shape: RoundedCornerShape, modifier: Modifier) {
+private fun PhotoCell(file: File, durationMs: Long?, shape: RoundedCornerShape, modifier: Modifier, compact: Boolean = false) {
     Box(modifier.clip(shape)) {
         AsyncImage(
             model = file,
@@ -603,6 +607,7 @@ private fun PhotoCell(file: File, shape: RoundedCornerShape, modifier: Modifier)
             contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize(),
         )
+        if (durationMs != null) VideoBadge(durationMs, compact)
     }
 }
 

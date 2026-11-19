@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.today
 
+import dev.chaik.remember.core.editor.MediaImportProgress
 import dev.chaik.remember.core.settings.LocalAppSettings
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
@@ -143,7 +144,7 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
     val launchPicker = {
         // Выбор фото — системное окно: блокировка по возвращении не нужна
         container.appLock.allowExternal()
-        pickPhotos.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+        pickPhotos.launch(PickVisualMediaRequest(PickVisualMedia.ImageAndVideo))
     }
 
     val failedImport = stringResource(R.string.editor_photo_import_failed)
@@ -371,7 +372,7 @@ private fun BoxScope.PhotoButton(
     ) {
         FloatingActionButton(onClick = onClick) {
             if (isImporting) {
-                CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                MediaImportProgress()
             } else {
                 Icon(Icons.Outlined.AddPhotoAlternate, stringResource(R.string.editor_add_photo))
             }

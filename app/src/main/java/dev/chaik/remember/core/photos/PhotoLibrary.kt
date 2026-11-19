@@ -22,6 +22,8 @@ data class LibraryPhoto(
     val sizeBytes: Long,
     val createdAt: Instant,
     val usages: List<PhotoUsage>,
+    /** Длительность видео, мс; null — фото. */
+    val durationMs: Long? = null,
 )
 
 /** Где стоит фото: запись дня или заметка. */
@@ -65,6 +67,7 @@ class PhotoLibrary(
                     height = photo.height,
                     sizeBytes = photo.sizeBytes,
                     createdAt = photo.createdAt,
+                    durationMs = photo.durationMs,
                     usages = byPhoto[photo.id].orEmpty().map { ref ->
                         when (ref.ownerType) {
                             PhotoOwner.DAY_ENTRY -> PhotoUsage.Day(LocalDate.ofEpochDay(ref.ownerId))
