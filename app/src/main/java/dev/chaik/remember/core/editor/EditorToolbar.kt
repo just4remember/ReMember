@@ -1,5 +1,7 @@
 package dev.chaik.remember.core.editor
 
+import androidx.compose.material.icons.automirrored.outlined.Redo
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +16,6 @@ import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.outlined.HorizontalRule
-import androidx.compose.material.icons.outlined.KeyboardHide
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.StrikethroughS
 import androidx.compose.material.icons.outlined.Title
@@ -59,12 +60,11 @@ enum class EditorTool(val icon: ImageVector, @param:StringRes val label: Int, va
 fun editorTools(saved: List<String>): List<EditorTool> =
     (saved.mapNotNull { name -> EditorTool.entries.firstOrNull { it.name == name } } + EditorTool.entries).distinct()
 
-/** Панель над клавиатурой: оформление текста, фото и «спрятать клавиатуру». */
+/** Панель над клавиатурой: отмена и повтор, фото и оформление текста. */
 @Composable
 fun EditorToolbar(
     state: EditorState,
     onAddPhoto: (() -> Unit)?,
-    onHideKeyboard: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -81,8 +81,12 @@ fun EditorToolbar(
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Отмена и повтор — первыми: ими пользуются чаще форматирования
+                ToolButton(Icons.AutoMirrored.Outlined.Undo, R.string.editor_undo, enabled = state.canUndo, onClick = state::undo)
+                ToolButton(Icons.AutoMirrored.Outlined.Redo, R.string.editor_redo, enabled = state.canRedo, onClick = state::redo)
+                VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
                 if (onAddPhoto != null) {
-                    ToolButton(Icons.Outlined.AddPhotoAlternate, R.string.editor_add_photo, onAddPhoto)
+                    ToolButton(Icons.Outlined.AddPhotoAlternate, R.string.editor_add_photo, onClick = onAddPhoto)
                     VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
                 }
                 // Порядок кнопок — из «Персонализации»
@@ -90,8 +94,6 @@ fun EditorToolbar(
                     ToolButton(tool.icon, tool.label) { tool.apply(state) }
                 }
             }
-            VerticalDivider(Modifier.height(24.dp))
-            ToolButton(Icons.Outlined.KeyboardHide, R.string.editor_hide_keyboard, onHideKeyboard)
         }
     }
 }
@@ -106,8 +108,8 @@ private val KeepScrollInside = object : NestedScrollConnection {
 }
 
 @Composable
-private fun ToolButton(icon: ImageVector, label: Int, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+private fun ToolButton(icon: ImageVector, label: Int, enabled: Boolean = true, onClick: () -> Unit) {
+    IconButton(onClick = onClick, enabled = enabled) {
         Icon(icon, contentDescription = stringResource(label))
     }
 }

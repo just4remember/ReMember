@@ -12,6 +12,9 @@ import kotlinx.serialization.json.Json
 const val DIGITS_SIZE_MIN = 40
 const val DIGITS_SIZE_STEP = 5
 
+/** Сколько городов можно добавить к основному времени цифровых часов: всего в таблице до 4. */
+const val MAX_EXTRA_CITIES = 3
+
 /** Тёмная подложка виджетов по умолчанию — как карточки приложения. */
 const val WIDGET_CARD_COLOR = 0xFF1C1F26
 
@@ -35,6 +38,12 @@ data class WidgetSettings(
     val digitalCardColor: Long = WIDGET_CARD_COLOR,
     val digitalDate: Boolean = true,
     val digitalStreak: Boolean = false,
+    /** Основное время цифровых часов: город из WorldCities (id); null — местное время. */
+    val digitalCity: String? = null,
+    /** Ещё до [MAX_EXTRA_CITIES] городов: на виджете от 3×2 часы встают таблицей. */
+    val digitalCities: List<String> = emptyList(),
+    /** Город часов со стрелками; null — местное время. */
+    val analogCity: String? = null,
     // Кольца здоровья
     val healthTextInside: Boolean = false,
     /** «из 6 000» рядом с цифрами; внутри колец целей нет — не хватает места. */

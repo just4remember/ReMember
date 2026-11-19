@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Дата и огонёк серии под часами -->
+<!-- Под часами две строки: дата крупнее, ниже — город часов и огонёк серии -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal">
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
     <!-- Дату пишет приложение на выбранном языке виджетов и обновляет в полночь -->
     <TextView
@@ -19,19 +19,39 @@
         android:shadowDy="1"
         android:shadowRadius="4" />
 
-    <ImageView
-        android:id="@+id/streak_icon"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
-        android:layout_marginStart="8dp"
-        android:src="@drawable/ic_widget_flame" />
-
-    <TextView
-        android:id="@+id/streak_count"
+    <LinearLayout
+        android:id="@+id/clock_line2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="2dp"
-        android:fontFamily="sans-serif-medium"
-        android:maxLines="1"
-        android:textSize="14sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/clock_place"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:maxLines="1"
+            android:textColor="#B3FFFFFF"
+            android:textSize="12sp"
+            android:shadowColor="#59000000"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <ImageView
+            android:id="@+id/streak_icon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_widget_flame" />
+
+        <TextView
+            android:id="@+id/streak_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textSize="12sp" />
+    </LinearLayout>
 </LinearLayout>

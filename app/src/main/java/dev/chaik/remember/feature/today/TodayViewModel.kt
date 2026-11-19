@@ -79,7 +79,7 @@ class TodayViewModel(private val container: AppContainer) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Дни с записанным сном — луна в календаре выбора дня. */
-    val calendarSleep: StateFlow<Set<LocalDate>> = container.sleepRepository.observeTimedDates()
+    val calendarSleep: StateFlow<Set<LocalDate>> = container.sleepRepository.observeDreamDates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     /** Теги дней — для списка в календаре выбора дня. */

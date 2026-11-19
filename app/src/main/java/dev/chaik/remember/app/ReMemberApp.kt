@@ -195,7 +195,7 @@ private fun MainScaffold(ready: Boolean) {
             is OpenTarget.Task -> Destination.Tasks
             is OpenTarget.Workout -> Destination.Gym
             OpenTarget.Health -> Destination.Health
-            OpenTarget.Time -> Destination.Time
+            OpenTarget.Time, OpenTarget.WorldClock -> Destination.Time
             OpenTarget.Raskobki -> Destination.Games
         }
         // Раздел выключен в «Страницах» — туда не попасть и по уведомлению
@@ -215,7 +215,7 @@ private fun MainScaffold(ready: Boolean) {
             OpenTarget.Raskobki -> stack.add(RaskobkiRoute)
             // Достаточно открыть сам раздел
             OpenTarget.Health, OpenTarget.Time -> Unit
-            // День, сон и дату календаря выставит сам экран и обнулит запрос
+            // День, сон, дату календаря и вкладку мирового времени выставит сам экран и обнулит запрос
             else -> return@LaunchedEffect
         }
         container.openRequests.value = null

@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.backup
 
+import dev.chaik.remember.feature.time.world.WorldClockStore
 import dev.chaik.remember.core.feedback.FeedbackSender
 import android.content.Context
 import android.content.SharedPreferences
@@ -44,6 +45,8 @@ internal object BackupSettings {
         Part("raskobki") { it !in RASKOBKI_ACCOUNT },
         // Готовый набор категорий карты уже ставили: иначе на новом телефоне удалённые вернутся
         Part("places"),
+        // Города мирового времени на странице «Время»
+        Part(WorldClockStore.PREFS),
         // До какой версии приведены стандартные категории трат в этой базе
         Part("app_state"),
         // Счётчики отправленных ошибок и предложений — значок на странице отзывов

@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Цифровые часы: цифры и строка даты вставляет код (шрифт цифр — по настройке, даты — шрифт приложения) -->
+<!-- Цифровые часы: цифры и строки даты вставляет код (шрифт цифр — по настройке, даты — шрифт приложения).
+     Подложка — фон блока с часами на весь виджет, часы и дата по центру -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/widget_bg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:src="@drawable/widget_card_bg"
-        android:tint="#F21C1F26" />
-
     <LinearLayout
+        android:id="@+id/widget_card"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical">
 

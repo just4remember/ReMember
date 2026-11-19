@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Цифровые часы с несколькими городами: таблица 1×2 или 2×2, в ячейке — цифры и название города.
+     Цифры (шрифт по настройке) и строку даты вставляет код. Подложка на весь виджет -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/widget_card"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/world_cell1"
+                style="@style/WidgetWorldCell">
+
+                <FrameLayout
+                    android:id="@+id/world_digits1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/world_label1"
+                    style="@style/WidgetWorldLabel" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/world_cell2"
+                style="@style/WidgetWorldCell">
+
+                <FrameLayout
+                    android:id="@+id/world_digits2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/world_label2"
+                    style="@style/WidgetWorldLabel" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/world_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/world_cell3"
+                style="@style/WidgetWorldCell">
+
+                <FrameLayout
+                    android:id="@+id/world_digits3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/world_label3"
+                    style="@style/WidgetWorldLabel" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/world_cell4"
+                style="@style/WidgetWorldCell">
+
+                <FrameLayout
+                    android:id="@+id/world_digits4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/world_label4"
+                    style="@style/WidgetWorldLabel" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/date_slot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</FrameLayout>

@@ -1536,4 +1536,32 @@
         <item quantity="many">Шаблоны: %s</item>
         <item quantity="other">Шаблоны: %s</item>
     </plurals>
+    <string name="editor_undo">Отменить</string>
+    <string name="editor_redo">Повторить</string>
+    <string name="time_tab_world">Мир</string>
+    <string name="world_clock_here">Здесь</string>
+    <string name="world_clock_empty">Добавьте города кнопкой «+». Нажмите на карточку — появятся кнопки, удержите — её можно перетащить. Карточка наверху — основное время</string>
+    <string name="world_clock_add">Добавить город</string>
+    <string name="world_clock_search">Город или страна</string>
+    <string name="world_clock_not_found">Такого города нет в списке</string>
+    <string name="world_clock_added">добавлен</string>
+    <string name="world_clock_up">Выше</string>
+    <string name="world_clock_down">Ниже</string>
+    <string name="world_clock_remove">Удалить</string>
+    <string name="world_clock_same">как основное</string>
+    <string name="world_clock_hours">%1$s%2$d ч</string>
+    <string name="world_clock_hours_minutes">%1$s%2$d ч %3$d мин</string>
+    <string name="world_clock_tomorrow">завтра</string>
+    <string name="world_clock_yesterday">вчера</string>
+    <string name="world_clock_local">Местное время</string>
+    <string name="time_widgets_settings">Настройки виджетов</string>
+    <string name="widget_local_time">Здесь</string>
+    <string name="widgets_city">Основное время</string>
+    <string name="widgets_city_local">Местное время</string>
+    <string name="widgets_city_pick">Город часов</string>
+    <string name="widgets_analog_city_hint">Если город не местный, его название мелко подписано под часами</string>
+    <string name="widgets_digital_cities">Другие города</string>
+    <string name="widgets_digital_cities_hint">До 3 городов к основному времени. На виджете от 3×2 все часы встают таблицей, на маленьком видно только основное время</string>
+    <string name="widgets_add_city">Добавить город</string>
+    <string name="widgets_remove_city">Убрать город</string>
 </resources>

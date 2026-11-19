@@ -76,7 +76,7 @@ private val RowShape = RoundedCornerShape(16.dp)
  *
  * @param marks дни с записью → оценка в половинках (null — без оценки)
  * @param tags дни с тегами → их теги
- * @param sleepDays дни с записанным сном — у них луна
+ * @param sleepDays дни с записанным сном (текстом) — у них луна
  * @param firstMonth самый ранний месяц в ленте
  */
 @Composable

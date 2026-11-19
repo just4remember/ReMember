@@ -152,7 +152,13 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<TemplateEditorRoute> { TemplateEditorScreen(route = it, onBack = back) }
         entry<WorkoutRoute> { WorkoutScreen(route = it, onBack = back) }
         entry<NetworkRoute> { NetworkScreen(onBack = backFor(it)) }
-        entry<TimeRoute> { TimeScreen(onBack = backFor(it), onOpenAlarm = { id -> backStack.add(AlarmEditorRoute(id)) }) }
+        entry<TimeRoute> {
+            TimeScreen(
+                onBack = backFor(it),
+                onOpenAlarm = { id -> backStack.add(AlarmEditorRoute(id)) },
+                onOpenWidgets = { backStack.add(WidgetsRoute) },
+            )
+        }
         entry<AlarmEditorRoute> { AlarmEditorScreen(route = it, onBack = back) }
         entry<GamesRoute> { GamesScreen(onBack = backFor(it), onOpen = { route -> backStack.add(route) }) }
         entry<MapRoute> { MapScreen(onBack = backFor(it)) }

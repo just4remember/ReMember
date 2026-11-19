@@ -19,9 +19,9 @@ interface SleepDao {
     @Query("SELECT date FROM sleep_entry")
     fun observeDates(): Flow<List<LocalDate>>
 
-    /** Дни, за которые записано время сна (отбой или подъём); только оценка или сон без времени не в счёт. */
-    @Query("SELECT date FROM sleep_entry WHERE bed_time IS NOT NULL OR wake_time IS NOT NULL")
-    fun observeTimedDates(): Flow<List<LocalDate>>
+    /** Дни, за которые записан сам сон (текст «что приснилось»); время и оценка без текста не в счёт. */
+    @Query("SELECT date FROM sleep_entry WHERE TRIM(dream) != ''")
+    fun observeDreamDates(): Flow<List<LocalDate>>
 
     @Upsert
     suspend fun upsert(entry: SleepEntryEntity)

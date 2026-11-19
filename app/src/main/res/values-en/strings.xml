@@ -1471,4 +1471,32 @@ The Inter, Nunito and Medeo Sans fonts are distributed under the SIL Open Font L
         <item quantity="one">Template: %s</item>
         <item quantity="other">Templates: %s</item>
     </plurals>
+    <string name="editor_undo">Undo</string>
+    <string name="editor_redo">Redo</string>
+    <string name="time_tab_world">World</string>
+    <string name="world_clock_here">Here</string>
+    <string name="world_clock_empty">Add cities with the “+” button. Tap a card to show its buttons, long-press it to drag. The top card is the main time</string>
+    <string name="world_clock_add">Add city</string>
+    <string name="world_clock_search">City or country</string>
+    <string name="world_clock_not_found">This city is not on the list</string>
+    <string name="world_clock_added">added</string>
+    <string name="world_clock_up">Move up</string>
+    <string name="world_clock_down">Move down</string>
+    <string name="world_clock_remove">Remove</string>
+    <string name="world_clock_same">same as main</string>
+    <string name="world_clock_hours">%1$s%2$d h</string>
+    <string name="world_clock_hours_minutes">%1$s%2$d h %3$d min</string>
+    <string name="world_clock_tomorrow">tomorrow</string>
+    <string name="world_clock_yesterday">yesterday</string>
+    <string name="world_clock_local">Local time</string>
+    <string name="time_widgets_settings">Widget settings</string>
+    <string name="widget_local_time">Here</string>
+    <string name="widgets_city">Main time</string>
+    <string name="widgets_city_local">Local time</string>
+    <string name="widgets_city_pick">Clock city</string>
+    <string name="widgets_analog_city_hint">If the city is not local, its name is shown in small type under the clock</string>
+    <string name="widgets_digital_cities">Other cities</string>
+    <string name="widgets_digital_cities_hint">Up to 3 cities besides the main time. On a widget of 3×2 or larger all clocks form a grid; a small widget shows only the main time</string>
+    <string name="widgets_add_city">Add city</string>
+    <string name="widgets_remove_city">Remove city</string>
 </resources>

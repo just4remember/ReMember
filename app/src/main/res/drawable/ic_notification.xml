@@ -2,7 +2,7 @@
 <!--
   Маленький значок уведомлений: плоская призма-треугольник, входящий луч, луч внутри
   и веер спектра на выходе. Нарисован по силуэту из Figma (291×176), по краям запас 2dp
-  из 24dp, как требует Android. Линии толще, чем в исходнике: в строке состояния значок
+  из 24dp, как требует Android. Линии заметно толще, чем в исходнике (26 вместо 8): в строке состояния значок
   около 20dp, и тонкие линии там пропадают. Android красит значок сам — важна только форма.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18,14 +18,14 @@
         <!-- Призма -->
         <path
             android:pathData="M143.88,4.98 L49.1,170.78 L239.6,171.76 Z"
-            android:strokeWidth="20"
+            android:strokeWidth="26"
             android:strokeColor="#FFFFFF"
             android:strokeLineJoin="round" />
 
         <!-- Луч: входит в призму и идёт внутри -->
         <path
             android:pathData="M4,112.01 L98.35,83.34 M99.34,84 L186.34,84"
-            android:strokeWidth="20"
+            android:strokeWidth="26"
             android:strokeColor="#FFFFFF"
             android:strokeLineCap="round"
             android:strokeLineJoin="round" />

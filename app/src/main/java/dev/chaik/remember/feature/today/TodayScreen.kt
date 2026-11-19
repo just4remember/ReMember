@@ -63,7 +63,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -171,7 +170,6 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
     var openedPhotos by remember { mutableStateOf<OpenedPhotos?>(null) }
     var pickingDate by remember { mutableStateOf(false) }
     val keyboardVisible = WindowInsets.isImeVisible
-    val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val mode = viewModel.mode
 
@@ -291,10 +289,6 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
                 EditorToolbar(
                     state = if (mode == TodayMode.Sleep) viewModel.sleep.dream else day.editor,
                     onAddPhoto = if (mode == TodayMode.Sleep) null else launchPicker,
-                    onHideKeyboard = {
-                        keyboard?.hide()
-                        focusManager.clearFocus()
-                    },
                 )
             }
         }

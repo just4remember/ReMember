@@ -53,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -201,7 +200,6 @@ fun NoteEditorScreen(
     var pickingFolder by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val keyboardVisible = WindowInsets.isImeVisible
-    val keyboard = LocalSoftwareKeyboardController.current
 
     // В шапке — папка заметки, чтобы было видно, где она лежит
     val folderName = folders.firstOrNull { it.id == viewModel.folderId }?.name
@@ -214,6 +212,7 @@ fun NoteEditorScreen(
         actions = {
             if (showLock) return@ScreenScaffold
             IconButton(
+                modifier = HeaderButton,
                 onClick = {
                     when {
                         viewModel.isProtected && lock.enabled -> {
@@ -235,17 +234,17 @@ fun NoteEditorScreen(
                     tint = if (viewModel.isProtected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = viewModel::togglePinned) {
+            IconButton(onClick = viewModel::togglePinned, modifier = HeaderButton) {
                 Icon(
                     imageVector = if (viewModel.pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
                     contentDescription = stringResource(if (viewModel.pinned) R.string.notes_unpin else R.string.notes_pin),
                     tint = if (viewModel.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = { pickingFolder = true }) {
+            IconButton(onClick = { pickingFolder = true }, modifier = HeaderButton) {
                 Icon(Icons.AutoMirrored.Outlined.DriveFileMove, stringResource(R.string.notes_move_to_folder))
             }
-            IconButton(onClick = { confirmDelete = true }) {
+            IconButton(onClick = { confirmDelete = true }, modifier = HeaderButton) {
                 Icon(Icons.Outlined.Delete, stringResource(R.string.notes_delete), tint = MaterialTheme.colorScheme.error)
             }
         },
@@ -338,10 +337,6 @@ fun NoteEditorScreen(
                 EditorToolbar(
                     state = editor,
                     onAddPhoto = launchPicker,
-                    onHideKeyboard = {
-                        keyboard?.hide()
-                        focusManager.clearFocus()
-                    },
                 )
             }
         }
@@ -409,3 +404,6 @@ private fun TitleField(value: String, onChange: (String) -> Unit, modifier: Modi
         },
     )
 }
+
+/** Кнопки шапки заметки поуже стандартных 48dp: их четыре, и заголовку с папкой не хватало места. */
+private val HeaderButton = Modifier.size(40.dp)

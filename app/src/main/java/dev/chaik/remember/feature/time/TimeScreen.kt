@@ -35,9 +35,11 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Snooze
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -70,6 +72,8 @@ import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.alarm.Alarm
 import dev.chaik.remember.core.alarm.nextRing
+import dev.chaik.remember.core.reminders.OpenTarget
+import dev.chaik.remember.feature.time.world.WorldClockTab
 import dev.chaik.remember.core.settings.LocalAppSettings
 import dev.chaik.remember.core.settings.weekDays
 import dev.chaik.remember.core.ui.components.ScreenScaffold
@@ -89,14 +93,36 @@ private enum class TimeTab(val label: Int) {
     ALARMS(R.string.time_tab_alarms),
     TIMER(R.string.time_tab_timer),
     STOPWATCH(R.string.time_tab_stopwatch),
+    WORLD(R.string.time_tab_world),
 }
 
-/** «Время»: будильники, таймер и секундомер — вкладки листаются и свайпом вбок. */
+/** «Время»: будильники, таймер, секундомер и мировое время — вкладки листаются и свайпом вбок. */
 @Composable
-fun TimeScreen(onBack: (() -> Unit)?, onOpenAlarm: (Long) -> Unit, modifier: Modifier = Modifier) {
+fun TimeScreen(onBack: (() -> Unit)?, onOpenAlarm: (Long) -> Unit, onOpenWidgets: () -> Unit, modifier: Modifier = Modifier) {
     val pager = rememberPagerState { TimeTab.entries.size }
     val scope = rememberCoroutineScope()
-    ScreenScaffold(title = stringResource(R.string.section_time), modifier = modifier, onBack = onBack) { padding ->
+    // Тап по виджету часов — сразу на мировое время
+    val container = LocalContext.current.appContainer
+    val openRequest by container.openRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(openRequest) {
+        if (openRequest == OpenTarget.WorldClock) {
+            pager.scrollToPage(TimeTab.WORLD.ordinal)
+            container.openRequests.value = null
+        }
+    }
+    ScreenScaffold(
+        title = stringResource(R.string.section_time),
+        modifier = modifier,
+        onBack = onBack,
+        actions = {
+            // На вкладке «Мир» — быстрый переход к виджетам часов: там выбираются их города
+            if (pager.currentPage == TimeTab.WORLD.ordinal) {
+                IconButton(onClick = onOpenWidgets) {
+                    Icon(Icons.Outlined.Widgets, stringResource(R.string.time_widgets_settings))
+                }
+            }
+        },
+    ) { padding ->
         Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
             SingleChoiceSegmentedButtonRow(
                 Modifier
@@ -125,6 +151,7 @@ fun TimeScreen(onBack: (() -> Unit)?, onOpenAlarm: (Long) -> Unit, modifier: Mod
                     TimeTab.ALARMS -> AlarmsTab(bottom, onOpenAlarm)
                     TimeTab.TIMER -> TimerTab(bottom)
                     TimeTab.STOPWATCH -> StopwatchTab(bottom)
+                    TimeTab.WORLD -> WorldClockTab(bottom)
                 }
             }
         }

@@ -20,7 +20,7 @@ import dev.chaik.remember.core.model.Photo
  * так чередование «текст / фото» никогда не нарушается.
  */
 @Stable
-class EditorState(markdown: String = "") {
+class EditorState(markdown: String = "", private val clock: () -> Long = System::currentTimeMillis) {
 
     sealed class Block {
         abstract val key: Long
@@ -108,7 +108,8 @@ class EditorState(markdown: String = "") {
     private var focusedKey by mutableStateOf<Long?>(null)
 
     init {
-        load(markdown)
+        // Не load(): поля истории отмены объявлены ниже и ещё не созданы
+        replaceDocument(markdown)
     }
 
     /** Текущий документ в виде Markdown. Чтение отслеживается Compose — подходит для snapshotFlow. */
@@ -126,8 +127,16 @@ class EditorState(markdown: String = "") {
 
     val isEmpty: Boolean get() = blocks.all { it is TextBlock && it.value.text.isBlank() }
 
-    /** Заменить документ целиком (при загрузке записи). */
+    /** Заменить документ целиком (при загрузке записи). История отмены начинается заново. */
     fun load(markdown: String) {
+        replaceDocument(markdown)
+        undoStack.clear()
+        redoStack.clear()
+        updateHistoryFlags()
+        lastEdit = null
+    }
+
+    private fun replaceDocument(markdown: String) {
         blocks.clear()
         EditorDocument.parse(markdown).forEach { block ->
             blocks += when (block) {
@@ -150,7 +159,9 @@ class EditorState(markdown: String = "") {
 
     /** Ввод в текстовом блоке. Enter в списке продолжает список. */
     fun onTextChange(block: TextBlock, value: TextFieldValue) {
-        block.edit(MarkdownFormatting.continueList(block.value, value))
+        val new = MarkdownFormatting.continueList(block.value, value)
+        if (new.text != block.value.text) recordTyping(block, block.value.text, new.text)
+        block.edit(new)
     }
 
     /** Клавиатура заменила слово (Т9) — запомнить, чтобы его можно было вернуть. */
@@ -160,6 +171,7 @@ class EditorState(markdown: String = "") {
 
     /** Вернуть слово, набранное до замены Т9. */
     fun revertCorrection(block: TextBlock, correction: AutoCorrection) {
+        record(EditKind.Other, block.key)
         block.revert(correction)
     }
 
@@ -179,7 +191,9 @@ class EditorState(markdown: String = "") {
     /** Применить действие панели форматирования к блоку с курсором. */
     fun format(transform: (TextFieldValue) -> TextFieldValue) {
         val block = activeTextBlock() ?: return
-        block.edit(transform(block.value))
+        val new = transform(block.value)
+        if (new.text != block.value.text) record(EditKind.Other, block.key)
+        block.edit(new)
     }
 
     /** Открыто окно ссылки. Его показывает редактор: панель исчезает вместе с клавиатурой. */
@@ -208,6 +222,7 @@ class EditorState(markdown: String = "") {
     fun insertPhotos(photos: List<Photo>): TextBlock? {
         if (photos.isEmpty()) return null
         val target = activeTextBlock() ?: return null
+        record(EditKind.Other, null)
         val index = blocks.indexOf(target)
         val value = target.value
         val cursor = value.selection.max.coerceIn(0, value.text.length)
@@ -254,17 +269,26 @@ class EditorState(markdown: String = "") {
     }
 
     fun setPhotoAlign(key: Long, align: PhotoAlign) {
-        photo(key)?.align = align
+        val block = photo(key) ?: return
+        if (block.align == align) return
+        record(EditKind.Other, key)
+        block.align = align
     }
 
     fun setPhotoWidth(key: Long, percent: Int) {
-        photo(key)?.widthPercent = percent.coerceIn(DocumentBlock.MIN_WIDTH, DocumentBlock.FULL_WIDTH)
+        val block = photo(key) ?: return
+        val width = percent.coerceIn(DocumentBlock.MIN_WIDTH, DocumentBlock.FULL_WIDTH)
+        if (block.widthPercent == width) return
+        // Ползунок шлёт ширину непрерывно — вся протяжка одним шагом
+        record(EditKind.PhotoWidth, key)
+        block.widthPercent = width
     }
 
     /** Удалить одно фото из блока; если оно было последним — весь блок. */
     fun removePhotoAt(key: Long, index: Int) {
         val block = photo(key) ?: return
         if (block.photoIds.size <= 1) return removePhoto(key)
+        record(EditKind.Other, key)
         block.photoIds = block.photoIds.filterIndexed { i, _ -> i != index }
         selectedPhotoIndex = selectedPhotoIndex.coerceAtMost(block.photoIds.lastIndex)
     }
@@ -273,6 +297,11 @@ class EditorState(markdown: String = "") {
     fun removePhoto(key: Long) {
         val index = blocks.indexOfFirst { it.key == key }
         if (index <= 0) return
+        record(EditKind.Other, key)
+        dropPhotoBlock(index, key)
+    }
+
+    private fun dropPhotoBlock(index: Int, key: Long) {
         val before = blocks[index - 1] as TextBlock
         val after = blocks[index + 1] as TextBlock
         val caret = before.value.text.length
@@ -286,11 +315,20 @@ class EditorState(markdown: String = "") {
 
     /** Убрать фото [ids] из документа — их удалили из галереи. Опустевшие блоки пропадают. */
     fun removePhotos(ids: Set<String>) {
+        // Шаги истории ссылаются на эти фото — вернуть их было бы нечем
+        if (photoIds.any(ids::contains)) {
+            undoStack.clear()
+            redoStack.clear()
+            lastEdit = null
+            updateHistoryFlags()
+        }
         blocks.filterIsInstance<PhotoBlock>()
             .filter { block -> block.photoIds.any(ids::contains) }
             .forEach { block ->
                 val left = block.photoIds.filterNot(ids::contains)
-                if (left.isEmpty()) removePhoto(block.key) else block.photoIds = left
+                // Фото удалили из галереи — в истории отмены это не шаг, вернуть его нельзя
+                val index = blocks.indexOf(block)
+                if (left.isEmpty()) { if (index > 0) dropPhotoBlock(index, block.key) } else block.photoIds = left
             }
     }
 
@@ -308,6 +346,7 @@ class EditorState(markdown: String = "") {
     fun movePhoto(key: Long, up: Boolean) {
         val index = blocks.indexOfFirst { it.key == key }
         if (index <= 0 || !canMovePhoto(key, up)) return
+        record(EditKind.Other, key)
         val above = blocks[index - 1] as TextBlock
         val below = blocks[index + 1] as TextBlock
 
@@ -336,10 +375,135 @@ class EditorState(markdown: String = "") {
 
     private fun photo(key: Long) = blocks.firstOrNull { it.key == key } as? PhotoBlock
 
+    // Отмена и повтор
+
+    /** Состояние документа для истории: текст, в каком текстовом блоке курсор и где. */
+    private class Snapshot(val markdown: String, val blockIndex: Int, val selection: TextRange)
+
+    private enum class EditKind { Insert, Delete, PhotoWidth, Other }
+
+    /** Последняя правка: следующая той же природы в том же блоке вскоре после неё — тот же шаг. */
+    private class LastEdit(val kind: EditKind, val blockKey: Long?, val at: Long)
+
+    private val undoStack = ArrayDeque<Snapshot>()
+    private val redoStack = ArrayDeque<Snapshot>()
+    private var lastEdit: LastEdit? = null
+
+    var canUndo by mutableStateOf(false)
+        private set
+    var canRedo by mutableStateOf(false)
+        private set
+
+    /**
+     * Набор и удаление текста: один шаг — одно слово. Пробел или перевод строки закрывают шаг,
+     * пауза дольше [GROUP_MILLIS] тоже. Удаление выделенного или вставка куска — отдельный шаг.
+     */
+    private fun recordTyping(block: TextBlock, old: String, new: String) {
+        val diff = new.length - old.length
+        val kind = when {
+            diff == 1 -> EditKind.Insert
+            diff == -1 -> EditKind.Delete
+            else -> EditKind.Other
+        }
+        record(kind, block.key)
+        val changed = if (diff > 0) changedChars(old, new) else changedChars(new, old)
+        if (kind == EditKind.Other || changed.any(Char::isWhitespace)) lastEdit = null
+    }
+
+    /** Что вставлено в [shorter], чтобы получился [longer] (или удалено из longer). */
+    private fun changedChars(shorter: String, longer: String): String {
+        val prefix = shorter.commonPrefixWith(longer).length
+        val suffix = shorter.substring(prefix).commonSuffixWith(longer.substring(prefix)).length
+        return longer.substring(prefix, longer.length - suffix)
+    }
+
+    /** Перед правкой: сохранить состояние, если это начало нового шага. */
+    private fun record(kind: EditKind, blockKey: Long?) {
+        val now = clock()
+        val last = lastEdit
+        val continues = last != null && kind != EditKind.Other && last.kind == kind &&
+            last.blockKey == blockKey && now - last.at < GROUP_MILLIS
+        if (!continues) {
+            undoStack.addLast(capture())
+            if (undoStack.size > MAX_HISTORY) undoStack.removeFirst()
+        }
+        lastEdit = if (kind == EditKind.Other) null else LastEdit(kind, blockKey, now)
+        redoStack.clear()
+        updateHistoryFlags()
+    }
+
+    fun undo() = step(from = undoStack, to = redoStack)
+
+    fun redo() = step(from = redoStack, to = undoStack)
+
+    private fun step(from: ArrayDeque<Snapshot>, to: ArrayDeque<Snapshot>) {
+        val target = from.removeLastOrNull() ?: return
+        to.addLast(capture())
+        restore(target)
+        lastEdit = null
+        updateHistoryFlags()
+    }
+
+    private fun capture(): Snapshot {
+        val block = activeTextBlock()
+        return Snapshot(markdown, block?.let(blocks::indexOf) ?: -1, block?.value?.selection ?: TextRange.Zero)
+    }
+
+    private fun restore(snapshot: Snapshot) {
+        val hadFocus = hasFocus
+        if (!restoreInPlace(snapshot.markdown)) replaceDocument(snapshot.markdown)
+        val block = blocks.getOrNull(snapshot.blockIndex) as? TextBlock ?: blocks.lastOrNull() as? TextBlock ?: return
+        val length = block.value.text.length
+        block.value = block.value.copy(
+            selection = TextRange(snapshot.selection.start.coerceIn(0, length), snapshot.selection.end.coerceIn(0, length)),
+        )
+        activeTextKey = block.key
+        if (hadFocus) {
+            // Старые поля исчезли вместе с фокусом — курсор переходит в восстановленный блок
+            focusedKey = block.key
+            focusRequestKey = block.key
+        }
+    }
+
+    /**
+     * Те же блоки в том же порядке (обычная правка текста) — обновить их значения, не пересоздавая.
+     * Поле с курсором остаётся тем же, и клавиатура не закрывается. Иначе — false.
+     */
+    private fun restoreInPlace(markdown: String): Boolean {
+        val parsed = EditorDocument.parse(markdown)
+        if (parsed.size != blocks.size) return false
+        val same = parsed.indices.all { i ->
+            (parsed[i] is DocumentBlock.Text && blocks[i] is TextBlock) || (parsed[i] is DocumentBlock.Photos && blocks[i] is PhotoBlock)
+        }
+        if (!same) return false
+        parsed.forEachIndexed { i, block ->
+            when (block) {
+                is DocumentBlock.Text -> (blocks[i] as TextBlock).let { if (it.value.text != block.text) it.value = TextFieldValue(block.text) }
+                is DocumentBlock.Photos -> (blocks[i] as PhotoBlock).let {
+                    it.photoIds = block.photoIds
+                    it.widthPercent = block.widthPercent
+                    it.align = block.align
+                }
+            }
+        }
+        return true
+    }
+
+    private fun updateHistoryFlags() {
+        canUndo = undoStack.isNotEmpty()
+        canRedo = redoStack.isNotEmpty()
+    }
+
     private fun textBlock(text: String) = TextBlock(nextKey++, TextFieldValue(text, TextRange(text.length)))
 
     private companion object {
         const val DEFAULT_ASPECT = 4f / 3f
+
+        /** Пауза в наборе, после которой начинается новый шаг отмены. */
+        const val GROUP_MILLIS = 1_500L
+
+        /** Сколько шагов назад можно отменить. */
+        const val MAX_HISTORY = 200
     }
 }
 

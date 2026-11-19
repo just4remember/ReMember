@@ -115,6 +115,7 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             SettingsGroupTitle(stringResource(R.string.widgets_analog))
             SettingsCard {
+                AnalogCityRow(settings, store)
                 Text(
                     stringResource(R.string.widgets_dial_theme),
                     style = MaterialTheme.typography.bodyLarge,
@@ -147,6 +148,7 @@ fun WidgetsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
             SettingsGroupTitle(stringResource(R.string.widgets_digital))
             SettingsCard {
+                DigitalCitiesRows(settings, store)
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.widgets_weight), style = MaterialTheme.typography.bodyLarge)
                     SettingsDropdown(
