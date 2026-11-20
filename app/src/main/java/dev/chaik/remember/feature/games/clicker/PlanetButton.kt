@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.games.clicker
 
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -70,26 +71,23 @@ fun PlanetButton(level: Int, onTap: () -> String?, modifier: Modifier = Modifier
     val nextId = remember { longArrayOf(0) }
     val tap by rememberUpdatedState(onTap)
     val shapes = remember { PlanetShapes(Random(11)) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Шары стадий из assets/clicker/planet/planet_N.png; у стадии без своей — шар предыдущей
+    val balls = remember { loadPlanetBalls(context) }
 
     val time = rememberInfiniteTransition(label = "planet")
     val orbit by time.animateFloat(0f, (2 * PI).toFloat(), infiniteRepeatable(tween(24_000, easing = LinearEasing)), label = "orbit")
     val pulse by time.animateFloat(0f, 1f, infiniteRepeatable(tween(1_600), RepeatMode.Reverse), label = "pulse")
 
-    BoxWithConstraints(modifier) {
-        Canvas(
-            Modifier
-                .matchParentSize()
-                .graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
-                }
-                .pointerInput(Unit) {
+    // Тапы ловит неподвижная рамка (не сжимается вместе с планетой) — круг шире самой планеты
+    BoxWithConstraints(
+        modifier.pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
                             for (change in event.changes.filter { it.changedToDown() }) {
                                 val center = Offset(size.width / 2f, size.height / 2f)
-                                val radius = minOf(size.width, size.height) * PLANET_SHARE / 2f
+                                val radius = minOf(size.width, size.height) * HIT_SHARE / 2f
                                 if ((change.position - center).getDistance() > radius) continue
                                 change.consume()
                                 val label = tap() ?: continue
@@ -103,8 +101,17 @@ fun PlanetButton(level: Int, onTap: () -> String?, modifier: Modifier = Modifier
                         }
                     }
                 },
+    ) {
+        Canvas(
+            Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                },
         ) {
-            drawPlanet(level.coerceIn(1, MAX_STAGE), shapes, orbit, pulse)
+            val stage = level.coerceIn(1, MAX_STAGE)
+            drawPlanet(stage, shapes, orbit, pulse, ballFor(balls, stage))
         }
 
         floaters.forEach { f -> key(f.id) { FloatingGain(f) { floaters.remove(f) } } }
@@ -112,7 +119,7 @@ fun PlanetButton(level: Int, onTap: () -> String?, modifier: Modifier = Modifier
 }
 
 /** Материки, кратеры и огни городов — одни и те же при каждой отрисовке. */
-private class PlanetShapes(rnd: Random) {
+internal class PlanetShapes(rnd: Random) {
     /** Материк: точки контура в долях радиуса. */
     val continents: List<List<Offset>> = listOf(
         Offset(-0.35f, -0.30f) to 0.42f, Offset(0.40f, 0.05f) to 0.34f, Offset(-0.15f, 0.50f) to 0.30f, Offset(0.25f, -0.62f) to 0.20f,
@@ -146,11 +153,10 @@ private fun smoothPath(points: List<Offset>, c: Offset, r: Float): Path = Path()
     close()
 }
 
-private fun DrawScope.drawPlanet(stage: Int, s: PlanetShapes, orbit: Float, pulse: Float) {
+private fun DrawScope.drawPlanet(stage: Int, s: PlanetShapes, orbit: Float, pulse: Float, ballImage: androidx.compose.ui.graphics.ImageBitmap?) {
     val r = size.minDimension * PLANET_SHARE / 2f
     val c = center
     val lava = stage == 1
-    val water = stage >= 3
 
     // Свечение: у лавы — горячее и пульсирует, у живой планеты — голубая атмосфера
     val glow = when {
@@ -164,6 +170,51 @@ private fun DrawScope.drawPlanet(stage: Int, s: PlanetShapes, orbit: Float, puls
     if (stage >= 8) drawRing(c, r, front = false)
     if (stage >= 6) drawSatellites(s, stage, c, r, orbit, front = false)
 
+    // Сам шар: картинка из assets/clicker/planet/, а если её нет — рисуем кодом
+    if (ballImage != null) {
+        drawImage(
+            ballImage,
+            dstOffset = androidx.compose.ui.unit.IntOffset((c.x - r).toInt(), (c.y - r).toInt()),
+            dstSize = androidx.compose.ui.unit.IntSize((r * 2).toInt(), (r * 2).toInt()),
+            filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
+        )
+    } else {
+        drawPlanetBall(stage, s, c, r, pulse)
+    }
+
+    if (stage >= 8) drawRing(c, r, front = true)
+    if (stage >= 6) drawSatellites(s, stage, c, r, orbit, front = true)
+}
+
+/** Планетарное кольцо: наклонный эллипс; [front] — нижняя половина, что перед планетой. */
+private fun DrawScope.drawRing(c: Offset, r: Float, front: Boolean) {
+    val rx = r * 1.55f
+    val ry = r * 0.36f
+    rotate(-16f, pivot = c) {
+        val rect = Rect(Offset(c.x - rx, c.y - ry), Size(rx * 2, ry * 2))
+        val bands = listOf(Color(0xFFE9D3A6).copy(alpha = 0.75f) to 0.085f, Color(0xFFC8A36E).copy(alpha = 0.55f) to 0.04f)
+        bands.forEachIndexed { i, (color, width) ->
+            val inset = r * 0.07f * i
+            drawArc(
+                color = color,
+                startAngle = if (front) 0f else 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = Offset(rect.left + inset, rect.top + inset * 0.25f),
+                size = Size(rect.width - inset * 2, rect.height - inset * 0.5f),
+                style = Stroke(width = r * width),
+            )
+        }
+    }
+}
+
+/**
+ * Шар планеты стадии [stage] — то, что можно заменить своей картинкой (assets/clicker/planet/):
+ * в центре [c], радиусом [r]. Свечение, спутники и кольцо рисуются отдельно и поверх.
+ */
+internal fun DrawScope.drawPlanetBall(stage: Int, s: PlanetShapes, c: Offset, r: Float, pulse: Float) {
+    val lava = stage == 1
+    val water = stage >= 3
     val (light, mid, dark) = when {
         lava -> Triple(Color(0xFFFF9A4A), Color(0xFFB8261A), Color(0xFF2E0704))
         stage == 2 -> Triple(Color(0xFFC9B39A), Color(0xFF7D6651), Color(0xFF241B14))
@@ -229,30 +280,6 @@ private fun DrawScope.drawPlanet(stage: Int, s: PlanetShapes, orbit: Float, puls
         }
     }
 
-    if (stage >= 8) drawRing(c, r, front = true)
-    if (stage >= 6) drawSatellites(s, stage, c, r, orbit, front = true)
-}
-
-/** Планетарное кольцо: наклонный эллипс; [front] — нижняя половина, что перед планетой. */
-private fun DrawScope.drawRing(c: Offset, r: Float, front: Boolean) {
-    val rx = r * 1.55f
-    val ry = r * 0.36f
-    rotate(-16f, pivot = c) {
-        val rect = Rect(Offset(c.x - rx, c.y - ry), Size(rx * 2, ry * 2))
-        val bands = listOf(Color(0xFFE9D3A6).copy(alpha = 0.75f) to 0.085f, Color(0xFFC8A36E).copy(alpha = 0.55f) to 0.04f)
-        bands.forEachIndexed { i, (color, width) ->
-            val inset = r * 0.07f * i
-            drawArc(
-                color = color,
-                startAngle = if (front) 0f else 180f,
-                sweepAngle = 180f,
-                useCenter = false,
-                topLeft = Offset(rect.left + inset, rect.top + inset * 0.25f),
-                size = Size(rect.width - inset * 2, rect.height - inset * 0.5f),
-                style = Stroke(width = r * width),
-            )
-        }
-    }
 }
 
 /** Спутники на наклонных орбитах; [front] — те, что перед планетой (иначе — за ней). */
@@ -302,5 +329,24 @@ private fun FloatingGain(floater: Floater, onDone: () -> Unit) {
 /** Какая доля ширины кнопки — сама планета (остальное — свечение и орбиты). */
 private const val PLANET_SHARE = 0.62f
 
+/** Зона тапа — круг почти во всю кнопку: попасть легко, даже не целясь в саму планету. */
+private const val HIT_SHARE = 0.92f
+
 /** Сколько стадий у планеты — по числу уровней игрока. */
 const val MAX_STAGE = 8
+
+/** Шары стадий: N → картинка; каких нет — тех нет в карте. */
+private fun loadPlanetBalls(context: android.content.Context): Map<Int, androidx.compose.ui.graphics.ImageBitmap> =
+    (1..MAX_STAGE).mapNotNull { stage ->
+        runCatching {
+            context.assets.open("clicker/planet/planet_$stage.png").use { android.graphics.BitmapFactory.decodeStream(it) }
+        }.getOrNull()?.let { stage to it.asImageBitmap() }
+    }.toMap()
+
+/** Шар для стадии: свой или ближайшей предыдущей (у спутников и кольца шар тот же, что у городов). */
+private fun ballFor(balls: Map<Int, androidx.compose.ui.graphics.ImageBitmap>, stage: Int) =
+    (stage downTo 1).firstNotNullOfOrNull { balls[it] }
+
+/** Шар стадии без свечения и спутников, на всю картинку — для выгрузки в PNG. */
+internal fun DrawScope.drawPlanetBallForExport(stage: Int) =
+    drawPlanetBall(stage, PlanetShapes(Random(11)), center, size.minDimension / 2f, pulse = 0.5f)

@@ -77,6 +77,15 @@ data class CardDef(
     val availableUntil: Long? = null,
     /** Картинка вместо иконки категории: файл в assets/clicker/images/; null — иконка. */
     val image: String? = null,
+    /**
+     * Картинка поверх [image] (например, кольца Сатурна): может выходить за рамку иконки,
+     * но не за край карточки. [overlayScale] — во сколько раз она больше рамки иконки.
+     */
+    val overlay: String? = null,
+    val overlayScale: Double = 1.6,
+    /** Сдвиг [overlay] от центра в долях рамки иконки: x — вправо, y — вниз (0.1 — на 10% рамки). */
+    val overlayOffsetX: Double = 0.0,
+    val overlayOffsetY: Double = 0.0,
 ) {
     /** Продаётся ли сейчас: у обычной карточки срока нет. */
     fun onSale(nowSeconds: Long?): Boolean {

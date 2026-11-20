@@ -1,5 +1,13 @@
 package dev.chaik.remember.feature.games.clicker
 
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.material.icons.outlined.HistoryToggleOff
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalBottomSheet
@@ -127,7 +135,7 @@ private fun CardEffect.cardLabel(): Int = when (this) {
     CardEffect.INCOME -> R.string.clicker_card_income
     CardEffect.TAP -> R.string.clicker_card_tap
     CardEffect.TAP_SECONDS -> R.string.clicker_card_tap_seconds
-    CardEffect.BOOST -> R.string.clicker_card_income
+    CardEffect.BOOST -> R.string.clicker_card_boost
     CardEffect.ENERGY_MAX -> R.string.clicker_card_energy_max
     CardEffect.ENERGY_REGEN -> R.string.clicker_card_energy_regen
     CardEffect.OFFLINE_RATE -> R.string.clicker_card_offline_rate
@@ -228,15 +236,15 @@ private fun <T> SegmentStrip(items: List<T>, selected: T, label: @Composable (T)
                 modifier = Modifier
                     .weight(1f)
                     .height(if (icon != null) 60.dp else 44.dp)
+                    .raised(on, strip = colors.surfaceContainerHigh)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (on) colors.secondaryContainer else Color.Transparent)
                     .clickable { onSelect(item) },
             ) {
-                icon?.let { Icon(it(item), null, tint = if (on) colors.onSecondaryContainer else colors.onSurfaceVariant, modifier = Modifier.size(24.dp)) }
+                icon?.let { Icon(it(item), null, tint = if (on) colors.onSurface else colors.onSurfaceVariant, modifier = Modifier.size(24.dp)) }
                 Text(
                     label(item),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (on) colors.onSecondaryContainer else colors.onSurfaceVariant,
+                    color = if (on) colors.onSurface else colors.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp),
@@ -270,10 +278,10 @@ fun UpgradesTab(viewModel: ClickerViewModel, engine: ClickerEngine, categories: 
 }
 
 /** Карточки «Хаоса»: купленные, продающиеся сейчас и пропавшие (событие кончилось). */
-enum class ChaosFilter(val label: Int, val empty: Int) {
-    MINE(R.string.clicker_chaos_mine, R.string.clicker_chaos_mine_empty),
-    CURRENT(R.string.clicker_chaos_current, R.string.clicker_chaos_empty),
-    MISSED(R.string.clicker_chaos_missed, R.string.clicker_chaos_missed_empty),
+enum class ChaosFilter(val label: Int, val empty: Int, val icon: ImageVector) {
+    MINE(R.string.clicker_chaos_mine, R.string.clicker_chaos_mine_empty, Icons.Outlined.Inventory2),
+    CURRENT(R.string.clicker_chaos_current, R.string.clicker_chaos_empty, Icons.Outlined.Timer),
+    MISSED(R.string.clicker_chaos_missed, R.string.clicker_chaos_missed_empty, Icons.Outlined.HistoryToggleOff),
 }
 
 /** «Хаос»: как «Улучшения», но разделы — мои, текущие и пропавшие карточки. */
@@ -289,7 +297,7 @@ fun ChaosTab(viewModel: ClickerViewModel, engine: ClickerEngine, pager: PagerSta
             items = ChaosFilter.entries.toList(),
             selected = ChaosFilter.entries[pager.currentPage],
             label = { stringResource(it.label) },
-            icon = null,
+            icon = { it.icon },
             onSelect = { scope.launch { pager.animateScrollToPage(it.ordinal) } },
         )
         HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { i ->
@@ -324,13 +332,18 @@ fun CardsGrid(cards: List<CardDef>, viewModel: ClickerViewModel, engine: Clicker
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 24.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(cards.chunked(2), key = { row -> row.first().id }) { row ->
+        // Усилители категории — отдельно, внизу списка, во всю ширину
+        val (boosts, regular) = cards.partition { it.effect == CardEffect.BOOST }
+        items(regular.chunked(2), key = { row -> row.first().id }) { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
                 row.forEach { card ->
                     CardTile(card, viewModel, engine, Modifier.weight(1f).fillMaxHeight()) { opened = card }
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
+        }
+        items(boosts, key = { it.id }) { card ->
+            CardTile(card, viewModel, engine, Modifier.fillMaxWidth().height(IntrinsicSize.Min), wide = true) { opened = card }
         }
     }
     opened?.let { card -> CardDialog(card, viewModel, engine, onDismiss = { opened = null }) }
@@ -342,7 +355,7 @@ fun CardsGrid(cards: List<CardDef>, viewModel: ClickerViewModel, engine: Clicker
  * вместо иконки красный замок.
  */
 @Composable
-private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: ClickerEngine, modifier: Modifier, onClick: () -> Unit) {
+private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: ClickerEngine, modifier: Modifier, wide: Boolean = false, onClick: () -> Unit) {
     val res = LocalContext.current.resources
     val state = viewModel.state
     val level = state.level(card.id)
@@ -361,21 +374,12 @@ private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: Clicker
         shadowElevation = if (open) 1.5.dp else 0.5.dp,
         modifier = modifier.clickable(onClick = onClick),
     ) {
-        Column {
+        Box {
+        // У широкого (усилитель) — по краям парят мини-иконки категории
+        if (wide) FloatingCategoryIcons(card.category, Modifier.matchParentSize())
+        Column(if (wide) Modifier.padding(horizontal = 40.dp) else Modifier) {
             Row(Modifier.weight(1f).padding(10.dp), verticalAlignment = Alignment.Top) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (open) colors.secondaryContainer else colors.surfaceContainerHighest),
-                ) {
-                    if (open) {
-                        CardPicture(card, iconSize = 22.dp)
-                    } else {
-                        Icon(Icons.Outlined.Lock, null, tint = colors.error, modifier = Modifier.size(22.dp))
-                    }
-                }
+                CardIcon(card, open, box = 40.dp, corner = 10.dp, iconSize = 22.dp)
                 Column(Modifier.padding(start = 10.dp).weight(1f)) {
                     Text(
                         card.name,
@@ -396,6 +400,15 @@ private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: Clicker
                         fontWeight = FontWeight.SemiBold,
                         color = colors.onSurface.copy(alpha = dim),
                     )
+                    if (card.effect == CardEffect.BOOST) {
+                        val category = engine.catalog.categories.firstOrNull { it.id == card.target }?.name.orEmpty()
+                        Text(
+                            stringResource(R.string.clicker_boost_hint, number(card.baseValue * 100, 0), category),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.onSurfaceVariant.copy(alpha = dim),
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
                 }
             }
             HorizontalDivider(thickness = 0.5.dp, color = line)
@@ -425,6 +438,7 @@ private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: Clicker
                     }
                 }
             }
+        }
         }
     }
 }
@@ -466,13 +480,7 @@ private fun CardDialog(card: CardDef, viewModel: ClickerViewModel, engine: Click
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 24.dp),
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(colors.secondaryContainer),
-                    ) { CardPicture(card, iconSize = 30.dp) }
+                    CardIcon(card, open = true, box = 56.dp, corner = 16.dp, iconSize = 30.dp)
                     Text(card.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
                     Text(stringResource(R.string.clicker_level_short, level), style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
 
@@ -733,21 +741,102 @@ fun GoalReachedDialog(viewModel: ClickerViewModel, engine: ClickerEngine) {
 }
 
 /**
- * Картинка карточки из набора (assets/clicker/images/<image>) — на всю ячейку; нет картинки
- * (или она не загрузилась) — иконка категории.
+ * Иконка карточки в рамке [box]. Без картинки — иконка категории на подложке (закрытая —
+ * красный замок). С картинкой (assets/clicker/images/) — картинка без подложки; закрытая —
+ * та же картинка, тусклее, с красным замком поверх. Оверлей (кольца и т. п.) — поверх всего,
+ * может выходить за рамку: его обрезает только край карточки.
  */
 @Composable
-private fun CardPicture(card: CardDef, iconSize: androidx.compose.ui.unit.Dp) {
-    val image = card.image
-    if (image.isNullOrBlank()) {
-        Icon(categoryIcon(card.category), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(iconSize))
-    } else {
-        coil3.compose.SubcomposeAsyncImage(
-            model = "file:///android_asset/clicker/images/$image",
-            contentDescription = null,
-            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            error = { Icon(categoryIcon(card.category), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(iconSize)) },
-            modifier = Modifier.fillMaxSize(),
-        )
+private fun CardIcon(card: CardDef, open: Boolean, box: androidx.compose.ui.unit.Dp, corner: androidx.compose.ui.unit.Dp, iconSize: androidx.compose.ui.unit.Dp) {
+    val colors = MaterialTheme.colorScheme
+    val image = card.image?.takeIf { it.isNotBlank() }
+    var imageFailed by remember(image) { mutableStateOf(false) }
+    val hasImage = image != null && !imageFailed
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(box)) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(corner))
+                .then(
+                    when {
+                        hasImage -> Modifier
+                        open -> Modifier.background(colors.secondaryContainer)
+                        else -> Modifier.background(colors.surfaceContainerHighest)
+                    },
+                ),
+        ) {
+            if (hasImage) {
+                // Обычный AsyncImage, не Subcompose: карточки меряют высоту заранее, а тот этого не умеет
+                coil3.compose.AsyncImage(
+                    model = "file:///android_asset/clicker/images/$image",
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alpha = if (open) 1f else 0.45f,
+                    onError = { imageFailed = true },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (open) {
+                Icon(categoryIcon(card.category), null, tint = colors.onSecondaryContainer, modifier = Modifier.size(iconSize))
+            }
+        }
+        card.overlay?.takeIf { it.isNotBlank() && hasImage }?.let { overlay ->
+            coil3.compose.AsyncImage(
+                model = "file:///android_asset/clicker/images/$overlay",
+                contentDescription = null,
+                alpha = if (open) 1f else 0.45f,
+                // requiredSize — больше рамки: выходит за неё, по центру
+                modifier = Modifier
+                    .offset(box * card.overlayOffsetX.toFloat(), box * card.overlayOffsetY.toFloat())
+                    .requiredSize(box * card.overlayScale.toFloat()),
+            )
+        }
+        if (!open) Icon(Icons.Outlined.Lock, null, tint = colors.error, modifier = Modifier.size(iconSize))
+    }
+}
+
+/**
+ * Украшение широкой карточки-усилителя: по левому и правому краю парят мини-иконки
+ * категории — без подложки, едва заметно покачиваясь. Рисуются прямо на холсте: карточка
+ * меряет свою высоту заранее, а контейнеры вроде BoxWithConstraints такого не умеют.
+ */
+@Composable
+private fun FloatingCategoryIcons(category: String, modifier: Modifier) {
+    val painter = androidx.compose.ui.graphics.vector.rememberVectorPainter(categoryIcon(category))
+    val tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val time = androidx.compose.animation.core.rememberInfiniteTransition(label = "boostIcons").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(4_000, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "boostIconsTime",
+    )
+    // x от края, доля высоты, размер, сдвиг фазы
+    val spots = listOf(
+        Triple(8.dp, 0.18f, 14.dp) to 0.0f,
+        Triple(22.dp, 0.50f, 11.dp) to 0.33f,
+        Triple(10.dp, 0.80f, 16.dp) to 0.66f,
+    )
+    androidx.compose.foundation.Canvas(modifier) {
+        // Векторная иконка кэширует картинку под размер первого рисования — поэтому рисуем
+        // всегда одного размера, а мельче делаем масштабом (иначе у маленькой обрезаны края)
+        val base = 16.dp.toPx()
+        spots.forEachIndexed { i, (spot, phase) ->
+            val (x, y, sizeDp) = spot
+            val s = sizeDp.toPx()
+            listOf(true, false).forEach { left ->
+                val shift = if (left) phase else (phase + 0.5f) % 1f
+                val bob = kotlin.math.sin(2 * Math.PI * (time.value + shift)).toFloat()
+                val cx = if (left) x.toPx() + s / 2 else size.width - x.toPx() - s / 2
+                val cy = size.height * y + bob * 4.dp.toPx()
+                withTransform({
+                    translate(cx - base / 2, cy - base / 2)
+                    val pivot = androidx.compose.ui.geometry.Offset(base / 2, base / 2)
+                    rotate(bob * 12f * (if (i % 2 == 0) 1 else -1), pivot = pivot)
+                    scale(s / base, s / base, pivot = pivot)
+                }) {
+                    with(painter) { draw(androidx.compose.ui.geometry.Size(base, base), colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tint)) }
+                }
+            }
+        }
     }
 }

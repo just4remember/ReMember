@@ -716,14 +716,14 @@
     <string name="about_tagline">Личный дневник: как прошёл день, что запланировано, что сделано и как вы себя чувствуете. Всё в одном месте и только на вашем телефоне</string>
     <string name="about_features">Что умеет</string>
     <string name="about_today">Запись дня с фото и тегами, оценка дня, сон с подсказкой по истории телефона и траты. Любой прошлый день открывается свайпом по дате</string>
-    <string name="about_notes">Заметки с папками, тегами и закреплением. Форматирование текста, красная строка, фото и отмена замен Т9</string>
+    <string name="about_notes">Заметки с папками, тегами и закреплением. Форматирование текста, спойлеры, красная строка, фото и отмена замен Т9</string>
     <string name="about_tasks">Список дел по срокам: приоритеты, повторы, подзадачи, быстрое добавление</string>
     <string name="about_calendar">События с цветами и повторами, дни рождения с возрастом</string>
     <string name="about_gym">Тренировки с таймером в шторке, упражнения и подходы, импорт старых записей</string>
     <string name="about_health">Шаги, активное время и калории из Health Connect, цели на день</string>
     <string name="about_stats">Графики и тепловые карты сна, оценок дней, трат, тренировок и активности за выбранный период</string>
     <string name="about_time">Будильники с усиленным режимом, который выключается только после игры. Таймер и секундомер</string>
-    <string name="about_games">«Пять букв»: английское слово за 6 попыток без интернета. Ра[скобки]: ежедневная головоломка, прогресс общий с сайтом raskobki.app</string>
+    <string name="about_games">«Пять букв»: английское слово за 6 попыток без интернета. Ра[скобки]: ежедневная головоломка, прогресс общий с сайтом raskobki.app. «Космо»: кликер про космос с карточками, перерождениями и звёздной пылью</string>
     <string name="about_network">Замер скорости интернета и проверка доступа к сайтам из белых списков</string>
     <string name="about_look_title">Под себя</string>
     <string name="about_look">Темы и акцентный цвет, шрифты, режим левши, свои вкладки и порядок разделов, отключение ненужных разделов</string>
@@ -732,6 +732,7 @@
     <string name="about_widgets">Часы со стрелками, цифровые часы и кольца здоровья на рабочем столе</string>
     <string name="about_data">Галерея фото и видео и расход памяти. Резервная копия с записями, фото, будильниками и настройками, в том числе автоматическая отправка на свой сервер</string>
     <string name="about_author">created by 4aik</string>
+    <string name="about_github">Исходный код на GitHub</string>
     <string name="about_reminders">Отчёт за день, сон, события, задачи, утренняя сводка, тихие часы</string>
     <string name="about_privacy_title">Приватность</string>
     <string name="about_privacy">Все данные хранятся только на телефоне, база данных зашифрована. Вход по PIN-коду и отпечатку, защищённые заметки, копии под вашим паролем</string>
@@ -1100,6 +1101,7 @@
     <string name="clicker_tab_upgrades">Улучшения</string>
     <string name="clicker_tab_chaos">Хаос</string>
     <string name="clicker_tab_daily">Ежедневные</string>
+    <string name="clicker_boost_hint">+%1$s%% к доходу «%2$s» за уровень</string>
     <string name="clicker_tap_upgrades">Прокачка тапа</string>
     <string name="clicker_level_short">Ур. %d</string>
     <string name="clicker_offline">Доход вне игры</string>
@@ -1115,7 +1117,7 @@
     <string name="clicker_card_income">Профит в час</string>
     <string name="clicker_card_tap">Профит за тап</string>
     <string name="clicker_card_tap_seconds">Секунд дохода за тап</string>
-    <string name="clicker_card_boost">Бонус к категории</string>
+    <string name="clicker_card_boost">Буст категории</string>
     <string name="clicker_card_energy_max">Объём энергии</string>
     <string name="clicker_card_energy_regen">Энергии в секунду</string>
     <string name="clicker_card_offline_rate">Доход вне игры</string>

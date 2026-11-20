@@ -1,5 +1,12 @@
 package dev.chaik.remember.feature.games.clicker
 
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.IntOffset
@@ -205,7 +212,7 @@ private fun GameTabs(selected: GameTab, onSelect: (GameTab) -> Unit) {
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .shadow(3.dp, RoundedCornerShape(18.dp))
             .clip(RoundedCornerShape(18.dp))
-            .background(colors.surfaceContainerHighest)
+            .background(colors.surfaceContainerHigh)
             .padding(4.dp),
     ) {
         GameTab.entries.forEach { t ->
@@ -214,16 +221,16 @@ private fun GameTabs(selected: GameTab, onSelect: (GameTab) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .weight(1f)
+                    .raised(on, strip = colors.surfaceContainerHigh)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (on) colors.primaryContainer else Color.Transparent)
                     .clickable { onSelect(t) }
                     .padding(vertical = 6.dp),
             ) {
-                Icon(t.icon, null, tint = if (on) colors.onPrimaryContainer else colors.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                Icon(t.icon, null, tint = if (on) colors.onSurface else colors.onSurfaceVariant, modifier = Modifier.size(22.dp))
                 Text(
                     stringResource(t.label),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (on) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                    color = if (on) colors.onSurface else colors.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -319,8 +326,17 @@ private fun TapTab(viewModel: ClickerViewModel) {
         var tapUpgrades by remember { mutableStateOf(false) }
         val energy = engine.energyOf(state, stats)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-            FilledTonalIconButton(onClick = { tapUpgrades = true }) {
-                Icon(Icons.Outlined.TouchApp, stringResource(R.string.clicker_tap_upgrades))
+            // Своя круглая кнопка: тень ровно по кругу (у IconButton она шла по невидимой рамке касания)
+            Surface(
+                onClick = { tapUpgrades = true },
+                shape = CircleShape,
+                // Как у плиток «за тап» и т. д.
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                shadowElevation = 2.dp,
+                modifier = Modifier.size(44.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.TouchApp, stringResource(R.string.clicker_tap_upgrades)) }
             }
             Spacer(Modifier.weight(1f))
             Icon(Icons.Outlined.Bolt, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
@@ -337,7 +353,7 @@ private fun TapTab(viewModel: ClickerViewModel) {
 
 @Composable
 private fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = modifier) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh, shadowElevation = 1.5.dp, modifier = modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
@@ -488,3 +504,28 @@ private fun AwayBanner(gain: Double?, onDone: () -> Unit, modifier: Modifier = M
         }
     }
 }
+
+/**
+ * Вид выбранной кнопки полосы: «выпуклая» плашка чуть меньше кнопки (отступ [RAISED_INSET]),
+ * на 5% светлее подложки [strip], с тенью снаружи, без акцентной заливки. Рисуется под
+ * содержимым и ставится до clip, иначе тень обрежется.
+ */
+@Composable
+fun Modifier.raised(on: Boolean, strip: Color, radius: androidx.compose.ui.unit.Dp = 10.dp): Modifier {
+    if (!on) return this
+    val fill = lerp(strip, Color.White, 0.05f).toArgb()
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val shadowColor = Color.Black.copy(alpha = if (dark) 0.8f else 0.45f).toArgb()
+    return drawBehind {
+        val inset = RAISED_INSET.toPx()
+        val r = radius.toPx()
+        // Тень — у самой плашки (shadowLayer), а не у всей кнопки: так плашку можно сделать меньше
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = fill
+            setShadowLayer(5.dp.toPx(), 0f, 1.5.dp.toPx(), shadowColor)
+        }
+        drawIntoCanvas { it.nativeCanvas.drawRoundRect(inset, inset, size.width - inset, size.height - inset, r, r, paint) }
+    }
+}
+
+private val RAISED_INSET = 2.dp

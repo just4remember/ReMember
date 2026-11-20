@@ -1,5 +1,8 @@
 package dev.chaik.remember.feature.settings.about
 
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.material3.IconButton
 import dev.chaik.remember.core.feedback.LegalDoc
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.foundation.clickable
@@ -108,11 +111,19 @@ fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val uriHandler = LocalUriHandler.current
+                IconButton(onClick = { runCatching { uriHandler.openUri(GITHUB_URL) } }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_github),
+                        contentDescription = stringResource(R.string.about_github),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     text = stringResource(R.string.about_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 12.dp, start = 8.dp, end = 8.dp),
+                    modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp),
                 )
             }
 
@@ -158,6 +169,9 @@ fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** Репозиторий проекта: иконка под версией открывает его в браузере. */
+private const val GITHUB_URL = "https://github.com/just4remember/ReMember"
 
 /** Строка-ссылка на документ: открывается в браузере. */
 @Composable

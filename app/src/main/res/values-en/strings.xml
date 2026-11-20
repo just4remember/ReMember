@@ -676,14 +676,14 @@
     <string name="about_tagline">A personal diary: how your day went, what is planned, what is done and how you feel. Everything in one place and only on your phone</string>
     <string name="about_features">What it can do</string>
     <string name="about_today">Day entry with photos and tags, day rating, sleep with a hint from phone usage, and spending. Any past day opens with a swipe on the date</string>
-    <string name="about_notes">Notes with folders, tags and pinning. Text formatting, first-line indent, photos and autocorrect undo</string>
+    <string name="about_notes">Notes with folders, tags and pinning. Text formatting, spoilers, first-line indent, photos and autocorrect undo</string>
     <string name="about_tasks">To-dos by due date: priorities, repeats, subtasks, quick add</string>
     <string name="about_calendar">Events with colors and repeats, birthdays with age</string>
     <string name="about_gym">Workouts with a timer in the notification shade, exercises and sets, import of old logs</string>
     <string name="about_health">Steps, active time and calories from Health Connect, daily goals</string>
     <string name="about_stats">Charts and heatmaps for sleep, day ratings, spending, workouts and activity over a chosen period</string>
     <string name="about_time">Alarms with a hard mode that turns off only after a game. Timer and stopwatch</string>
-    <string name="about_games">Five Letters: the English word in 6 tries, offline. Ra[skobki]: a daily puzzle with progress shared with raskobki.app</string>
+    <string name="about_games">Five Letters: the English word in 6 tries, offline. Ra[skobki]: a daily puzzle with progress shared with raskobki.app. Cosmo: a space clicker with cards, rebirths and stardust</string>
     <string name="about_network">Internet speed test and whitelist site check</string>
     <string name="about_look_title">Make it yours</string>
     <string name="about_look">Themes and accent color, fonts, left-handed mode, custom tabs and section order, turning off unused sections</string>
@@ -692,6 +692,7 @@
     <string name="about_widgets">Analog clock, digital clock and health rings on the home screen</string>
     <string name="about_data">A gallery of photos and videos and storage usage. Backups with entries, photos, alarms and settings, including automatic upload to your own server</string>
     <string name="about_author">created by 4aik</string>
+    <string name="about_github">Source code on GitHub</string>
     <string name="about_reminders">Daily entry, sleep, events, tasks, morning summary, quiet hours</string>
     <string name="about_privacy_title">Privacy</string>
     <string name="about_privacy">All data is stored only on the phone, the database is encrypted. PIN and fingerprint sign-in, protected notes, backups under your password</string>
@@ -1037,6 +1038,7 @@
     <string name="clicker_tab_upgrades">Upgrades</string>
     <string name="clicker_tab_chaos">Chaos</string>
     <string name="clicker_tab_daily">Daily</string>
+    <string name="clicker_boost_hint">+%1$s%% to “%2$s” income per level</string>
     <string name="clicker_tap_upgrades">Tap upgrades</string>
     <string name="clicker_level_short">Lv. %d</string>
     <string name="clicker_offline">Offline income</string>
@@ -1052,7 +1054,7 @@
     <string name="clicker_card_income">Profit per hour</string>
     <string name="clicker_card_tap">Profit per tap</string>
     <string name="clicker_card_tap_seconds">Seconds of income per tap</string>
-    <string name="clicker_card_boost">Category bonus</string>
+    <string name="clicker_card_boost">Category boost</string>
     <string name="clicker_card_energy_max">Energy capacity</string>
     <string name="clicker_card_energy_regen">Energy per second</string>
     <string name="clicker_card_offline_rate">Offline income</string>
