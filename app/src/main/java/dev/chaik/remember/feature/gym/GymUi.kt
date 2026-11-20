@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.gym
 
+import androidx.compose.material3.MaterialTheme
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,13 @@ fun BodyWeightDialog(
     initial: Double?,
     onSave: (Double) -> Unit,
     onSkip: () -> Unit,
+    /**
+     * Можно передумать (окно перед завершением тренировки): «Отмена», «назад» и тап мимо
+     * окна ничего не делают. Без него закрыть окно — то же, что «Пропустить».
+     */
+    onCancel: (() -> Unit)? = null,
+    /** Пояснение над полем веса. */
+    message: String? = null,
 ) {
     var text by remember { mutableStateOf(initial?.let(::formatKg).orEmpty()) }
     val value = parseKg(text)
@@ -86,10 +94,11 @@ fun BodyWeightDialog(
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     AlertDialog(
-        onDismissRequest = onSkip,
+        onDismissRequest = onCancel ?: onSkip,
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.releaseFocus()) {
+                message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { new -> if (new.length <= 6 && new.all { it.isDigit() || it == ',' || it == '.' }) text = new },
@@ -118,7 +127,10 @@ fun BodyWeightDialog(
             TextButton(enabled = value != null, onClick = { value?.let(onSave) }) { Text(stringResource(R.string.gym_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onSkip) { Text(stringResource(R.string.gym_skip)) }
+            Row {
+                onCancel?.let { TextButton(onClick = it) { Text(stringResource(R.string.action_cancel)) } }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.gym_skip)) }
+            }
         },
     )
 }

@@ -493,8 +493,11 @@ private fun Sheets(
                 onSkip = close,
             )
         }
+        // Нажали «Закончить» случайно — «Отмена» (или мимо окна) оставляет тренировку идти
         is Sheet.Finish -> BodyWeightDialog(
-            title = stringResource(R.string.gym_weight_after),
+            title = stringResource(R.string.gym_finish_title),
+            message = stringResource(R.string.gym_finish_message),
+            onCancel = close,
             initial = sheet.suggested,
             onSave = { kg ->
                 viewModel.finish(kg, sheet.end)

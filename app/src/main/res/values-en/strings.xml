@@ -474,6 +474,8 @@
     <string name="gym_start_time">Start</string>
     <string name="gym_end_time">End</string>
     <string name="gym_finish">Finish workout</string>
+    <string name="gym_finish_title">Finish the workout?</string>
+    <string name="gym_finish_message">Enter your weight after the workout or skip. Changed your mind? Tap Cancel and the workout goes on</string>
     <string name="gym_add_exercise">Exercise</string>
     <string name="gym_add_set">Set</string>
     <string name="gym_new_exercise">New exercise</string>
@@ -1014,8 +1016,8 @@
     <string name="network_server_selectel_hint">Measures ping and download. This server doesn\'t accept uploads</string>
     <string name="game_raskobki">Ra[skobki]</string>
     <string name="game_raskobki_hint">Recursive crossword</string>
-    <string name="game_clicker">Cosmos</string>
-    <string name="game_clicker_hint">Tap the planet, collect cards, grow your income</string>
+    <string name="game_clicker">Cosmo</string>
+    <string name="game_clicker_hint">A clicker game about space</string>
     <string name="clicker_millions">%s M</string>
     <string name="clicker_billions">%s B</string>
     <string name="clicker_trillions">%s T</string>

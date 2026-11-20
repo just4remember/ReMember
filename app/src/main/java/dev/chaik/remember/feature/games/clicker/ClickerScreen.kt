@@ -1,5 +1,21 @@
 package dev.chaik.remember.feature.games.clicker
 
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.shadow
@@ -139,6 +155,7 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         val upgrades = rememberPagerState { categories.size }
         val chaos = rememberPagerState { ChaosFilter.entries.size }
         val scope = rememberCoroutineScope()
+        Box(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxSize()
@@ -164,17 +181,15 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 },
             )
         }
+        // Сколько накопилось, пока вас не было, — уведомлением сверху по центру
+        AwayBanner(
+            gain = viewModel.awayGain,
+            onDone = viewModel::dismissAway,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = padding.calculateTopPadding() + 8.dp),
+        )
+        }
     }
 
-    viewModel.awayGain?.let { gain ->
-        AlertDialog(
-            onDismissRequest = viewModel::dismissAway,
-            icon = { Icon(Icons.Filled.MonetizationOn, null, tint = CoinColor) },
-            title = { Text(stringResource(R.string.clicker_away_title)) },
-            text = { Text(stringResource(R.string.clicker_away_text, formatCoinsFull(gain))) },
-            confirmButton = { TextButton(onClick = viewModel::dismissAway) { Text(stringResource(R.string.action_ok)) } },
-        )
-    }
     if (viewModel.showGoalReached) GoalReachedDialog(viewModel, viewModel.engine!!)
     if (metaOpen && viewModel.engine != null) MetaProgressDialog(viewModel, viewModel.engine!!, onDismiss = { metaOpen = false })
 }
@@ -395,5 +410,60 @@ private fun DebugMenu(viewModel: ClickerViewModel, expanded: Boolean, onDismiss:
         item(R.string.clicker_debug_coins, viewModel::debugCoins)
         item(R.string.clicker_debug_goal, viewModel::debugReachGoal)
         item(R.string.clicker_debug_reset, viewModel::debugReset)
+    }
+}
+
+/**
+ * «+ 12 345» с монетой — сколько принёс доход вне игры. Выезжает сверху, само уходит через
+ * 3 с; смахнуть можно в любую сторону (уведомление едет за пальцем).
+ */
+@Composable
+private fun AwayBanner(gain: Double?, onDone: () -> Unit, modifier: Modifier = Modifier) {
+    // Последняя сумма остаётся на экране, пока уведомление уезжает
+    var shown by remember { mutableStateOf(0.0) }
+    if (gain != null) shown = gain
+    val done by rememberUpdatedState(onDone)
+    val drag = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(gain) {
+        if (gain == null) return@LaunchedEffect
+        drag.snapTo(Offset.Zero)
+        delay(3_000)
+        done()
+    }
+    AnimatedVisibility(
+        visible = gain != null,
+        enter = slideInVertically { -it } + fadeIn(),
+        exit = fadeOut() + slideOutVertically { -it / 2 },
+        modifier = modifier,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            shadowElevation = 3.dp,
+            modifier = Modifier
+                .offset { IntOffset(drag.value.x.roundToInt(), drag.value.y.roundToInt()) }
+                .pointerInput(Unit) {
+                    val far = 48.dp.toPx()
+                    detectDragGestures(
+                        onDragEnd = {
+                            if (drag.value.getDistance() > far) done() else scope.launch { drag.animateTo(Offset.Zero) }
+                        },
+                        onDragCancel = { scope.launch { drag.animateTo(Offset.Zero) } },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            scope.launch { drag.snapTo(drag.value + amount) }
+                        },
+                    )
+                },
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("+", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Filled.MonetizationOn, null, tint = CoinColor, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(formatCoinsFull(shown), style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"), fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }

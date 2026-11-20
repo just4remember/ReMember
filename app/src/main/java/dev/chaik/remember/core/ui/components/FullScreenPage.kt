@@ -1,5 +1,6 @@
 package dev.chaik.remember.core.ui.components
 
+import androidx.compose.ui.graphics.luminance
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -106,6 +107,8 @@ fun FullScreenPage(
         ),
     ) {
         BackHandler { close() }
+        // Своё окно — свои значки панелей: тёмные на светлой теме, иначе белые сливаются с фоном
+        SystemBarIcons(dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f)
         Surface(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier

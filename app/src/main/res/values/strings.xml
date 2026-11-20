@@ -504,6 +504,8 @@
     <string name="gym_start_time">Начало</string>
     <string name="gym_end_time">Конец</string>
     <string name="gym_finish">Закончить тренировку</string>
+    <string name="gym_finish_title">Закончить тренировку?</string>
+    <string name="gym_finish_message">Укажите вес после тренировки или пропустите. Передумали — «Отмена», тренировка продолжится</string>
     <string name="gym_add_exercise">Упражнение</string>
     <string name="gym_add_set">Подход</string>
     <string name="gym_new_exercise">Новое упражнение</string>
@@ -1077,8 +1079,8 @@
     <string name="network_server_selectel_hint">Замеряет пинг и загрузку. Отдачу этот сервер не принимает</string>
     <string name="game_raskobki">Ра[скобки]</string>
     <string name="game_raskobki_hint">Рекурсивный кроссворд</string>
-    <string name="game_clicker">Космос</string>
-    <string name="game_clicker_hint">Тапайте планету, собирайте карточки, растите доход</string>
+    <string name="game_clicker">Космо</string>
+    <string name="game_clicker_hint">Кликер игра про космос</string>
     <string name="clicker_millions">%s млн</string>
     <string name="clicker_billions">%s млрд</string>
     <string name="clicker_trillions">%s трлн</string>
