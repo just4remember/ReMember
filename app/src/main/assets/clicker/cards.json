@@ -1,0 +1,1033 @@
+{
+ "version": 6,
+ "rules": {
+  "goal": 4000000000000.0,
+  "stardustPerRun": 100,
+  "maxRuns": 3,
+  "baseIncomePerHour": 0.0,
+  "tapIncomeSeconds": 0.0,
+  "levels": [
+   0,
+   10000.0,
+   100000.0,
+   500000.0,
+   1000000.0,
+   10000000.0,
+   1000000000.0,
+   1000000000000.0
+  ]
+ },
+ "categories": [
+  {
+   "id": "planet",
+   "name": "Планета"
+  },
+  {
+   "id": "orbit",
+   "name": "Орбита"
+  },
+  {
+   "id": "star",
+   "name": "Звезда"
+  },
+  {
+   "id": "galaxy",
+   "name": "Галактика"
+  },
+  {
+   "id": "universe",
+   "name": "Вселенная"
+  },
+  {
+   "id": "tap",
+   "name": "Тап",
+   "hidden": true
+  },
+  {
+   "id": "chaos",
+   "name": "Хаос",
+   "temporary": true
+  }
+ ],
+ "cards": [
+  {
+   "id": "planet_1",
+   "category": "planet",
+   "name": "Планета · 1",
+   "effect": "income",
+   "baseCost": 10,
+   "costGrowth": 1.22,
+   "baseValue": 5.0,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_1",
+   "category": "orbit",
+   "name": "Орбита · 1",
+   "effect": "income",
+   "baseCost": 14,
+   "costGrowth": 1.22,
+   "baseValue": 6.653,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_1",
+   "category": "star",
+   "name": "Звезда · 1",
+   "effect": "income",
+   "baseCost": 21,
+   "costGrowth": 1.22,
+   "baseValue": 8.853,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_1",
+   "category": "galaxy",
+   "name": "Галактика · 1",
+   "effect": "income",
+   "baseCost": 30,
+   "costGrowth": 1.22,
+   "baseValue": 11.78,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_1",
+     "level": 5
+    }
+   ]
+  },
+  {
+   "id": "universe_1",
+   "category": "universe",
+   "name": "Вселенная · 1",
+   "effect": "income",
+   "baseCost": 44,
+   "costGrowth": 1.22,
+   "baseValue": 15.674,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "galaxy_1",
+     "level": 2
+    }
+   ]
+  },
+  {
+   "id": "planet_2",
+   "category": "planet",
+   "name": "Планета · 2",
+   "effect": "income",
+   "baseCost": 64,
+   "costGrowth": 1.22,
+   "baseValue": 20.857,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_2",
+   "category": "orbit",
+   "name": "Орбита · 2",
+   "effect": "income",
+   "baseCost": 93,
+   "costGrowth": 1.22,
+   "baseValue": 27.752,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "universe_1",
+     "level": 3
+    }
+   ]
+  },
+  {
+   "id": "star_2",
+   "category": "star",
+   "name": "Звезда · 2",
+   "effect": "income",
+   "baseCost": 134,
+   "costGrowth": 1.22,
+   "baseValue": 36.928,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "galaxy_1",
+     "level": 6
+    }
+   ]
+  },
+  {
+   "id": "galaxy_2",
+   "category": "galaxy",
+   "name": "Галактика · 2",
+   "effect": "income",
+   "baseCost": 194,
+   "costGrowth": 1.22,
+   "baseValue": 49.137,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_2",
+   "category": "universe",
+   "name": "Вселенная · 2",
+   "effect": "income",
+   "baseCost": 282,
+   "costGrowth": 1.22,
+   "baseValue": 65.383,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_2",
+     "level": 6
+    },
+    {
+     "card": "planet_1",
+     "level": 14
+    }
+   ]
+  },
+  {
+   "id": "planet_3",
+   "category": "planet",
+   "name": "Планета · 3",
+   "effect": "income",
+   "baseCost": 408,
+   "costGrowth": 1.22,
+   "baseValue": 87.0,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "galaxy_2",
+     "level": 3
+    }
+   ]
+  },
+  {
+   "id": "orbit_3",
+   "category": "orbit",
+   "name": "Орбита · 3",
+   "effect": "income",
+   "baseCost": 592,
+   "costGrowth": 1.22,
+   "baseValue": 115.764,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_3",
+   "category": "star",
+   "name": "Звезда · 3",
+   "effect": "income",
+   "baseCost": 857,
+   "costGrowth": 1.22,
+   "baseValue": 154.039,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "galaxy_2",
+     "level": 6
+    },
+    {
+     "card": "universe_1",
+     "level": 13
+    }
+   ]
+  },
+  {
+   "id": "galaxy_3",
+   "category": "galaxy",
+   "name": "Галактика · 3",
+   "effect": "income",
+   "baseCost": 1242,
+   "costGrowth": 1.22,
+   "baseValue": 204.968,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "orbit_3",
+     "level": 3
+    },
+    {
+     "card": "orbit_2",
+     "level": 11
+    }
+   ]
+  },
+  {
+   "id": "universe_3",
+   "category": "universe",
+   "name": "Вселенная · 3",
+   "effect": "income",
+   "baseCost": 1800,
+   "costGrowth": 1.22,
+   "baseValue": 272.734,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_4",
+   "category": "planet",
+   "name": "Планета · 4",
+   "effect": "income",
+   "baseCost": 2608,
+   "costGrowth": 1.22,
+   "baseValue": 362.907,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_4",
+   "category": "orbit",
+   "name": "Орбита · 4",
+   "effect": "income",
+   "baseCost": 3780,
+   "costGrowth": 1.22,
+   "baseValue": 482.892,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_4",
+   "category": "star",
+   "name": "Звезда · 4",
+   "effect": "income",
+   "baseCost": 5477,
+   "costGrowth": 1.22,
+   "baseValue": 642.547,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_4",
+   "category": "galaxy",
+   "name": "Галактика · 4",
+   "effect": "income",
+   "baseCost": 7937,
+   "costGrowth": 1.22,
+   "baseValue": 854.988,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "orbit_4",
+     "level": 3
+    },
+    {
+     "card": "star_3",
+     "level": 10
+    }
+   ]
+  },
+  {
+   "id": "universe_4",
+   "category": "universe",
+   "name": "Вселенная · 4",
+   "effect": "income",
+   "baseCost": 11501,
+   "costGrowth": 1.22,
+   "baseValue": 1137.667,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_5",
+   "category": "planet",
+   "name": "Планета · 5",
+   "effect": "income",
+   "baseCost": 16666,
+   "costGrowth": 1.22,
+   "baseValue": 1513.805,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_5",
+   "category": "orbit",
+   "name": "Орбита · 5",
+   "effect": "income",
+   "baseCost": 24151,
+   "costGrowth": 1.22,
+   "baseValue": 2014.304,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_5",
+   "category": "star",
+   "name": "Звезда · 5",
+   "effect": "income",
+   "baseCost": 34997,
+   "costGrowth": 1.22,
+   "baseValue": 2680.279,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_5",
+   "category": "galaxy",
+   "name": "Галактика · 5",
+   "effect": "income",
+   "baseCost": 50713,
+   "costGrowth": 1.22,
+   "baseValue": 3566.441,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_5",
+   "category": "universe",
+   "name": "Вселенная · 5",
+   "effect": "income",
+   "baseCost": 73487,
+   "costGrowth": 1.22,
+   "baseValue": 4745.588,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_6",
+   "category": "planet",
+   "name": "Планета · 6",
+   "effect": "income",
+   "baseCost": 106488,
+   "costGrowth": 1.22,
+   "baseValue": 6314.588,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_6",
+   "category": "orbit",
+   "name": "Орбита · 6",
+   "effect": "income",
+   "baseCost": 154310,
+   "costGrowth": 1.22,
+   "baseValue": 8402.335,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_6",
+   "category": "star",
+   "name": "Звезда · 6",
+   "effect": "income",
+   "baseCost": 223607,
+   "costGrowth": 1.22,
+   "baseValue": 11180.34,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_6",
+     "level": 3
+    }
+   ]
+  },
+  {
+   "id": "galaxy_6",
+   "category": "galaxy",
+   "name": "Галактика · 6",
+   "effect": "income",
+   "baseCost": 324024,
+   "costGrowth": 1.22,
+   "baseValue": 14876.817,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_6",
+     "level": 5
+    }
+   ]
+  },
+  {
+   "id": "universe_6",
+   "category": "universe",
+   "name": "Вселенная · 6",
+   "effect": "income",
+   "baseCost": 469536,
+   "costGrowth": 1.22,
+   "baseValue": 19795.433,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_7",
+   "category": "planet",
+   "name": "Планета · 7",
+   "effect": "income",
+   "baseCost": 680395,
+   "costGrowth": 1.22,
+   "baseValue": 26340.257,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_7",
+   "category": "orbit",
+   "name": "Орбита · 7",
+   "effect": "income",
+   "baseCost": 985946,
+   "costGrowth": 1.22,
+   "baseValue": 35048.95,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_7",
+     "level": 2
+    },
+    {
+     "card": "planet_5",
+     "level": 17
+    }
+   ]
+  },
+  {
+   "id": "star_7",
+   "category": "star",
+   "name": "Звезда · 7",
+   "effect": "income",
+   "baseCost": 1428714,
+   "costGrowth": 1.22,
+   "baseValue": 46636.936,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "universe_6",
+     "level": 5
+    },
+    {
+     "card": "planet_5",
+     "level": 19
+    }
+   ]
+  },
+  {
+   "id": "galaxy_7",
+   "category": "galaxy",
+   "name": "Галактика · 7",
+   "effect": "income",
+   "baseCost": 2070319,
+   "costGrowth": 1.22,
+   "baseValue": 62056.176,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_7",
+   "category": "universe",
+   "name": "Вселенная · 7",
+   "effect": "income",
+   "baseCost": 3000055,
+   "costGrowth": 1.22,
+   "baseValue": 82573.37,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_8",
+   "category": "planet",
+   "name": "Планета · 8",
+   "effect": "income",
+   "baseCost": 4347317,
+   "costGrowth": 1.22,
+   "baseValue": 109874.018,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "star_7",
+     "level": 5
+    },
+    {
+     "card": "planet_6",
+     "level": 16
+    }
+   ]
+  },
+  {
+   "id": "orbit_8",
+   "category": "orbit",
+   "name": "Орбита · 8",
+   "effect": "income",
+   "baseCost": 6299605,
+   "costGrowth": 1.22,
+   "baseValue": 146200.887,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_8",
+   "category": "star",
+   "name": "Звезда · 8",
+   "effect": "income",
+   "baseCost": 9128625,
+   "costGrowth": 1.22,
+   "baseValue": 194538.251,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_8",
+   "category": "galaxy",
+   "name": "Галактика · 8",
+   "effect": "income",
+   "baseCost": 13228098,
+   "costGrowth": 1.22,
+   "baseValue": 258857.056,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_8",
+   "category": "universe",
+   "name": "Вселенная · 8",
+   "effect": "income",
+   "baseCost": 19168558,
+   "costGrowth": 1.22,
+   "baseValue": 344441.132,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_9",
+   "category": "planet",
+   "name": "Планета · 9",
+   "effect": "income",
+   "baseCost": 27776753,
+   "costGrowth": 1.22,
+   "baseValue": 458321.265,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_9",
+   "category": "orbit",
+   "name": "Орбита · 9",
+   "effect": "income",
+   "baseCost": 40250708,
+   "costGrowth": 1.22,
+   "baseValue": 609852.78,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_9",
+   "category": "star",
+   "name": "Звезда · 9",
+   "effect": "income",
+   "baseCost": 58326452,
+   "costGrowth": 1.22,
+   "baseValue": 811484.087,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_9",
+   "category": "galaxy",
+   "name": "Галактика · 9",
+   "effect": "income",
+   "baseCost": 84519632,
+   "costGrowth": 1.22,
+   "baseValue": 1079779.325,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "planet_9",
+     "level": 5
+    }
+   ]
+  },
+  {
+   "id": "universe_9",
+   "category": "universe",
+   "name": "Вселенная · 9",
+   "effect": "income",
+   "baseCost": 122475616,
+   "costGrowth": 1.22,
+   "baseValue": 1436779.12,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_10",
+   "category": "planet",
+   "name": "Планета · 10",
+   "effect": "income",
+   "baseCost": 177476833,
+   "costGrowth": 1.22,
+   "baseValue": 1911811.228,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_10",
+   "category": "orbit",
+   "name": "Орбита · 10",
+   "effect": "income",
+   "baseCost": 257177937,
+   "costGrowth": 1.22,
+   "baseValue": 2543899.84,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "star_9",
+     "level": 6
+    }
+   ]
+  },
+  {
+   "id": "star_10",
+   "category": "star",
+   "name": "Звезда · 10",
+   "effect": "income",
+   "baseCost": 372671125,
+   "costGrowth": 1.22,
+   "baseValue": 3384971.435,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "galaxy_10",
+   "category": "galaxy",
+   "name": "Галактика · 10",
+   "effect": "income",
+   "baseCost": 540029869,
+   "costGrowth": 1.22,
+   "baseValue": 4504120.577,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_10",
+   "category": "universe",
+   "name": "Вселенная · 10",
+   "effect": "income",
+   "baseCost": 782545897,
+   "costGrowth": 1.22,
+   "baseValue": 5993286.076,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_11",
+   "category": "planet",
+   "name": "Планета · 11",
+   "effect": "income",
+   "baseCost": 1133970759,
+   "costGrowth": 1.22,
+   "baseValue": 7974803.822,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "orbit_11",
+   "category": "orbit",
+   "name": "Орбита · 11",
+   "effect": "income",
+   "baseCost": 1643213117,
+   "costGrowth": 1.22,
+   "baseValue": 10611456.753,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "star_11",
+   "category": "star",
+   "name": "Звезда · 11",
+   "effect": "income",
+   "baseCost": 2381145480,
+   "costGrowth": 1.22,
+   "baseValue": 14119847.576,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": [
+    {
+     "card": "universe_10",
+     "level": 5
+    },
+    {
+     "card": "universe_9",
+     "level": 13
+    }
+   ]
+  },
+  {
+   "id": "galaxy_11",
+   "category": "galaxy",
+   "name": "Галактика · 11",
+   "effect": "income",
+   "baseCost": 3450467707,
+   "costGrowth": 1.22,
+   "baseValue": 18788192.819,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "universe_11",
+   "category": "universe",
+   "name": "Вселенная · 11",
+   "effect": "income",
+   "baseCost": 5000000000,
+   "costGrowth": 1.22,
+   "baseValue": 25000000.0,
+   "valueGrowth": 1.1,
+   "maxLevel": 30,
+   "requires": []
+  },
+  {
+   "id": "planet_boost",
+   "category": "planet",
+   "name": "Планета · усилитель",
+   "requires": [
+    {
+     "card": "planet_4",
+     "level": 3
+    },
+    {
+     "card": "galaxy_3",
+     "level": 8
+    }
+   ],
+   "effect": "boost",
+   "target": "planet",
+   "baseCost": 63496,
+   "costGrowth": 2.0,
+   "baseValue": 0.1,
+   "maxLevel": 10
+  },
+  {
+   "id": "orbit_boost",
+   "category": "orbit",
+   "name": "Орбита · усилитель",
+   "requires": [
+    {
+     "card": "orbit_5",
+     "level": 3
+    },
+    {
+     "card": "galaxy_5",
+     "level": 3
+    }
+   ],
+   "effect": "boost",
+   "target": "orbit",
+   "baseCost": 851905,
+   "costGrowth": 2.0,
+   "baseValue": 0.1,
+   "maxLevel": 10
+  },
+  {
+   "id": "star_boost",
+   "category": "star",
+   "name": "Звезда · усилитель",
+   "requires": [
+    {
+     "card": "star_7",
+     "level": 3
+    },
+    {
+     "card": "universe_6",
+     "level": 5
+    }
+   ],
+   "effect": "boost",
+   "target": "star",
+   "baseCost": 11429709,
+   "costGrowth": 2.0,
+   "baseValue": 0.1,
+   "maxLevel": 10
+  },
+  {
+   "id": "galaxy_boost",
+   "category": "galaxy",
+   "name": "Галактика · усилитель",
+   "requires": [
+    {
+     "card": "galaxy_8",
+     "level": 3
+    },
+    {
+     "card": "universe_7",
+     "level": 8
+    }
+   ],
+   "effect": "boost",
+   "target": "galaxy",
+   "baseCost": 153348466,
+   "costGrowth": 2.0,
+   "baseValue": 0.1,
+   "maxLevel": 10
+  },
+  {
+   "id": "universe_boost",
+   "category": "universe",
+   "name": "Вселенная · усилитель",
+   "requires": [
+    {
+     "card": "universe_9",
+     "level": 3
+    },
+    {
+     "card": "orbit_9",
+     "level": 8
+    }
+   ],
+   "effect": "boost",
+   "target": "universe",
+   "baseCost": 2057423492,
+   "costGrowth": 2.0,
+   "baseValue": 0.1,
+   "maxLevel": 10
+  },
+  {
+   "id": "tap_power",
+   "category": "tap",
+   "name": "Сила тапа",
+   "effect": "tap",
+   "baseCost": 200.0,
+   "costGrowth": 1.6,
+   "baseValue": 1.0,
+   "valueGrowth": 1.3,
+   "maxLevel": 40
+  },
+  {
+   "id": "tap_energy",
+   "category": "tap",
+   "name": "Объём энергии",
+   "effect": "energy_max",
+   "baseCost": 500,
+   "costGrowth": 3.2,
+   "baseValue": 250.0,
+   "maxLevel": 10
+  },
+  {
+   "id": "tap_regen",
+   "category": "tap",
+   "name": "Восстановление энергии",
+   "effect": "energy_regen",
+   "baseCost": 2000,
+   "costGrowth": 3.6,
+   "baseValue": 0.25,
+   "maxLevel": 8
+  }
+ ],
+ "perks": [
+  {
+   "id": "stars",
+   "name": "Сила звёзд: +15% ко всему доходу",
+   "effect": "income",
+   "value": 0.15,
+   "cost": 25,
+   "maxLevel": 4
+  },
+  {
+   "id": "discount",
+   "name": "Скидка: −5% к ценам карточек",
+   "effect": "discount",
+   "value": 0.05,
+   "cost": 20,
+   "maxLevel": 4
+  },
+  {
+   "id": "dream",
+   "name": "Дремлющий двигатель: +10% к доходу вне игры",
+   "effect": "offline_rate",
+   "value": 0.1,
+   "cost": 30,
+   "maxLevel": 2
+  },
+  {
+   "id": "reserve",
+   "name": "Запас: +3 ч дохода вне игры",
+   "effect": "offline_cap",
+   "value": 3.0,
+   "cost": 20,
+   "maxLevel": 3
+  },
+  {
+   "id": "capital",
+   "name": "Стартовый капитал: +50 тыс. коинов в начале",
+   "effect": "start_coins",
+   "value": 50000.0,
+   "cost": 15,
+   "maxLevel": 3
+  },
+  {
+   "id": "impulse",
+   "name": "Импульс тапа: +0.5 с дохода за тап",
+   "effect": "tap_seconds",
+   "value": 0.5,
+   "cost": 15,
+   "maxLevel": 3
+  },
+  {
+   "id": "battery",
+   "name": "Аккумулятор: +500 энергии",
+   "effect": "energy_max",
+   "value": 500.0,
+   "cost": 10,
+   "maxLevel": 3
+  },
+  {
+   "id": "regen",
+   "name": "Регенератор: +0.5 энергии в секунду",
+   "effect": "energy_regen",
+   "value": 0.5,
+   "cost": 15,
+   "maxLevel": 2
+  }
+ ]
+}

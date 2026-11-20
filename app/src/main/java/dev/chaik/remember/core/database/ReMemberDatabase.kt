@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import dev.chaik.remember.core.database.dao.DayEntryDao
+import dev.chaik.remember.core.database.dao.GameDao
+import dev.chaik.remember.core.database.entity.ClickerSaveEntity
 import dev.chaik.remember.core.database.dao.EventDao
 import dev.chaik.remember.core.database.dao.MoneyDao
 import dev.chaik.remember.core.database.dao.NoteDao
@@ -44,7 +46,7 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
  * (`autoMigrations` — для простых случаев). Схемы лежат в app/schemas.
  */
 @Database(
-    version = 15,
+    version = 16,
     entities = [
         DayEntryEntity::class,
         SleepEntryEntity::class,
@@ -68,6 +70,7 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
         WorkoutTemplateExerciseEntity::class,
         PlaceEntity::class,
         PlaceCategoryEntity::class,
+        ClickerSaveEntity::class,
     ],
     autoMigrations = [
         // 2: задачи и подзадачи — только новые таблицы
@@ -98,6 +101,8 @@ import dev.chaik.remember.core.database.entity.WorkoutTemplateExerciseEntity
         AutoMigration(from = 13, to = 14),
         // 15: защищённые папки заметок
         AutoMigration(from = 14, to = 15),
+        // 16: сохранение кликера — новая таблица
+        AutoMigration(from = 15, to = 16),
     ],
     exportSchema = true,
 )
@@ -113,4 +118,5 @@ abstract class ReMemberDatabase : RoomDatabase() {
     abstract fun eventDao(): EventDao
     abstract fun workoutDao(): WorkoutDao
     abstract fun placeDao(): PlaceDao
+    abstract fun gameDao(): GameDao
 }

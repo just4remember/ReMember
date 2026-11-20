@@ -110,6 +110,7 @@ class AppContainer(context: Context) {
     val offlineMaps by lazy { OfflineMaps(appContext) }
     val moneyRepository by lazy { MoneyRepository(database) { settings.settings.value.currency } }
     val noteRepository by lazy { NoteRepository(database) }
+    val clickerStore by lazy { dev.chaik.remember.feature.games.clicker.ClickerStore(appContext, database.gameDao()) }
     val tagRepository by lazy { TagRepository(database) }
     val taskRepository by lazy { TaskRepository(database) }
     val eventRepository by lazy { EventRepository(database) }

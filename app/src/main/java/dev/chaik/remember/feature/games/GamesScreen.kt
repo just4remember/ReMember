@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Abc
 import androidx.compose.material.icons.outlined.DataArray
+import androidx.compose.material.icons.outlined.Public
+import dev.chaik.remember.feature.games.clicker.ClickerRoute
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,6 +36,7 @@ private data class GameInfo(@param:StringRes val title: Int, @param:StringRes va
 private val AllGames = listOf(
     GameInfo(R.string.game_title, R.string.game_five_letters_hint, Icons.Outlined.Abc, FiveLettersRoute),
     GameInfo(R.string.game_raskobki, R.string.game_raskobki_hint, Icons.Outlined.DataArray, RaskobkiRoute),
+    GameInfo(R.string.game_clicker, R.string.game_clicker_hint, Icons.Outlined.Public, ClickerRoute),
 )
 
 /** «Игры»: плитки игр, как плитки разделов в «Ещё». */

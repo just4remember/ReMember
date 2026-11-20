@@ -19,6 +19,8 @@ import dev.chaik.remember.feature.finance.FinanceScreen
 import dev.chaik.remember.feature.games.GamesRoute
 import dev.chaik.remember.feature.games.GamesScreen
 import dev.chaik.remember.feature.games.fiveletters.FiveLettersRoute
+import dev.chaik.remember.feature.games.clicker.ClickerRoute
+import dev.chaik.remember.feature.games.clicker.ClickerScreen
 import dev.chaik.remember.feature.games.fiveletters.FiveLettersScreen
 import dev.chaik.remember.feature.games.raskobki.RaskobkiPlayRoute
 import dev.chaik.remember.feature.games.raskobki.RaskobkiPlayScreen
@@ -163,6 +165,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<GamesRoute> { GamesScreen(onBack = backFor(it), onOpen = { route -> backStack.add(route) }) }
         entry<MapRoute> { MapScreen(onBack = backFor(it)) }
         entry<FiveLettersRoute> { FiveLettersScreen(onBack = back) }
+        entry<ClickerRoute> { ClickerScreen(onBack = back) }
         entry<RaskobkiRoute> {
             RaskobkiScreen(
                 onBack = back,
