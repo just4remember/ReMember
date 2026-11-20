@@ -498,6 +498,7 @@ private fun Sheets(
             title = stringResource(R.string.gym_finish_title),
             message = stringResource(R.string.gym_finish_message),
             onCancel = close,
+            confirmLabel = stringResource(R.string.gym_finish_confirm),
             initial = sheet.suggested,
             onSave = { kg ->
                 viewModel.finish(kg, sheet.end)

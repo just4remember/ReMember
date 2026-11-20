@@ -11,9 +11,14 @@ interface GameDao {
     @Query("SELECT * FROM clicker_save WHERE id = 1")
     suspend fun clicker(): ClickerSaveEntity?
 
+    /** Снимок игры для отладки (строка id = 2): запомнить перед проверками и вернуть после. */
+    @Query("SELECT * FROM clicker_save WHERE id = 2")
+    suspend fun clickerSnapshot(): ClickerSaveEntity?
+
     @Upsert
     suspend fun saveClicker(save: ClickerSaveEntity)
 
-    @Query("DELETE FROM clicker_save")
+    /** Сбросить игру; снимок для отладки остаётся. */
+    @Query("DELETE FROM clicker_save WHERE id = 1")
     suspend fun deleteClicker()
 }

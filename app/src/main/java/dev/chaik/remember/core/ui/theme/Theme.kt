@@ -95,15 +95,39 @@ fun AccentColor.preview(): Color? = argb?.let(::Color)
 
 /**
  * Палитра из одного цвета: оттенки по светлоте, как тона Material (40/80 — основной,
- * 90/30 — контейнеры). Нейтральные поверхности — стандартные, чтобы фон оставался спокойным.
+ * 90/30 — контейнеры). Нейтральные поверхности (фон, карточки, подложки, обводки) — почти
+ * серые с едва заметным оттенком акцента, как в Material You: со стандартными нейтральными
+ * Material, чуть сиреневыми, тёплые акценты (коричневый, оранжевый) смотрелись чужеродно.
  */
 private fun accentScheme(seed: Color, dark: Boolean): ColorScheme {
     val hsl = FloatArray(3).also { ColorUtils.colorToHSL(seed.toArgb(), it) }
     fun tone(lightness: Float, saturation: Float = hsl[1], hueShift: Float = 0f) =
         Color(ColorUtils.HSLToColor(floatArrayOf((hsl[0] + hueShift + 360f) % 360f, saturation.coerceIn(0f, 1f), lightness)))
     val muted = hsl[1] * 0.35f
+    // Насыщенность нейтральных: едва заметно, у «вариантов» (подложки, обводки) — чуть сильнее
+    val neutral = (hsl[1] * 0.12f).coerceAtMost(0.08f)
+    val neutralVariant = (hsl[1] * 0.2f).coerceAtMost(0.14f)
+    fun n(lightness: Float) = tone(lightness, neutral)
+    fun nv(lightness: Float) = tone(lightness, neutralVariant)
     return if (dark) {
         darkColorScheme(
+            background = n(0.07f),
+            onBackground = n(0.90f),
+            surface = n(0.07f),
+            onSurface = n(0.90f),
+            surfaceVariant = nv(0.27f),
+            onSurfaceVariant = nv(0.79f),
+            surfaceContainerLowest = n(0.04f),
+            surfaceContainerLow = n(0.09f),
+            surfaceContainer = n(0.11f),
+            surfaceContainerHigh = n(0.14f),
+            surfaceContainerHighest = n(0.17f),
+            surfaceDim = n(0.07f),
+            surfaceBright = n(0.21f),
+            inverseSurface = n(0.90f),
+            inverseOnSurface = n(0.19f),
+            outline = nv(0.57f),
+            outlineVariant = nv(0.30f),
             primary = tone(0.78f),
             onPrimary = tone(0.18f),
             primaryContainer = tone(0.30f),
@@ -119,6 +143,23 @@ private fun accentScheme(seed: Color, dark: Boolean): ColorScheme {
         )
     } else {
         lightColorScheme(
+            background = n(0.985f),
+            onBackground = n(0.11f),
+            surface = n(0.985f),
+            onSurface = n(0.11f),
+            surfaceVariant = nv(0.90f),
+            onSurfaceVariant = nv(0.30f),
+            surfaceContainerLowest = n(1.0f),
+            surfaceContainerLow = n(0.965f),
+            surfaceContainer = n(0.948f),
+            surfaceContainerHigh = n(0.93f),
+            surfaceContainerHighest = n(0.91f),
+            surfaceDim = n(0.86f),
+            surfaceBright = n(0.985f),
+            inverseSurface = n(0.19f),
+            inverseOnSurface = n(0.95f),
+            outline = nv(0.48f),
+            outlineVariant = nv(0.80f),
             primary = tone(0.42f),
             onPrimary = Color.White,
             primaryContainer = tone(0.90f),

@@ -475,7 +475,11 @@
     <string name="gym_end_time">End</string>
     <string name="gym_finish">Finish workout</string>
     <string name="gym_finish_title">Finish the workout?</string>
-    <string name="gym_finish_message">Enter your weight after the workout or skip. Changed your mind? Tap Cancel and the workout goes on</string>
+    <string name="gym_finish_message">Enter your weight after the workout — you can leave it empty. Changed your mind? Tap Cancel and the workout goes on</string>
+    <string name="gym_finish_confirm">Finish</string>
+    <string name="gym_start_title">Start a workout?</string>
+    <string name="gym_start_message">Enter your weight before the workout — you can leave it empty</string>
+    <string name="gym_start_confirm">Start</string>
     <string name="gym_add_exercise">Exercise</string>
     <string name="gym_add_set">Set</string>
     <string name="gym_new_exercise">New exercise</string>
@@ -836,6 +840,9 @@
     <string name="appearance_left_handed">Left-handed mode</string>
     <string name="appearance_left_handed_hint">Buttons in the bottom corners are placed on the left, the master button menu opens to the right</string>
     <string name="appearance_back_swipe">“Back” swipe</string>
+    <string name="appearance_spoiler">Hidden text</string>
+    <string name="appearance_spoiler_particles">Shimmering particles</string>
+    <string name="appearance_spoiler_bar">Solid bar</string>
     <string name="appearance_back_rtl">Right to left</string>
     <string name="appearance_back_ltr">Left to right</string>
     <string name="appearance_back_both">Both directions</string>
@@ -1135,6 +1142,11 @@
     <string name="clicker_debug_coins">+ an hour of income</string>
     <string name="clicker_debug_goal">Reach goal</string>
     <string name="clicker_debug_reset">Reset game</string>
+    <string name="clicker_debug_snapshot">Remember game</string>
+    <string name="clicker_debug_restore">Restore game</string>
+    <string name="clicker_debug_restore_text">The game returns to the remembered snapshot. Everything after it is lost. The diary is not affected</string>
+    <string name="clicker_debug_reset_meta">Reset meta progress</string>
+    <string name="clicker_debug_reset_meta_text">Stardust, upgrades, run count and debug income and tap bonuses are reset. Coins, cards and level stay</string>
     <string name="game_raskobki_error">Couldn\'t load the puzzle. Check your connection</string>
     <string name="game_raskobki_retry">Retry</string>
     <string name="raskobki_sign_in">Sign in</string>

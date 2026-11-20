@@ -59,6 +59,7 @@ import dev.chaik.remember.core.editor.correctionLine
 import dev.chaik.remember.core.settings.AccentColor
 import dev.chaik.remember.core.settings.AppFont
 import dev.chaik.remember.core.settings.BackSwipe
+import dev.chaik.remember.core.settings.SpoilerStyle
 import dev.chaik.remember.core.settings.GAP_MAX
 import dev.chaik.remember.core.settings.GAP_STEP
 import dev.chaik.remember.core.settings.INDENT_MAX
@@ -224,6 +225,20 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                         label = stringResource(label),
                         selected = settings.backSwipe == direction,
                         onClick = { store.update { it.copy(backSwipe = direction) } },
+                    )
+                }
+            }
+
+            SettingsGroupTitle(stringResource(R.string.appearance_spoiler))
+            SettingsCard {
+                listOf(
+                    SpoilerStyle.PARTICLES to R.string.appearance_spoiler_particles,
+                    SpoilerStyle.BAR to R.string.appearance_spoiler_bar,
+                ).forEach { (style, label) ->
+                    SettingsRadioRow(
+                        label = stringResource(label),
+                        selected = settings.spoilerStyle == style,
+                        onClick = { store.update { it.copy(spoilerStyle = style) } },
                     )
                 }
             }

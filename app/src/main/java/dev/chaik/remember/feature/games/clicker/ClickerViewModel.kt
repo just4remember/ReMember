@@ -199,6 +199,44 @@ class ClickerViewModel(private val store: ClickerStore) : ViewModel() {
         if (missing > 0) state = state.copy(coins = state.coins + missing, earned = state.earned + missing)
     }
 
+    /** Снимок игры есть — его можно вернуть. */
+    var hasSnapshot by mutableStateOf(false)
+        private set
+
+    init {
+        viewModelScope.launch { hasSnapshot = store.loadSnapshot() != null }
+    }
+
+    /** Запомнить игру как есть — перед проверками с читами. */
+    fun debugSnapshot() {
+        val snapshot = state
+        viewModelScope.launch {
+            withContext(NonCancellable) { store.saveSnapshot(snapshot, System.currentTimeMillis()) }
+            hasSnapshot = true
+        }
+    }
+
+    /**
+     * Вернуть запомненную игру. Время, прошедшее со снимка, не начисляется — игра ровно
+     * такая, какой была.
+     */
+    fun debugRestoreSnapshot() {
+        viewModelScope.launch {
+            val snapshot = store.loadSnapshot() ?: return@launch
+            state = snapshot.state
+            save()
+        }
+    }
+
+    /**
+     * Сбросить мета-прогресс: звёздную пыль, улучшения, счёт прохождений и отладочные прибавки.
+     * Коины, карточки и уровень остаются.
+     */
+    fun debugResetMeta() {
+        state = state.copy(runs = 0, stardust = 0, perks = emptyMap(), debugIncome = 0.0, debugTap = 0.0, goalSeen = false)
+        save()
+    }
+
     fun debugReset() {
         state = ClickerState()
         viewModelScope.launch { store.reset() }

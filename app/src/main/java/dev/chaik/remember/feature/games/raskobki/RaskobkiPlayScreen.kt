@@ -1,10 +1,10 @@
 package dev.chaik.remember.feature.games.raskobki
 
+import dev.chaik.remember.core.ui.components.SPOILER_PLACEHOLDER
+import dev.chaik.remember.core.ui.components.spoiler
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import dev.chaik.remember.core.settings.LocalAppSettings
 import android.content.Intent
 import android.os.SystemClock
@@ -607,12 +607,13 @@ private fun assembledClue(node: RaskobkiNode, state: RaskobkiState): String =
 private fun ResultRow(label: String, value: String, hidden: Boolean = false) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-        Text(value, fontWeight = FontWeight.Bold, modifier = Modifier.hiddenIf(hidden))
+        // Скрытое — заготовкой одной длины, а не самим значением
+        Text(if (hidden) SPOILER_PLACEHOLDER else value, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.hiddenIf(hidden))
     }
 }
 
-/** Размыть цифру результата так, чтобы её нельзя было прочитать. */
-private fun Modifier.hiddenIf(hidden: Boolean): Modifier =
-    if (hidden) blur(10.dp, BlurredEdgeTreatment.Unbounded).clearAndSetSemantics {} else this
+/** Скрыть цифру результата спойлером — «пылью», под которой её не прочитать. */
+@Composable
+private fun Modifier.hiddenIf(hidden: Boolean): Modifier = spoiler(hidden)
 
 private fun raskobkiTime(seconds: Long): String = "%02d:%02d".format(seconds / 60, seconds % 60)

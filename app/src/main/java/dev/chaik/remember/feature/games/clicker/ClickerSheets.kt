@@ -371,7 +371,7 @@ private fun CardTile(card: CardDef, viewModel: ClickerViewModel, engine: Clicker
                         .background(if (open) colors.secondaryContainer else colors.surfaceContainerHighest),
                 ) {
                     if (open) {
-                        Icon(categoryIcon(card.category), null, tint = colors.onSecondaryContainer, modifier = Modifier.size(22.dp))
+                        CardPicture(card, iconSize = 22.dp)
                     } else {
                         Icon(Icons.Outlined.Lock, null, tint = colors.error, modifier = Modifier.size(22.dp))
                     }
@@ -472,7 +472,7 @@ private fun CardDialog(card: CardDef, viewModel: ClickerViewModel, engine: Click
                             .size(56.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(colors.secondaryContainer),
-                    ) { Icon(categoryIcon(card.category), null, tint = colors.onSecondaryContainer, modifier = Modifier.size(30.dp)) }
+                    ) { CardPicture(card, iconSize = 30.dp) }
                     Text(card.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
                     Text(stringResource(R.string.clicker_level_short, level), style = MaterialTheme.typography.labelLarge, color = colors.onSurfaceVariant)
 
@@ -730,4 +730,24 @@ fun GoalReachedDialog(viewModel: ClickerViewModel, engine: ClickerEngine) {
         },
         dismissButton = { TextButton(onClick = viewModel::dismissGoalReached) { Text(stringResource(R.string.clicker_later)) } },
     )
+}
+
+/**
+ * Картинка карточки из набора (assets/clicker/images/<image>) — на всю ячейку; нет картинки
+ * (или она не загрузилась) — иконка категории.
+ */
+@Composable
+private fun CardPicture(card: CardDef, iconSize: androidx.compose.ui.unit.Dp) {
+    val image = card.image
+    if (image.isNullOrBlank()) {
+        Icon(categoryIcon(card.category), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(iconSize))
+    } else {
+        coil3.compose.SubcomposeAsyncImage(
+            model = "file:///android_asset/clicker/images/$image",
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            error = { Icon(categoryIcon(card.category), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(iconSize)) },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }

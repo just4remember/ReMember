@@ -1,5 +1,7 @@
 package dev.chaik.remember.feature.network
 
+import dev.chaik.remember.core.ui.components.SPOILER_PLACEHOLDER
+import dev.chaik.remember.core.ui.components.spoiler
 import dev.chaik.remember.core.ui.releaseFocus
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -28,8 +30,6 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Wifi
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -507,10 +507,12 @@ private fun IpLine(label: String, ip: String, visible: Boolean) {
     Column {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
-            text = ip,
+            // Скрытый адрес — заготовкой одной длины: по спойлеру не угадать, IPv4 это или IPv6
+            text = if (visible) ip else SPOILER_PLACEHOLDER,
+            maxLines = 1,
             // IPv6 длинный: поменьше шрифт, чтобы по возможности влез в строку
-            style = if (':' in ip) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
-            modifier = if (visible) Modifier else Modifier.blur(10.dp, BlurredEdgeTreatment.Unbounded),
+            style = if (visible && ':' in ip) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
+            modifier = Modifier.spoiler(hidden = !visible),
         )
     }
 }

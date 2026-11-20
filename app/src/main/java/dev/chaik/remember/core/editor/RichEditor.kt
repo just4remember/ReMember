@@ -1,5 +1,8 @@
 package dev.chaik.remember.core.editor
 
+import dev.chaik.remember.core.settings.SpoilerStyle
+import dev.chaik.remember.core.ui.components.rememberSpoilerTime
+import dev.chaik.remember.core.ui.components.drawSpoiler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.Dp
@@ -326,6 +329,11 @@ private fun TextBlockField(
         emptyList()
     }
     val shownHighlighter = remember(highlighter, active, revealed) { highlighter.withInline(active, revealed) }
+    // Закрытые спойлеры — «пыль» поверх строк вместо букв; часы анимации — только если они есть
+    val hiddenSpoilers = spans.filterIsInstance<SpoilerSpan>().filter { it.range !in active && it.text !in revealed }
+    val spoilerStyle = settings.spoilerStyle
+    val spoilerTime = if (hiddenSpoilers.isNotEmpty() && spoilerStyle == SpoilerStyle.PARTICLES) rememberSpoilerTime() else null
+    val spoilerColor = MaterialTheme.colorScheme.onSurface
     val context = LocalContext.current
     val boxColor = MaterialTheme.colorScheme.primary
     val ruleColor = MaterialTheme.colorScheme.outlineVariant
@@ -381,6 +389,13 @@ private fun TextBlockField(
                     }
                     spans.filterIsInstance<CheckboxSpan>().filter { it.range !in active }.forEach { box ->
                         drawCheckbox(result, mapping.originalToTransformed(box.range.first), box.checked, boxColor, checkColor)
+                    }
+                    hiddenSpoilers.forEachIndexed { i, spoiler ->
+                        val from = mapping.originalToTransformed(spoiler.content.first)
+                        val to = mapping.originalToTransformed(spoiler.content.last + 1)
+                        spoilerLines(result, from, to).forEachIndexed { line, rect ->
+                            drawSpoiler(rect, spoilerTime?.value ?: 0f, spoilerColor, seed = i * 31 + line, style = spoilerStyle)
+                        }
                     }
                     if (!undoEnabled || underline == null) return@drawBehind
                     corrections.forEach {
@@ -1081,4 +1096,19 @@ private fun PhotoAlign.toAlignment(): Alignment = when (this) {
     PhotoAlign.Start -> Alignment.TopStart
     PhotoAlign.Center -> Alignment.TopCenter
     PhotoAlign.End -> Alignment.TopEnd
+}
+
+/** Прямоугольники строк, которые занимает текст [from]..[to] (для «пыли» спойлера). */
+private fun spoilerLines(layout: androidx.compose.ui.text.TextLayoutResult, from: Int, to: Int): List<androidx.compose.ui.geometry.Rect> {
+    val length = layout.layoutInput.text.length
+    val start = from.coerceIn(0, length)
+    val end = to.coerceIn(start, length)
+    if (end <= start) return emptyList()
+    val first = layout.getLineForOffset(start)
+    val last = layout.getLineForOffset(end - 1)
+    return (first..last).map { line ->
+        val left = if (line == first) layout.getHorizontalPosition(start, usePrimaryDirection = true) else layout.getLineLeft(line)
+        val right = if (line == last) layout.getHorizontalPosition(end, usePrimaryDirection = true) else layout.getLineRight(line)
+        androidx.compose.ui.geometry.Rect(minOf(left, right), layout.getLineTop(line), maxOf(left, right), layout.getLineBottom(line))
+    }
 }

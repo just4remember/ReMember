@@ -393,6 +393,24 @@ private fun levelName(level: Int): Int = when (level) {
 
 @Composable
 private fun DebugMenu(viewModel: ClickerViewModel, expanded: Boolean, onDismiss: () -> Unit) {
+    // Необратимое — после подтверждения
+    var confirm by remember { mutableStateOf<Int?>(null) }
+    confirm?.let { what ->
+        AlertDialog(
+            onDismissRequest = { confirm = null },
+            title = { Text(stringResource(what)) },
+            text = {
+                Text(stringResource(if (what == R.string.clicker_debug_restore) R.string.clicker_debug_restore_text else R.string.clicker_debug_reset_meta_text))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (what == R.string.clicker_debug_restore) viewModel.debugRestoreSnapshot() else viewModel.debugResetMeta()
+                    confirm = null
+                }) { Text(stringResource(R.string.action_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         @Composable
         fun item(label: Int, action: () -> Unit) {
@@ -409,6 +427,9 @@ private fun DebugMenu(viewModel: ClickerViewModel, expanded: Boolean, onDismiss:
         item(R.string.clicker_debug_give_tap, viewModel::debugGiveTap)
         item(R.string.clicker_debug_coins, viewModel::debugCoins)
         item(R.string.clicker_debug_goal, viewModel::debugReachGoal)
+        item(R.string.clicker_debug_snapshot, viewModel::debugSnapshot)
+        if (viewModel.hasSnapshot) item(R.string.clicker_debug_restore) { confirm = R.string.clicker_debug_restore }
+        item(R.string.clicker_debug_reset_meta) { confirm = R.string.clicker_debug_reset_meta }
         item(R.string.clicker_debug_reset, viewModel::debugReset)
     }
 }

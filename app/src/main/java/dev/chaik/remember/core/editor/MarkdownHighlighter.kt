@@ -1,7 +1,6 @@
 package dev.chaik.remember.core.editor
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -164,7 +163,7 @@ class MarkdownHighlighter(
             addStyle(markers, end - span.marker, end)
         }
 
-        // Ссылки раньше спойлеров: ссылка под спойлером тоже должна быть размыта
+        // Ссылки раньше спойлеров: ссылка под спойлером тоже должна быть скрыта
         spans.filterIsInstance<LinkSpan>().forEach { link ->
             addStyle(SpanStyle(color = accentColor, textDecoration = TextDecoration.Underline), link.label.first, link.label.last + 1)
             markup(link.range, link.label, if (link.range in active) marker else HiddenMarkup)
@@ -175,8 +174,8 @@ class MarkdownHighlighter(
                 val look = if (spoiler.text in revealed) {
                     SpanStyle(background = accentColor.copy(alpha = 0.14f))
                 } else {
-                    // Прозрачные буквы и их размытая тень. Непрозрачный цвет тень взяла бы от букв и исчезла
-                    SpanStyle(color = Color.Transparent, shadow = Shadow(textColor.copy(alpha = 0.99f), blurRadius = BLUR_RADIUS))
+                    // Прозрачные буквы; на их месте редактор рисует «пыль» (см. drawSpoiler)
+                    SpanStyle(color = Color.Transparent)
                 }
                 addStyle(look, spoiler.content.first, spoiler.content.last + 1)
             }
@@ -202,7 +201,6 @@ class MarkdownHighlighter(
     private companion object {
         /** Разметка не занимает места, но остаётся в тексте: позиции курсора не сдвигаются. */
         val HiddenMarkup = SpanStyle(color = Color.Transparent, fontSize = 0.sp)
-        const val BLUR_RADIUS = 28f
 
         /** Шрифт зазора — крошечный, чтобы высоту задавал только [gapParagraph]. */
         val GapStyle = SpanStyle(fontSize = 0.02.em)

@@ -337,10 +337,13 @@ fun GymScreen(
             viewModel.start(startedAt, weight, onOpen)
         }
         BodyWeightDialog(
-            title = stringResource(R.string.gym_weight_before),
+            title = stringResource(R.string.gym_start_title),
+            message = stringResource(R.string.gym_start_message),
             initial = lastWeight,
             onSave = { start(it) },
             onSkip = { start(null) },
+            onCancel = { starting = null },
+            confirmLabel = stringResource(R.string.gym_start_confirm),
         )
     }
 

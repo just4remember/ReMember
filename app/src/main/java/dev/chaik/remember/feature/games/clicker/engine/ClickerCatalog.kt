@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.games.clicker.engine
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -74,6 +75,8 @@ data class CardDef(
      */
     val availableFrom: Long? = null,
     val availableUntil: Long? = null,
+    /** Картинка вместо иконки категории: файл в assets/clicker/images/; null — иконка. */
+    val image: String? = null,
 ) {
     /** Продаётся ли сейчас: у обычной карточки срока нет. */
     fun onSale(nowSeconds: Long?): Boolean {
@@ -186,7 +189,13 @@ data class ClickerCatalog(
     val cardsById: Map<String, CardDef> by lazy { cards.associateBy { it.id } }
 
     companion object {
-        private val json = Json { ignoreUnknownKeys = true }
+        // Набор правится руками: в нём можно писать комментарии и лишнюю запятую в конце
+        @OptIn(ExperimentalSerializationApi::class)
+        private val json = Json {
+            ignoreUnknownKeys = true
+            allowComments = true
+            allowTrailingComma = true
+        }
 
         fun parse(text: String): ClickerCatalog = json.decodeFromString(serializer(), text)
     }

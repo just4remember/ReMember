@@ -38,7 +38,17 @@ class ClickerStore(private val context: Context, private val dao: GameDao) {
 
     suspend fun reset() = dao.deleteClicker()
 
+    /** Отладка: запомнить состояние игры отдельно от сохранения (и от резервной копии дневника). */
+    suspend fun saveSnapshot(state: ClickerState, at: Long) {
+        dao.saveClicker(ClickerSaveEntity(id = SNAPSHOT_ID, state = json.encodeToString(ClickerState.serializer(), state), savedAt = at))
+    }
+
+    suspend fun loadSnapshot(): Save? = dao.clickerSnapshot()?.let { row ->
+        runCatching { Save(json.decodeFromString(ClickerState.serializer(), row.state), row.savedAt) }.getOrNull()
+    }
+
     private companion object {
         const val CATALOG = "clicker/cards.json"
+        const val SNAPSHOT_ID = 2
     }
 }

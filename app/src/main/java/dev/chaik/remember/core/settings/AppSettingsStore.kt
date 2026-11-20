@@ -34,6 +34,7 @@ class AppSettingsStore(context: Context) {
             customAccent = prefs.getLong("custom_accent", d.customAccent),
             leftHanded = prefs.getBoolean("left_handed", d.leftHanded),
             backSwipe = enumOr(prefs.getString("back_swipe", null), d.backSwipe),
+            spoilerStyle = enumOr(prefs.getString("spoiler_style", null), d.spoilerStyle),
             timePicker = enumOr(prefs.getString("time_picker", null), d.timePicker),
             font = enumOr(prefs.getString("font", null), d.font),
             welcome = prefs.getBoolean("welcome", d.welcome),
@@ -81,6 +82,7 @@ class AppSettingsStore(context: Context) {
         putLong("custom_accent", s.customAccent)
         putBoolean("left_handed", s.leftHanded)
         putString("back_swipe", s.backSwipe.name)
+        putString("spoiler_style", s.spoilerStyle.name)
         putString("time_picker", s.timePicker.name)
         putString("font", s.font.name)
         putBoolean("welcome", s.welcome)

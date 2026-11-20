@@ -20,6 +20,8 @@ data class AppSettings(
     /** Кнопки в нижних углах — слева, веер мастеркнопки раскрывается вправо. */
     val leftHanded: Boolean = false,
     val backSwipe: BackSwipe = BackSwipe.RIGHT_TO_LEFT,
+    /** Как выглядит скрытый текст (спойлер). */
+    val spoilerStyle: SpoilerStyle = SpoilerStyle.PARTICLES,
     val timePicker: TimePickerStyle = TimePickerStyle.DIAL,
     val font: AppFont = AppFont.SYSTEM,
     /** Приветствие при запуске (после PIN). */
@@ -124,6 +126,9 @@ enum class AccentColor(val argb: Long?) {
 
 /** Каким свайпом закрывается вложенная страница. */
 enum class BackSwipe { RIGHT_TO_LEFT, LEFT_TO_RIGHT, BOTH }
+
+/** Вид спойлера: мерцающие частицы (как в Телеграме) или сплошная полоса (как в рассекреченных документах). */
+enum class SpoilerStyle { PARTICLES, BAR }
 
 /** Границы длительности приветствия и шаг ползунка, мс. */
 const val WELCOME_MIN = 300

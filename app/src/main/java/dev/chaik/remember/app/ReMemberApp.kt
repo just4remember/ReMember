@@ -259,8 +259,10 @@ private fun MainScaffold(ready: Boolean) {
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = IslandBottomMargin),
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut(),
+            // Только выезд, без проявления: пока прозрачность меньше 1, Android рисует островок
+            // через промежуточный слой, и тень у него на это время прямоугольная
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
         ) {
             FloatingIsland(
                 tabs = tabs,

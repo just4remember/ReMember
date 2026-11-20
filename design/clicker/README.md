@@ -7,17 +7,20 @@
 | Что | Где |
 |---|---|
 | Движок (правила, без Android) | `app/src/main/java/.../feature/games/clicker/engine/` |
-| Набор карточек и улучшений | `app/src/main/assets/clicker/cards.json` — генерируется, руками не правится |
-| Генератор набора | `design/clicker/generate_cards.py` — параметры баланса и список улучшений в начале файла |
+| **Набор карточек — правится вручную** | `app/src/main/assets/clicker/cards.json` — карточки, категории, правила, уровни планеты, улучшения за пыль; описание полей — в комментариях в начале файла |
+| Картинки карточек | `app/src/main/assets/clicker/images/` — имя файла в поле `image` карточки |
 | Симулятор и отчёт | `app/src/test/java/.../feature/games/clicker/` |
 | Отчёт с графиками | `app/build/reports/clicker/balance.html` после прогона |
+| Старый генератор (справка, не используется) | `design/clicker/legacy/generate_cards.py` — пишет только в `legacy/generated.json` |
+
+После правки набора — проверить баланс:
 
 ```
-python design/clicker/generate_cards.py
 gradlew testDebugUnitTest --tests "*ClickerBalanceSimulation*" --rerun
 ```
 
-Тест баланса падает, если основной игрок проходит не за 280–420 активных часов.
+Тест падает, если основной игрок проходит не за 280–420 активных часов. `id` карточек
+не менять: по ним хранится прогресс игрока.
 
 ## Механика
 

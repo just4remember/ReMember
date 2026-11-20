@@ -1,5 +1,9 @@
 """
-Генератор набора карточек кликера: по параметрам баланса выписывает
+СТАРЫЙ ГЕНЕРАТОР — больше не используется: набор карточек теперь правится вручную
+в app/src/main/assets/clicker/cards.json. Скрипт оставлен как справка по формулам первого
+баланса и пишет только в design/clicker/legacy/generated.json — набор приложения не трогает.
+
+Был: генератор набора карточек кликера: по параметрам баланса выписывал
 app/src/main/assets/clicker/cards.json. Запуск: python design/clicker/generate_cards.py [key=value ...]
 Параметры подбираются симулятором (ClickerBalanceSimulation в юнит-тестах).
 
@@ -136,7 +140,8 @@ if __name__ == "__main__":
         k, v = arg.split("=")
         P[k] = type(P[k])(v)
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    out = os.path.join(root, "app", "src", "main", "assets", "clicker", "cards.json")
+    # Набор приложения правится вручную — сюда только для сравнения
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated.json")
     data = build(P)
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)

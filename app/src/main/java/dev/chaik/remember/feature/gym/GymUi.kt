@@ -81,10 +81,12 @@ fun BodyWeightDialog(
     onSave: (Double) -> Unit,
     onSkip: () -> Unit,
     /**
-     * Можно передумать (окно перед завершением тренировки): «Отмена», «назад» и тап мимо
+     * Окно подтверждения (начать или закончить тренировку): кнопки «Отмена» и [confirmLabel],
+     * без «Пропустить» — вес не обязателен, пустое поле = без веса. «Отмена», «назад» и тап мимо
      * окна ничего не делают. Без него закрыть окно — то же, что «Пропустить».
      */
     onCancel: (() -> Unit)? = null,
+    confirmLabel: String? = null,
     /** Пояснение над полем веса. */
     message: String? = null,
 ) {
@@ -124,11 +126,19 @@ fun BodyWeightDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = value != null, onClick = { value?.let(onSave) }) { Text(stringResource(R.string.gym_save)) }
+            if (onCancel != null) {
+                // Подтверждение: вес по желанию — пусто значит «без веса»
+                TextButton(enabled = text.isBlank() || value != null, onClick = { value?.let(onSave) ?: onSkip() }) {
+                    Text(confirmLabel ?: stringResource(R.string.gym_save))
+                }
+            } else {
+                TextButton(enabled = value != null, onClick = { value?.let(onSave) }) { Text(stringResource(R.string.gym_save)) }
+            }
         },
         dismissButton = {
-            Row {
-                onCancel?.let { TextButton(onClick = it) { Text(stringResource(R.string.action_cancel)) } }
+            if (onCancel != null) {
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
+            } else {
                 TextButton(onClick = onSkip) { Text(stringResource(R.string.gym_skip)) }
             }
         },

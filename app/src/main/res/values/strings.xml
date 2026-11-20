@@ -505,7 +505,11 @@
     <string name="gym_end_time">Конец</string>
     <string name="gym_finish">Закончить тренировку</string>
     <string name="gym_finish_title">Закончить тренировку?</string>
-    <string name="gym_finish_message">Укажите вес после тренировки или пропустите. Передумали — «Отмена», тренировка продолжится</string>
+    <string name="gym_finish_message">Укажите вес после тренировки — можно оставить пустым. Передумали — «Отмена», тренировка продолжится</string>
+    <string name="gym_finish_confirm">Закончить</string>
+    <string name="gym_start_title">Начать тренировку?</string>
+    <string name="gym_start_message">Укажите вес до тренировки — можно оставить пустым</string>
+    <string name="gym_start_confirm">Начать</string>
     <string name="gym_add_exercise">Упражнение</string>
     <string name="gym_add_set">Подход</string>
     <string name="gym_new_exercise">Новое упражнение</string>
@@ -891,6 +895,9 @@
     <string name="appearance_left_handed">Режим левши</string>
     <string name="appearance_left_handed_hint">Кнопки в нижних углах располагаются слева, меню мастеркнопки раскрывается вправо</string>
     <string name="appearance_back_swipe">Свайп «назад»</string>
+    <string name="appearance_spoiler">Скрытый текст</string>
+    <string name="appearance_spoiler_particles">Мерцающие частицы</string>
+    <string name="appearance_spoiler_bar">Сплошная полоса</string>
     <string name="appearance_back_rtl">Справа налево</string>
     <string name="appearance_back_ltr">Слева направо</string>
     <string name="appearance_back_both">В обе стороны</string>
@@ -1200,6 +1207,11 @@
     <string name="clicker_debug_coins">+ час дохода</string>
     <string name="clicker_debug_goal">До цели</string>
     <string name="clicker_debug_reset">Сбросить игру</string>
+    <string name="clicker_debug_snapshot">Запомнить игру</string>
+    <string name="clicker_debug_restore">Вернуть игру</string>
+    <string name="clicker_debug_restore_text">Игра вернётся к запомненному снимку. Всё, что было после него, пропадёт. Дневник не затрагивается</string>
+    <string name="clicker_debug_reset_meta">Сбросить мета-прогресс</string>
+    <string name="clicker_debug_reset_meta_text">Звёздная пыль, улучшения, счёт прохождений и отладочные прибавки к доходу и тапу обнулятся. Коины, карточки и уровень останутся</string>
     <string name="game_raskobki_error">Не удалось загрузить раскобку. Проверьте интернет</string>
     <string name="game_raskobki_retry">Повторить</string>
     <string name="raskobki_sign_in">Войти</string>
