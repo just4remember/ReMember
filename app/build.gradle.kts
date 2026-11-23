@@ -15,6 +15,8 @@ val secrets = Properties().apply {
 }
 fun secret(key: String): String = secrets.getProperty(key, "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
 
+val useReleaseSigning = providers.gradleProperty("useReleaseSigning").map(String::toBoolean).getOrElse(false)
+
 android {
     namespace = "dev.chaik.remember"
     compileSdk {
@@ -43,11 +45,34 @@ android {
         buildConfigField("int", "FEEDBACK_DAILY_LIMIT", feedbackLimit.toString())
     }
 
+    signingConfigs {
+        if (useReleaseSigning) {
+            val signingProperties = Properties()
+            val localProperties = rootProject.file("local.properties")
+            check(localProperties.isFile) { "Для релизной подписи нужен local.properties" }
+            localProperties.inputStream().use(signingProperties::load)
+
+            fun required(name: String): String =
+                signingProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+                    ?: error("Для релизной подписи укажите $name в local.properties")
+
+            create("localRelease") {
+                storeFile = rootProject.file(required("signing.storeFile")).also {
+                    check(it.isFile) { "Файл из signing.storeFile не найден" }
+                }
+                storePassword = required("signing.storePassword")
+                keyAlias = required("signing.keyAlias")
+                keyPassword = signingProperties.getProperty("signing.keyPassword", storePassword)
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (useReleaseSigning) signingConfig = signingConfigs.getByName("localRelease")
+        }
         release {
-            // Приложение только для себя: релиз подписываем отладочным ключом, чтобы ставить его
-            // на телефон напрямую (`gradlew installRelease`) — он заметно быстрее отладочной сборки
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (useReleaseSigning) "localRelease" else "debug")
             proguardFiles("proguard-rules.pro")
             optimization {
                 enable = true
