@@ -15,7 +15,11 @@ val secrets = Properties().apply {
 }
 fun secret(key: String): String = secrets.getProperty(key, "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
 
-val useReleaseSigning = providers.gradleProperty("useReleaseSigning").map(String::toBoolean).getOrElse(false)
+val signingProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
+}
+val useReleaseSigning = providers.gradleProperty("useReleaseSigning").map(String::toBoolean)
+    .getOrElse(signingProperties.containsKey("signing.storeFile"))
 
 android {
     namespace = "dev.chaik.remember"
@@ -47,11 +51,6 @@ android {
 
     signingConfigs {
         if (useReleaseSigning) {
-            val signingProperties = Properties()
-            val localProperties = rootProject.file("local.properties")
-            check(localProperties.isFile) { "Для релизной подписи нужен local.properties" }
-            localProperties.inputStream().use(signingProperties::load)
-
             fun required(name: String): String =
                 signingProperties.getProperty(name)?.takeIf { it.isNotBlank() }
                     ?: error("Для релизной подписи укажите $name в local.properties")

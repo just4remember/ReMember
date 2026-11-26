@@ -15,6 +15,8 @@ import dev.chaik.remember.core.editor.EditorState
 import dev.chaik.remember.core.model.Note
 import dev.chaik.remember.core.model.NoteFolder
 import dev.chaik.remember.core.model.Tag
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +85,7 @@ class NoteEditorViewModel(
         viewModelScope.launch { container.photoLibrary.removed.collect(editor::removePhotos) }
         viewModelScope.launch {
             if (noteId != 0L) {
+                container.noteMediaImports.await(noteId)
                 notes.get(noteId)?.let { note ->
                     title = note.title
                     editor.load(note.text)
@@ -105,7 +108,7 @@ class NoteEditorViewModel(
         snapshotFlow { snapshot() }
             .drop(1)
             .debounce(AUTOSAVE_DELAY_MS)
-            .collect { save(it) }
+            .collect { save() }
     }
 
     // Теги
@@ -151,21 +154,34 @@ class NoteEditorViewModel(
      * готовые появляются по одному, не дожидаясь остальных.
      */
     fun addPhotos(uris: List<Uri>) {
+        if (!isLoaded || deleted || isImporting) return
         // Выбор отменили — beginImport сбросит и цель «добавить в галерею»
         val handle = editor.beginImport(uris.size) ?: return
-        viewModelScope.launch {
-            isImporting = true
+        isImporting = true
+        container.noteMediaImports.start(uris, noteId = { id }) {
             var failed = 0
-            uris.zip(handle.items).forEach { (uri, item) ->
-                editor.setImportProgress(item, 0f)
-                val photo = runCatching { photos.import(uri) { editor.setImportProgress(item, it) } }
-                    .onFailure { Log.w(TAG, "Не удалось добавить фото $uri", it) }
-                    .getOrNull()
-                if (photo == null) failed++
-                editor.finishImport(handle, item, photo)
+            try {
+                for ((uri, item) in uris.zip(handle.items)) {
+                    if (deleted) break
+                    editor.setImportProgress(item, 0f)
+                    val photo = try {
+                        photos.import(uri) { editor.setImportProgress(item, it) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Не удалось добавить медиа", e)
+                        failed++
+                        null
+                    }
+                    editor.finishImport(handle, item, photo)
+                    save()
+                }
+            } finally {
+                // При остановке импорта убрать только незавершённые элементы.
+                handle.items.forEach { editor.finishImport(handle, it, null) }
+                failedImports = failed
+                isImporting = false
             }
-            failedImports = failed
-            isImporting = false
         }
     }
 
@@ -177,14 +193,14 @@ class NoteEditorViewModel(
 
     /** Сохранить сейчас (уход в фон). */
     fun flush() {
-        val snapshot = snapshot()
-        container.appScope.launch { save(snapshot) }
+        container.appScope.launch(Dispatchers.Main.immediate) { save() }
     }
 
     fun delete(onDone: () -> Unit) {
         deleted = true
-        val noteId = id
-        container.appScope.launch { if (noteId != 0L) notes.delete(noteId) }
+        container.appScope.launch(Dispatchers.Main.immediate) {
+            lock.withLock { if (id != 0L) notes.delete(id) }
+        }
         onDone()
     }
 
@@ -195,7 +211,8 @@ class NoteEditorViewModel(
 
     private fun snapshot() = Snapshot(title, editor.markdown, tags, folderId, pinned, isProtected)
 
-    private suspend fun save(snapshot: Snapshot) = lock.withLock {
+    private suspend fun save() = lock.withLock {
+        val snapshot = snapshot()
         if (deleted || !isLoaded || snapshot == saved) return@withLock
         // Пустую новую заметку не создаём
         if (id == 0L && snapshot.isEmpty) return@withLock

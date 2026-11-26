@@ -147,6 +147,7 @@
         <item quantity="other">%1$d seconds</item>
     </plurals>
     <string name="editor_photo_import_failed">Couldn’t add the photo</string>
+    <string name="editor_media_importing">Adding media to a note</string>
 
     <!-- Today -->
     <string name="today_placeholder">How was your day?</string>

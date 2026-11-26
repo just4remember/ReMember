@@ -153,6 +153,7 @@
         <item quantity="other">%1$d секунды</item>
     </plurals>
     <string name="editor_photo_import_failed">Не удалось добавить фото</string>
+    <string name="editor_media_importing">Добавление медиа в заметку</string>
 
     <!-- Сегодня -->
     <string name="today_placeholder">Как прошёл день?</string>

@@ -59,6 +59,7 @@ class AppContainer(context: Context) {
      * Сюда же — сохранения, которые должны доделаться, даже если экран уже закрыт.
      */
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    internal val noteMediaImports by lazy { dev.chaik.remember.feature.notes.editor.NoteMediaImports(appContext, appScope) }
 
     val databaseKeyManager by lazy { DatabaseKeyManager(appContext) }
 
