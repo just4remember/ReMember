@@ -101,6 +101,10 @@
     <string name="editor_link_text">Text</string>
     <string name="editor_link_url">Address</string>
     <string name="editor_link_add">Insert</string>
+    <string name="editor_link_pick_place">Choose a map marker</string>
+    <string name="editor_link_place_title">Map marker</string>
+    <string name="editor_link_place_missing">This marker is no longer available</string>
+    <string name="editor_link_go">Go to map</string>
     <string name="editor_heading">Heading</string>
     <string name="editor_bullets">Bulleted list</string>
     <string name="editor_numbers">Numbered list</string>
@@ -1299,6 +1303,10 @@
     <string name="map_area_download">Download</string>
     <string name="map_pick_area">Pick an area on the map</string>
     <string name="map_search_city">Find a city</string>
+    <string name="map_search_place">Search the map</string>
+    <string name="map_search_markers_mode">Markers</string>
+    <string name="map_search_objects_mode">Map objects</string>
+    <string name="map_search_submit">Find</string>
     <string name="map_search_failed">Search failed: internet is needed</string>
     <string name="map_area_hint">Move and zoom the map: what is inside the frame will be downloaded</string>
     <string name="map_area_size">About %1$s in the frame, all data down to individual buildings will be downloaded</string>

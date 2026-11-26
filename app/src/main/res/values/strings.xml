@@ -101,6 +101,10 @@
     <string name="editor_link_text">Текст</string>
     <string name="editor_link_url">Адрес</string>
     <string name="editor_link_add">Вставить</string>
+    <string name="editor_link_pick_place">Выбрать метку на карте</string>
+    <string name="editor_link_place_title">Метка на карте</string>
+    <string name="editor_link_place_missing">Эта метка больше недоступна</string>
+    <string name="editor_link_go">Перейти</string>
     <string name="editor_heading">Заголовок</string>
     <string name="editor_bullets">Список</string>
     <string name="editor_numbers">Нумерованный список</string>
@@ -1366,6 +1370,10 @@
     <string name="map_area_download">Скачать</string>
     <string name="map_pick_area">Выбрать область на карте</string>
     <string name="map_search_city">Найти город</string>
+    <string name="map_search_place">Поиск по карте</string>
+    <string name="map_search_markers_mode">Метки</string>
+    <string name="map_search_objects_mode">Объекты на карте</string>
+    <string name="map_search_submit">Найти</string>
     <string name="map_search_failed">Не удалось найти: нужен интернет</string>
     <string name="map_area_hint">Двигайте и масштабируйте карту: скачается то, что в рамке</string>
     <string name="map_area_size">В рамке примерно %1$s, будут скачаны все данные вплоть до отдельных домов</string>

@@ -182,6 +182,7 @@ fun RichEditor(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
     onAddMedia: (() -> Unit)? = null,
+    onOpenPlace: ((Long) -> Unit)? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val style = textStyle.copy(color = colors.onSurface)
@@ -191,6 +192,33 @@ fun RichEditor(
     }
 
     if (state.linkDialogOpen) LinkDialog(state)
+    if (onOpenPlace != null && state.placeLinkPickerOpen) {
+        PlaceLinkPicker(
+            onDismiss = { state.placeLinkPickerOpen = false },
+            onPick = { place, name ->
+                state.format { value ->
+                    val label = value.text.substring(value.selection.min, value.selection.max)
+                        .ifBlank { name }.replace('[', '(').replace(']', ')')
+                        .replace('\n', ' ').replace('\r', ' ')
+                    MarkdownFormatting.insertLink(value, label, placeLinkUrl(place.id))
+                }
+                state.placeLinkPickerOpen = false
+            },
+        )
+    }
+    var openedPlaceLink by remember { mutableStateOf<Long?>(null) }
+    openedPlaceLink?.let { id ->
+        if (onOpenPlace != null) {
+            PlaceLinkDialog(
+                id,
+                onDismiss = { openedPlaceLink = null },
+                onOpen = {
+                    openedPlaceLink = null
+                    onOpenPlace(id)
+                },
+            )
+        }
+    }
 
     // После вставки фото курсор переходит под него — но только если клавиатура уже была в работе
     LaunchedEffect(state.focusRequestKey) {
@@ -256,6 +284,7 @@ fun RichEditor(
                         state = state,
                         style = style,
                         highlighter = highlighter,
+                        onPlaceLink = { openedPlaceLink = it },
                         // Подсказка только в пустом документе
                         placeholder = placeholder.takeIf { index == 0 && state.isEmpty },
                     )
@@ -285,6 +314,7 @@ private fun TextBlockField(
     style: TextStyle,
     highlighter: MarkdownHighlighter,
     placeholder: String?,
+    onPlaceLink: (Long) -> Unit,
 ) {
     // Строка с курсором должна оставаться над клавиатурой и панелью форматирования.
     // Поле само в прокручиваемый экран не подкручивает (оно не знает про панель) — делаем это сами
@@ -353,8 +383,13 @@ private fun TextBlockField(
             box != null -> block.edit(block.value.copy(text = InlineSpans.toggle(block.value.text, box)))
             spoiler != null && spoiler.text !in revealed -> revealed = revealed + spoiler.text
             link != null -> {
-                context.appContainer.appLock.allowExternal()
-                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, link.url.toUri())) }
+                val placeId = placeLinkId(link.url)
+                if (placeId != null) {
+                    onPlaceLink(placeId)
+                } else {
+                    context.appContainer.appLock.allowExternal()
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, link.url.toUri())) }
+                }
             }
             spoiler != null -> revealed = revealed - spoiler.text
             undoEnabled -> shownCorrection = corrections.firstOrNull { offset in it.start..it.end }

@@ -169,7 +169,7 @@ fun SearchScreen(onBack: (() -> Unit)?, onOpen: (NavKey) -> Unit, modifier: Modi
             is SearchTarget.Task -> onOpen(TaskEditorRoute(target.id))
             is SearchTarget.Event -> onOpen(EventEditorRoute(eventId = target.id))
             is SearchTarget.Workout -> onOpen(WorkoutRoute(target.id))
-            SearchTarget.Map -> onOpen(MapRoute)
+            SearchTarget.Map -> onOpen(MapRoute())
         }
     }
 

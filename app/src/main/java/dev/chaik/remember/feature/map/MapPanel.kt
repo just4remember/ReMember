@@ -1,5 +1,6 @@
 package dev.chaik.remember.feature.map
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +24,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Tune
@@ -39,16 +42,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chaik.remember.R
 import dev.chaik.remember.core.map.CityDownload
+import dev.chaik.remember.core.map.MapSearchResult
 import dev.chaik.remember.core.map.OfflineMaps
 import dev.chaik.remember.core.model.Place
 import dev.chaik.remember.core.model.PlaceCategory
@@ -65,13 +72,26 @@ internal fun MapPanel(
     places: List<Place>,
     hidden: Set<Long>,
     download: CityDownload?,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    searchObjects: Boolean,
+    onSearchModeChange: (Boolean) -> Unit,
+    searchFocusRequest: Int,
+    canOpenSearchResult: Boolean,
+    onOpenSearchResult: (MapSearchResult) -> Unit,
     onToggle: (Long) -> Unit,
     onManage: () -> Unit,
     onOpen: (Place) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    fun setExpanded(value: Boolean) {
+        if (!value) focusManager.clearFocus()
+        onExpandedChange(value)
+    }
+    val onDragExpanded by rememberUpdatedState(::setExpanded)
+    BackHandler(enabled = expanded) { setExpanded(false) }
     val byId = remember(categories) { categories.associateBy { it.id } }
     val hasUncategorized = places.any { it.categoryId == null || it.categoryId !in byId }
 
@@ -88,11 +108,11 @@ internal fun MapPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
-                    .clickable(interactionSource = null, indication = null) { expanded = !expanded }
+                    .clickable(interactionSource = null, indication = null) { setExpanded(!expanded) }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures { _, dragAmount ->
-                            if (dragAmount < -8) expanded = true
-                            if (dragAmount > 8) expanded = false
+                            if (dragAmount < -8) onDragExpanded(true)
+                            if (dragAmount > 8) onDragExpanded(false)
                         }
                     },
             ) {
@@ -136,40 +156,35 @@ internal fun MapPanel(
                 }
             }
             AnimatedVisibility(expanded) {
-                val found = remember(places, hidden, query, byId) {
-                    val text = query.trim()
-                    places
-                        .filter { (it.categoryId?.takeIf { id -> id in byId } ?: OfflineMaps.NO_CATEGORY) !in hidden }
-                        .filter { text.isEmpty() || it.title.contains(text, ignoreCase = true) || it.note.contains(text, ignoreCase = true) }
-                        .sortedWith(compareByDescending<Place> { it.visitedOn }.thenByDescending { it.id })
-                }
                 Column(Modifier.padding(top = 8.dp)) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text(stringResource(R.string.place_search)) },
-                        leadingIcon = { Icon(Icons.Outlined.Search, null) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    )
-                    if (found.isEmpty()) {
-                        Text(
-                            stringResource(R.string.place_list_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(20.dp),
+                    Row(
+                        Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = !searchObjects,
+                            onClick = { onSearchModeChange(false) },
+                            label = { Text(stringResource(R.string.map_search_markers_mode)) },
+                        )
+                        FilterChip(
+                            selected = searchObjects,
+                            onClick = { onSearchModeChange(true) },
+                            label = { Text(stringResource(R.string.map_search_objects_mode)) },
                         )
                     }
-                    LazyColumn(
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        modifier = Modifier.heightIn(max = 320.dp),
-                    ) {
-                        items(found, key = { it.id }) { place ->
-                            PlaceRow(place, byId[place.categoryId]) {
-                                expanded = false
-                                onOpen(place)
-                            }
+                    if (searchObjects) {
+                        MapPlaceSearch(
+                            focusRequest = searchFocusRequest,
+                            onPick = {
+                                setExpanded(false)
+                                onOpenSearchResult(it)
+                            },
+                            canOpen = canOpenSearchResult,
+                        )
+                    } else {
+                        SavedMarkerSearch(places, hidden, byId, query, { query = it }) {
+                            setExpanded(false)
+                            onOpen(it)
                         }
                     }
                 }
@@ -177,6 +192,68 @@ internal fun MapPanel(
             if (!expanded) Box(Modifier.height(8.dp))
         }
     }
+}
+
+@Composable
+private fun SavedMarkerSearch(
+    places: List<Place>,
+    hidden: Set<Long>,
+    byId: Map<Long, PlaceCategory>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onOpen: (Place) -> Unit,
+) {
+    val found = remember(places, hidden, query, byId) {
+        val text = query.trim()
+        places
+            .filter { (it.categoryId?.takeIf { id -> id in byId } ?: OfflineMaps.NO_CATEGORY) !in hidden }
+            .filter { text.isEmpty() || it.title.contains(text, ignoreCase = true) || it.note.contains(text, ignoreCase = true) }
+            .sortedWith(compareByDescending<Place> { it.visitedOn }.thenByDescending { it.id })
+    }
+    Column {
+        MapPanelSearchField(
+            value = query,
+            onValueChange = onQueryChange,
+            hint = stringResource(R.string.place_search),
+        )
+        if (found.isEmpty()) {
+            Text(
+                stringResource(R.string.place_list_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(20.dp),
+            )
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(vertical = 8.dp),
+            modifier = Modifier.heightIn(max = 320.dp),
+        ) {
+            items(found, key = { it.id }) { place ->
+                PlaceRow(place, byId[place.categoryId]) { onOpen(place) }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun MapPanelSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    hint: String,
+    modifier: Modifier = Modifier,
+    onSearch: (() -> Unit)? = null,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(hint) },
+        leadingIcon = { Icon(Icons.Outlined.Search, null) },
+        singleLine = true,
+        shape = RoundedCornerShape(16.dp),
+        keyboardOptions = KeyboardOptions(imeAction = if (onSearch == null) ImeAction.Done else ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = onSearch?.let { action -> { action() } }),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    )
 }
 
 /** Чип категории в фильтре: значок в её цвете; [category] = null — «Без категории». */

@@ -107,6 +107,7 @@ data class NoteEditorRoute(
 fun NoteEditorScreen(
     route: NoteEditorRoute,
     onBack: () -> Unit,
+    onOpenPlace: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -287,6 +288,7 @@ fun NoteEditorScreen(
                         placeholder = stringResource(R.string.notes_text_hint),
                         modifier = Modifier.fillMaxWidth(),
                         onAddMedia = launchPicker,
+                        onOpenPlace = onOpenPlace,
                     )
                     // Пустое место под текстом: тап ставит курсор в конец заметки
                     Spacer(
@@ -324,6 +326,7 @@ fun NoteEditorScreen(
                 EditorToolbar(
                     state = editor,
                     onAddPhoto = launchPicker,
+                    showPlaceLink = true,
                 )
             }
         }

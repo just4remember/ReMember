@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.DownloadForOffline
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,7 +85,7 @@ import java.time.LocalDate
 import kotlin.coroutines.resume
 
 @Serializable
-data object MapRoute : NavKey
+data class MapRoute(val placeId: Long? = null) : NavKey
 
 private const val PLACES_SOURCE = "places"
 private const val PLACES_DOT = "places-dot"
@@ -100,7 +101,7 @@ private const val NO_CATEGORY_COLOR = 0xFF546E7A.toInt()
  * без сети (см. OfflineMaps).
  */
 @Composable
-fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier, placeId: Long? = null) {
     val context = LocalContext.current
     val container = context.appContainer
     val maps = container.offlineMaps
@@ -119,8 +120,14 @@ fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     var citiesOpen by remember { mutableStateOf(false) }
     var managingCategories by remember { mutableStateOf(false) }
     var pickingArea by remember { mutableStateOf(false) }
+    var panelExpanded by remember { mutableStateOf(false) }
+    var searchObjects by remember { mutableStateOf(false) }
+    var searchFocusRequest by remember { mutableIntStateOf(0) }
 
-    val shown = remember(places, hidden) { places.filter { (it.categoryId ?: OfflineMaps.NO_CATEGORY) !in hidden } }
+    val shown = remember(places, hidden, placeId) {
+        places.filter { it.id == placeId || (it.categoryId ?: OfflineMaps.NO_CATEGORY) !in hidden }
+    }
+    val linkedPlace = places.firstOrNull { it.id == placeId }
 
     // Пока экран открыт, а город скачан, карта не ходит в сеть
     DisposableEffect(Unit) {
@@ -199,12 +206,26 @@ fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
         val byId = categories.associateBy { it.id }
         source.setGeoJson(FeatureCollection.fromFeatures(shown.map { it.toFeature(byId[it.categoryId]) }))
     }
+    LaunchedEffect(map, linkedPlace?.id) {
+        val current = map ?: return@LaunchedEffect
+        val place = linkedPlace ?: return@LaunchedEffect
+        current.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(place.latitude, place.longitude), 16.0))
+    }
 
     ScreenScaffold(
         title = stringResource(R.string.section_map),
         modifier = modifier,
         onBack = onBack,
         actions = {
+            if (!pickingArea) {
+                IconButton(onClick = {
+                    searchObjects = true
+                    panelExpanded = true
+                    searchFocusRequest++
+                }) {
+                    Icon(Icons.Outlined.Search, stringResource(R.string.map_search_place))
+                }
+            }
             if (cities.isNotEmpty()) {
                 IconButton(onClick = { maps.setOfflineOnly(!offlineOnly) }) {
                     Icon(
@@ -242,7 +263,7 @@ fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
                     },
                 )
             } else {
-                if (places.isEmpty() && editing == null) {
+                if (places.isEmpty() && editing == null && !panelExpanded) {
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
@@ -263,6 +284,15 @@ fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
                     places = places,
                     hidden = hidden,
                     download = download,
+                    expanded = panelExpanded,
+                    onExpandedChange = { panelExpanded = it },
+                    searchObjects = searchObjects,
+                    onSearchModeChange = { searchObjects = it },
+                    searchFocusRequest = searchFocusRequest,
+                    canOpenSearchResult = current != null,
+                    onOpenSearchResult = { result ->
+                        current?.animateCamera(CameraUpdateFactory.newLatLngZoom(result.location, result.zoom))
+                    },
                     onToggle = { id -> maps.hiddenCategories.value = if (id in hidden) hidden - id else hidden + id },
                     onManage = { managingCategories = true },
                     onOpen = { place ->
@@ -288,6 +318,7 @@ fun MapScreen(onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
             download = download,
             onPickArea = {
                 citiesOpen = false
+                panelExpanded = false
                 pickingArea = true
             },
             onDismiss = { citiesOpen = false },

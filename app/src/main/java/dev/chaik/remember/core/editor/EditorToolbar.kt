@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.outlined.HorizontalRule
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.StrikethroughS
 import androidx.compose.material.icons.outlined.Title
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -66,6 +67,7 @@ fun EditorToolbar(
     state: EditorState,
     onAddPhoto: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    showPlaceLink: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -87,6 +89,13 @@ fun EditorToolbar(
                 VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
                 if (onAddPhoto != null) {
                     ToolButton(Icons.Outlined.AddPhotoAlternate, R.string.editor_add_photo, onClick = onAddPhoto)
+                }
+                if (showPlaceLink) {
+                    ToolButton(Icons.Outlined.LocationOn, R.string.editor_link_pick_place) {
+                        state.placeLinkPickerOpen = true
+                    }
+                }
+                if (onAddPhoto != null || showPlaceLink) {
                     VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp))
                 }
                 // Порядок кнопок — из «Персонализации»

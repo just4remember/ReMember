@@ -111,7 +111,12 @@ private val FabSpace = 96.dp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
+fun TodayScreen(
+    onOpenMoneyCategories: () -> Unit,
+    onOpenPlace: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     val container = context.appContainer
     val viewModel = viewModel { TodayViewModel(container) }
@@ -233,6 +238,7 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
                             photoFile = container.photoStorage::file,
                             onOpenPhotos = { ids, index -> openedPhotos = OpenedPhotos(ids, index) },
                             onAddMedia = launchPicker,
+                            onOpenPlace = onOpenPlace,
                             bottomSpace = bottomSpace,
                         )
                         TodayMode.Sleep -> {
@@ -289,6 +295,7 @@ fun TodayScreen(onOpenMoneyCategories: () -> Unit, modifier: Modifier = Modifier
                 EditorToolbar(
                     state = if (mode == TodayMode.Sleep) viewModel.sleep.dream else day.editor,
                     onAddPhoto = if (mode == TodayMode.Sleep) null else launchPicker,
+                    showPlaceLink = mode == TodayMode.Day,
                 )
             }
         }
@@ -330,6 +337,7 @@ private fun DayModeContent(
     photoFile: (String) -> File,
     onOpenPhotos: (List<String>, Int) -> Unit,
     onAddMedia: () -> Unit,
+    onOpenPlace: (Long) -> Unit,
     bottomSpace: Dp,
 ) {
     if (!day.isLoaded) return
@@ -344,6 +352,7 @@ private fun DayModeContent(
         placeholder = stringResource(R.string.today_placeholder),
         modifier = Modifier.fillMaxWidth(),
         onAddMedia = onAddMedia,
+        onOpenPlace = onOpenPlace,
     )
     // Пустое место под текстом: тап ставит курсор в конец записи
     Spacer(

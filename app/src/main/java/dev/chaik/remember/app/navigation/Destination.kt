@@ -80,7 +80,7 @@ enum class Destination(
     Network(R.string.section_network, R.string.section_network_hint, Icons.Outlined.Speed, Icons.Filled.Speed, NetworkRoute),
     Time(R.string.section_time, R.string.section_time_hint, Icons.Outlined.Alarm, Icons.Filled.Alarm, TimeRoute),
     Games(R.string.section_games, R.string.section_games_hint, Icons.Outlined.SportsEsports, Icons.Filled.SportsEsports, GamesRoute),
-    Places(R.string.section_map, R.string.section_map_hint, Icons.Outlined.Map, Icons.Filled.Map, MapRoute),
+    Places(R.string.section_map, R.string.section_map_hint, Icons.Outlined.Map, Icons.Filled.Map, MapRoute()),
 
     /** Всегда последняя плитка «Ещё», во вкладки не ставится. */
     Settings(R.string.section_settings, R.string.section_settings_hint, Icons.Outlined.Settings, Icons.Filled.Settings, SettingsRoute),

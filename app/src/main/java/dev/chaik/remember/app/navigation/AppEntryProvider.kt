@@ -106,7 +106,13 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
 
     return entryProvider {
         // Корни вкладок
-        entry<TodayRoute> { TodayScreen(onOpenMoneyCategories = { backStack.add(MoneyCategoriesRoute) }, onBack = backFor(it)) }
+        entry<TodayRoute> {
+            TodayScreen(
+                onOpenMoneyCategories = { backStack.add(MoneyCategoriesRoute) },
+                onOpenPlace = { id -> backStack.add(MapRoute(id)) },
+                onBack = backFor(it),
+            )
+        }
         entry<MoneyCategoriesRoute> { MoneyCategoriesScreen(onBack = back) }
         entry<NotesRoute> {
             NotesScreen(
@@ -126,7 +132,9 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         entry<MoreRoute> { MoreScreen(onOpen = { backStack.add(it) }) }
 
         // Вложенные страницы вкладок
-        entry<NoteEditorRoute> { NoteEditorScreen(route = it, onBack = back) }
+        entry<NoteEditorRoute> {
+            NoteEditorScreen(route = it, onBack = back, onOpenPlace = { id -> backStack.add(MapRoute(id)) })
+        }
         entry<TaskEditorRoute> { TaskEditorScreen(route = it, onBack = back) }
         entry<EventEditorRoute> { EventEditorScreen(route = it, onBack = back) }
 
@@ -163,7 +171,7 @@ fun appEntryProvider(backStack: NavBackStack<NavKey>): (NavKey) -> NavEntry<NavK
         }
         entry<AlarmEditorRoute> { AlarmEditorScreen(route = it, onBack = back) }
         entry<GamesRoute> { GamesScreen(onBack = backFor(it), onOpen = { route -> backStack.add(route) }) }
-        entry<MapRoute> { MapScreen(onBack = backFor(it)) }
+        entry<MapRoute> { MapScreen(onBack = backFor(it), placeId = it.placeId) }
         entry<FiveLettersRoute> { FiveLettersScreen(onBack = back) }
         entry<ClickerRoute> { ClickerScreen(onBack = back) }
         entry<RaskobkiRoute> {

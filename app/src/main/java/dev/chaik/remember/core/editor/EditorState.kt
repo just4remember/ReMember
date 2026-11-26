@@ -248,6 +248,7 @@ class EditorState(markdown: String = "", private val clock: () -> Long = System:
 
     /** Открыто окно ссылки. Его показывает редактор: панель исчезает вместе с клавиатурой. */
     var linkDialogOpen by mutableStateOf(false)
+    var placeLinkPickerOpen by mutableStateOf(false)
 
     /** Поставить курсор в конец последнего текстового блока (тап по пустому месту под текстом). */
     fun focusEnd() {
