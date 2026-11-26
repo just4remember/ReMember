@@ -47,6 +47,8 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Whatshot
@@ -86,6 +88,10 @@ import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.BuildConfig
 import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
+import dev.chaik.remember.core.settings.BackSwipe
+import dev.chaik.remember.core.settings.LocalAppSettings
+import dev.chaik.remember.core.ui.LocalTabVisible
+import dev.chaik.remember.core.ui.components.BackGestureLock
 import dev.chaik.remember.core.ui.components.ScreenScaffold
 import kotlinx.serialization.Serializable
 import kotlin.math.floor
@@ -132,11 +138,20 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
     var metaOpen by remember { mutableStateOf(false) }
     var debugOpen by remember { mutableStateOf(false) }
+    var swipeLocked by remember { mutableStateOf(false) }
+    val swipeEnabled = LocalAppSettings.current.backSwipe != BackSwipe.OFF
+    val gameVisible = LocalTabVisible.current
+    LaunchedEffect(gameVisible, swipeEnabled) {
+        if (!gameVisible || !swipeEnabled) swipeLocked = false
+    }
 
     ScreenScaffold(
         title = stringResource(R.string.game_clicker),
         modifier = modifier,
-        onBack = onBack,
+        onBack = {
+            swipeLocked = false
+            onBack()
+        },
         actions = {
             if (BuildConfig.DEBUG) {
                 Box {
@@ -155,6 +170,7 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         val categories = remember(engine) { engine.catalog.categories.filterNot { it.temporary || it.hidden } }
         // Главные вкладки переключаются на нижней полосе, карточки листаются в своих разделах.
         val tabs = rememberPagerState { GameTab.entries.size }
+        BackGestureLock.Hold(swipeLocked && swipeEnabled && gameVisible && tabs.settledPage == GameTab.TAP.ordinal)
         val upgrades = rememberPagerState { categories.size }
         val chaos = rememberPagerState { ChaosFilter.entries.size }
         LaunchedEffect(tabs.settledPage) {
@@ -173,7 +189,11 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 ) { page ->
                     when (GameTab.entries[page]) {
-                        GameTab.TAP -> TapTab(viewModel)
+                        GameTab.TAP -> TapTab(
+                            viewModel = viewModel,
+                            swipeLocked = swipeLocked,
+                            onToggleSwipe = if (swipeEnabled) ({ swipeLocked = !swipeLocked }) else null,
+                        )
                         GameTab.UPGRADES -> UpgradesTab(viewModel, engine, categories, upgrades)
                         GameTab.CHAOS -> ChaosTab(viewModel, engine, chaos)
                         GameTab.DAILY -> DailyTab(viewModel, engine)
@@ -230,7 +250,7 @@ fun CoinsLine(coins: Double, large: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TapTab(viewModel: ClickerViewModel) {
+private fun TapTab(viewModel: ClickerViewModel, swipeLocked: Boolean, onToggleSwipe: (() -> Unit)?) {
     val engine = viewModel.engine ?: return
     val res = LocalContext.current.resources
     val state = viewModel.state
@@ -293,24 +313,26 @@ private fun TapTab(viewModel: ClickerViewModel) {
                     .fillMaxWidth()
                     .aspectRatio(1f),
             )
+            if (onToggleSwipe != null) {
+                TapControlButton(
+                    icon = if (swipeLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
+                    label = stringResource(if (swipeLocked) R.string.clicker_swipe_unlock else R.string.clicker_swipe_lock),
+                    onClick = onToggleSwipe,
+                    active = swipeLocked,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp),
+                )
+            }
         }
 
         // Внизу: слева — прокачка тапа, справа — энергия
         var tapUpgrades by remember { mutableStateOf(false) }
         val energy = engine.energyOf(state, stats)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-            // Своя круглая кнопка: тень ровно по кругу (у IconButton она шла по невидимой рамке касания)
-            Surface(
+            TapControlButton(
+                icon = Icons.Outlined.TouchApp,
+                label = stringResource(R.string.clicker_tap_upgrades),
                 onClick = { tapUpgrades = true },
-                shape = CircleShape,
-                // Как у плиток «за тап» и т. д.
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                shadowElevation = 2.dp,
-                modifier = Modifier.size(44.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.TouchApp, stringResource(R.string.clicker_tap_upgrades)) }
-            }
+            )
             Spacer(Modifier.weight(1f))
             Icon(Icons.Outlined.Bolt, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(4.dp))
@@ -321,6 +343,27 @@ private fun TapTab(viewModel: ClickerViewModel) {
             )
         }
         if (tapUpgrades) TapUpgradesSheet(viewModel, engine, onDismiss = { tapUpgrades = false })
+    }
+}
+
+@Composable
+private fun TapControlButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (active) colors.secondaryContainer else colors.surfaceContainerHigh,
+        contentColor = if (active) colors.onSecondaryContainer else colors.onSurfaceVariant,
+        shadowElevation = 2.dp,
+        modifier = modifier.size(44.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) { Icon(icon, label) }
     }
 }
 

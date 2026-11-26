@@ -23,6 +23,7 @@ import kotlin.math.abs
 @Composable
 fun Modifier.swipeToClose(onClose: () -> Unit): Modifier {
     val mode = LocalAppSettings.current.backSwipe
+    if (mode == BackSwipe.OFF) return this
     val close by rememberUpdatedState(onClose)
     val scope = rememberCoroutineScope()
     val offset = remember { Animatable(0f) }
@@ -39,6 +40,7 @@ fun Modifier.swipeToClose(onClose: () -> Unit): Modifier {
                         BackSwipe.RIGHT_TO_LEFT -> next.coerceAtMost(0f)
                         BackSwipe.LEFT_TO_RIGHT -> next.coerceAtLeast(0f)
                         BackSwipe.BOTH -> next
+                        BackSwipe.OFF -> 0f
                     }
                     change.consume()
                     scope.launch { offset.snapTo(allowed) }

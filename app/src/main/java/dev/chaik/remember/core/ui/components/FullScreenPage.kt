@@ -82,6 +82,7 @@ fun FullScreenPage(
         BackSwipe.RIGHT_TO_LEFT -> sign < 0
         BackSwipe.LEFT_TO_RIGHT -> sign > 0
         BackSwipe.BOTH -> true
+        BackSwipe.OFF -> false
     }
 
     LaunchedEffect(Unit) {
@@ -120,6 +121,7 @@ fun FullScreenPage(
                     val flingVelocity = FlingVelocity.toPx()
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        if (mode == BackSwipe.OFF) return@awaitEachGesture
                         val tracker = VelocityTracker().apply { addPosition(down.uptimeMillis, down.position) }
 
                         // Берём жест, только если он явно вбок в разрешённую сторону; вертикальный — прокрутке ленты

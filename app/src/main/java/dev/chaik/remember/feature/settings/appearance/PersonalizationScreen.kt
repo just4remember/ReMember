@@ -220,6 +220,7 @@ fun PersonalizationScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     BackSwipe.RIGHT_TO_LEFT to R.string.appearance_back_rtl,
                     BackSwipe.LEFT_TO_RIGHT to R.string.appearance_back_ltr,
                     BackSwipe.BOTH to R.string.appearance_back_both,
+                    BackSwipe.OFF to R.string.appearance_back_off,
                 ).forEach { (direction, label) ->
                     SettingsRadioRow(
                         label = stringResource(label),

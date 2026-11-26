@@ -63,6 +63,7 @@ fun SwipeBackHost(
         BackSwipe.RIGHT_TO_LEFT -> sign < 0
         BackSwipe.LEFT_TO_RIGHT -> sign > 0
         BackSwipe.BOTH -> true
+        BackSwipe.OFF -> false
     }
 
     Box(
@@ -72,7 +73,7 @@ fun SwipeBackHost(
 
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
-                if (!isEnabled || down.uptimeMillis < lockedUntil) return@awaitEachGesture
+                if (!isEnabled || mode == BackSwipe.OFF || down.uptimeMillis < lockedUntil) return@awaitEachGesture
 
                 // Скорость считаем с самого касания: у короткого резкого свайпа
                 // почти все точки приходятся на этап распознавания направления

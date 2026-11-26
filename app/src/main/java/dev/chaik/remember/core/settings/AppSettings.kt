@@ -125,7 +125,7 @@ enum class AccentColor(val argb: Long?) {
 }
 
 /** Каким свайпом закрывается вложенная страница. */
-enum class BackSwipe { RIGHT_TO_LEFT, LEFT_TO_RIGHT, BOTH }
+enum class BackSwipe { RIGHT_TO_LEFT, LEFT_TO_RIGHT, BOTH, OFF }
 
 /** Вид спойлера: мерцающие частицы (как в Телеграме) или сплошная полоса (как в рассекреченных документах). */
 enum class SpoilerStyle { PARTICLES, BAR }

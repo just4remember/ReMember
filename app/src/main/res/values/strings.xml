@@ -907,6 +907,7 @@
     <string name="appearance_back_rtl">Справа налево</string>
     <string name="appearance_back_ltr">Слева направо</string>
     <string name="appearance_back_both">В обе стороны</string>
+    <string name="appearance_back_off">Выключен</string>
     <string name="appearance_time_picker">Выбор времени</string>
     <string name="appearance_time_dial">Циферблат</string>
     <string name="appearance_time_input">Ввод цифрами</string>
@@ -1108,6 +1109,8 @@
     <string name="clicker_tab_daily">Ежедневные</string>
     <string name="clicker_boost_hint">+%1$s%% к доходу «%2$s» за уровень</string>
     <string name="clicker_tap_upgrades">Прокачка тапа</string>
+    <string name="clicker_swipe_lock">Заблокировать свайп «Назад»</string>
+    <string name="clicker_swipe_unlock">Разблокировать свайп «Назад»</string>
     <string name="clicker_level_short">Ур. %d</string>
     <string name="clicker_offline">Доход вне игры</string>
     <string name="clicker_offline_rate">Идёт %s%% от дохода в игре</string>

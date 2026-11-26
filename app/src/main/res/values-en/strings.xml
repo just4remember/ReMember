@@ -852,6 +852,7 @@
     <string name="appearance_back_rtl">Right to left</string>
     <string name="appearance_back_ltr">Left to right</string>
     <string name="appearance_back_both">Both directions</string>
+    <string name="appearance_back_off">Off</string>
     <string name="appearance_time_picker">Time picker</string>
     <string name="appearance_time_dial">Clock dial</string>
     <string name="appearance_time_input">Type digits</string>
@@ -1045,6 +1046,8 @@
     <string name="clicker_tab_daily">Daily</string>
     <string name="clicker_boost_hint">+%1$s%% to “%2$s” income per level</string>
     <string name="clicker_tap_upgrades">Tap upgrades</string>
+    <string name="clicker_swipe_lock">Lock back swipe</string>
+    <string name="clicker_swipe_unlock">Unlock back swipe</string>
     <string name="clicker_level_short">Lv. %d</string>
     <string name="clicker_offline">Offline income</string>
     <string name="clicker_offline_rate">%s%% of your in-game income</string>
