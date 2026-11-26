@@ -5,6 +5,8 @@ import androidx.compose.material.icons.outlined.HistoryToggleOff
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.offset
@@ -16,8 +18,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.draw.shadow
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -25,12 +26,15 @@ import androidx.compose.ui.graphics.luminance
 import dev.chaik.remember.core.ui.components.SystemBarIcons
 import dev.chaik.remember.feature.games.clicker.engine.CategoryDef
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.foundation.background
 import android.content.res.Resources
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,9 +93,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.chaik.remember.R
@@ -104,6 +111,10 @@ import dev.chaik.remember.feature.games.clicker.engine.ClickerStats
 import dev.chaik.remember.feature.games.clicker.engine.PerkDef
 import java.text.NumberFormat
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 private fun CardEffect.label(): Int = when (this) {
     CardEffect.INCOME -> R.string.clicker_effect_income
@@ -211,64 +222,131 @@ fun CoinsHeader(viewModel: ClickerViewModel, engine: ClickerEngine) {
     }
 }
 
-/**
- * Полоса переключения: общая подложка без обводок, крупные кнопки (иконка над подписью),
- * выбранная — подсвечена. Одна и та же у «Улучшений» и «Хаоса».
- */
+/** Общая полоса вкладок «Космо»: капля каждой вкладки привязана к её центру. */
 @Composable
-private fun <T> SegmentStrip(items: List<T>, selected: T, label: @Composable (T) -> String, icon: ((T) -> ImageVector)?, onSelect: (T) -> Unit) {
+internal fun <T> SegmentStrip(
+    items: List<T>,
+    pager: PagerState,
+    label: @Composable (T) -> String,
+    icon: (T) -> ImageVector,
+    modifier: Modifier = Modifier,
+) {
     val colors = MaterialTheme.colorScheme
+    val labelStyle = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.sp)
+    val position = pager.currentPage + pager.currentPageOffsetFraction
+    fun emphasisAt(index: Int) = (1f - abs(position - index)).coerceIn(0f, 1f)
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .shadow(2.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .background(colors.surfaceContainerHigh)
+            .drawBehind {
+                if (items.isEmpty()) return@drawBehind
+                val padding = 4.dp.toPx()
+                val spacing = 2.dp.toPx()
+                val width = (size.width - 2 * padding - spacing * (items.size - 1)) / items.size
+                val half = minOf(14.dp.toPx(), width * 0.28f)
+                for (index in items.indices) {
+                    val progress = emphasisAt(index)
+                    if (progress == 0f) continue
+                    val slot = if (layoutDirection == LayoutDirection.Ltr) index else items.lastIndex - index
+                    val center = padding + width / 2 + (width + spacing) * slot
+                    drawTabDroplet(center, half, progress, colors.onSurface)
+                }
+            }
+            .then(modifier)
+            .selectableGroup()
             .padding(4.dp),
     ) {
-        items.forEach { item ->
-            val on = item == selected
+        items.forEachIndexed { index, item ->
+            val emphasis = emphasisAt(index)
+            val color = colors.onSurface.copy(alpha = 0.55f + 0.45f * emphasis)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .weight(1f)
-                    .height(if (icon != null) 60.dp else 44.dp)
-                    .raised(on, strip = colors.surfaceContainerHigh)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelect(item) },
+                    .heightIn(min = 48.dp)
+                    .selectable(
+                        selected = index == pager.currentPage,
+                        interactionSource = null,
+                        indication = null,
+                        role = Role.Tab,
+                        onClick = { pager.requestScrollToPage(index) },
+                    ),
             ) {
-                icon?.let { Icon(it(item), null, tint = if (on) colors.onSurface else colors.onSurfaceVariant, modifier = Modifier.size(24.dp)) }
-                Text(
-                    label(item),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (on) colors.onSurface else colors.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp),
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.graphicsLayer { translationY = -3.dp.toPx() * emphasis },
+                ) {
+                    Icon(icon(item), null, tint = color, modifier = Modifier.size(30.dp))
+                    Text(
+                        label(item),
+                        style = labelStyle,
+                        color = color,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 2.dp),
+                    )
+                }
             }
         }
     }
 }
 
+/** Круглая капля приближается к выступу, соединяется с ним и уходит внутрь общего контура. */
+private fun DrawScope.drawTabDroplet(center: Float, maxHalfWidth: Float, progress: Float, color: Color) {
+    val bottom = size.height
+    val waveHeight = 7.dp.toPx() * progress
+    val crest = bottom - waveHeight
+    val half = maxHalfWidth * sqrt(progress)
+    val wave = Path().apply {
+        moveTo(center - half, bottom)
+        cubicTo(center - half * 0.45f, bottom, center - half * 0.43f, crest, center, crest)
+        cubicTo(center + half * 0.43f, crest, center + half * 0.45f, bottom, center + half, bottom)
+        close()
+    }
+    drawPath(wave, color)
+
+    if (progress == 1f) return
+    val radius = 2.4.dp.toPx() * sin(PI * progress).toFloat()
+    val dropY = bottom - (7.5f - 5f * progress).dp.toPx()
+    val gap = crest - (dropY + radius)
+    val contactRange = 0.8.dp.toPx()
+    val contact = (1f - gap / contactRange).coerceIn(0f, 1f)
+    val upperY = dropY + radius * 0.38f
+    val lowerY = crest + waveHeight * 0.32f
+    if (contact > 0f && upperY < lowerY) {
+        val neck = radius * contact * 0.72f
+        val span = lowerY - upperY
+        val bridge = Path().apply {
+            moveTo(center - neck, upperY)
+            cubicTo(center - neck * 0.65f, upperY + span * 0.45f, center - neck * 0.75f, lowerY, center - neck * 1.7f, lowerY)
+            lineTo(center + neck * 1.7f, lowerY)
+            cubicTo(center + neck * 0.75f, lowerY, center + neck * 0.65f, upperY + span * 0.45f, center + neck, upperY)
+            close()
+        }
+        drawPath(bridge, color)
+    }
+    drawCircle(color, radius, Offset(center, dropY))
+}
+
 /**
  * «Улучшения»: шапка и полоса категорий стоят, свайпом листаются только карточки.
- * С последней категории свайп уходит на соседнюю вкладку (вложенная прокрутка лент).
  */
 @Composable
 fun UpgradesTab(viewModel: ClickerViewModel, engine: ClickerEngine, categories: List<CategoryDef>, pager: PagerState) {
-    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize()) {
         CoinsHeader(viewModel, engine)
         SegmentStrip(
             items = categories.indices.toList(),
-            selected = pager.currentPage,
+            pager = pager,
             label = { categories[it].name },
             icon = { categoryIcon(categories[it].id) },
-            onSelect = { scope.launch { pager.animateScrollToPage(it) } },
         )
         HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { i ->
             val cards = engine.catalog.cards.filter { it.category == categories[i].id }.sortedBy { it.baseCost }
@@ -287,7 +365,6 @@ enum class ChaosFilter(val label: Int, val empty: Int, val icon: ImageVector) {
 /** «Хаос»: как «Улучшения», но разделы — мои, текущие и пропавшие карточки. */
 @Composable
 fun ChaosTab(viewModel: ClickerViewModel, engine: ClickerEngine, pager: PagerState) {
-    val scope = rememberCoroutineScope()
     val state = viewModel.state
     val now = System.currentTimeMillis() / 1000
     val chaos = engine.catalog.cards.filter { card -> engine.catalog.categories.firstOrNull { it.id == card.category }?.temporary == true }
@@ -295,10 +372,9 @@ fun ChaosTab(viewModel: ClickerViewModel, engine: ClickerEngine, pager: PagerSta
         CoinsHeader(viewModel, engine)
         SegmentStrip(
             items = ChaosFilter.entries.toList(),
-            selected = ChaosFilter.entries[pager.currentPage],
+            pager = pager,
             label = { stringResource(it.label) },
             icon = { it.icon },
-            onSelect = { scope.launch { pager.animateScrollToPage(it.ordinal) } },
         )
         HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { i ->
             val filter = ChaosFilter.entries[i]

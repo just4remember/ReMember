@@ -1,12 +1,6 @@
 package dev.chaik.remember.feature.games.clicker
 
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.lerp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.IntOffset
@@ -16,6 +10,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.fadeOut
@@ -24,13 +21,12 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.draw.shadow
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,10 +69,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -157,43 +153,40 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             return@ScreenScaffold
         }
         val categories = remember(engine) { engine.catalog.categories.filterNot { it.temporary || it.hidden } }
-        // Между вкладками — только меню внизу; внутри «Улучшений» и «Хаоса» разделы листаются свайпом
-        var tab by rememberSaveable { mutableStateOf(GameTab.TAP) }
+        // Главные вкладки переключаются на нижней полосе, карточки листаются в своих разделах.
+        val tabs = rememberPagerState { GameTab.entries.size }
         val upgrades = rememberPagerState { categories.size }
         val chaos = rememberPagerState { ChaosFilter.entries.size }
-        val scope = rememberCoroutineScope()
-        Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
-        ) {
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                when (tab) {
-                    GameTab.TAP -> TapTab(viewModel)
-                    GameTab.UPGRADES -> UpgradesTab(viewModel, engine, categories, upgrades)
-                    GameTab.CHAOS -> ChaosTab(viewModel, engine, chaos)
-                    GameTab.DAILY -> DailyTab(viewModel, engine)
-                }
-            }
-            GameTabs(
-                selected = tab,
-                onSelect = { t ->
-                    // «Улучшения» — с «Планеты», «Хаос» — с «Моих»
-                    scope.launch {
-                        if (t == GameTab.UPGRADES && t != tab) upgrades.scrollToPage(0)
-                        if (t == GameTab.CHAOS && t != tab) chaos.scrollToPage(ChaosFilter.MINE.ordinal)
-                    }
-                    tab = t
-                },
-            )
+        LaunchedEffect(tabs.settledPage) {
+            // При следующем открытии «Улучшения» начинаются с «Планеты», «Хаос» — с «Моих».
+            if (tabs.settledPage != GameTab.UPGRADES.ordinal) upgrades.requestScrollToPage(0)
+            if (tabs.settledPage != GameTab.CHAOS.ordinal) chaos.requestScrollToPage(ChaosFilter.MINE.ordinal)
         }
-        // Сколько накопилось, пока вас не было, — уведомлением сверху по центру
-        AwayBanner(
-            gain = viewModel.awayGain,
-            onDone = viewModel::dismissAway,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = padding.calculateTopPadding() + 8.dp),
-        )
+        Box(Modifier.fillMaxSize()) {
+            Column(
+                Modifier.fillMaxSize()
+                    .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+            ) {
+                HorizontalPager(
+                    state = tabs,
+                    userScrollEnabled = false,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                ) { page ->
+                    when (GameTab.entries[page]) {
+                        GameTab.TAP -> TapTab(viewModel)
+                        GameTab.UPGRADES -> UpgradesTab(viewModel, engine, categories, upgrades)
+                        GameTab.CHAOS -> ChaosTab(viewModel, engine, chaos)
+                        GameTab.DAILY -> DailyTab(viewModel, engine)
+                    }
+                }
+                GameTabs(tabs)
+            }
+            // Сколько накопилось, пока вас не было, — уведомлением сверху по центру.
+            AwayBanner(
+                gain = viewModel.awayGain,
+                onDone = viewModel::dismissAway,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = padding.calculateTopPadding() + 8.dp),
+            )
         }
     }
 
@@ -201,42 +194,22 @@ fun ClickerScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     if (metaOpen && viewModel.engine != null) MetaProgressDialog(viewModel, viewModel.engine!!, onDismiss = { metaOpen = false })
 }
 
-/** Полоса вкладок на своей подложке — чтобы не терялась; выбранная — подсвечена. */
 @Composable
-private fun GameTabs(selected: GameTab, onSelect: (GameTab) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .shadow(3.dp, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
-            .background(colors.surfaceContainerHigh)
-            .padding(4.dp),
-    ) {
-        GameTab.entries.forEach { t ->
-            val on = t == selected
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .weight(1f)
-                    .raised(on, strip = colors.surfaceContainerHigh)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelect(t) }
-                    .padding(vertical = 6.dp),
-            ) {
-                Icon(t.icon, null, tint = if (on) colors.onSurface else colors.onSurfaceVariant, modifier = Modifier.size(22.dp))
-                Text(
-                    stringResource(t.label),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (on) colors.onSurface else colors.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
+private fun GameTabs(pager: PagerState) {
+    SegmentStrip(
+        items = GameTab.entries,
+        pager = pager,
+        label = { stringResource(it.label) },
+        icon = { it.icon },
+        modifier = Modifier.scrollable(
+            state = pager,
+            orientation = Orientation.Horizontal,
+            reverseDirection = ScrollableDefaults.reverseDirection(
+                LocalLayoutDirection.current, Orientation.Horizontal, reverseScrolling = false,
+            ),
+            flingBehavior = PagerDefaults.flingBehavior(pager),
+        ),
+    )
 }
 
 /** Монеты с иконкой — целиком, без сокращений. */
@@ -504,28 +477,3 @@ private fun AwayBanner(gain: Double?, onDone: () -> Unit, modifier: Modifier = M
         }
     }
 }
-
-/**
- * Вид выбранной кнопки полосы: «выпуклая» плашка чуть меньше кнопки (отступ [RAISED_INSET]),
- * на 5% светлее подложки [strip], с тенью снаружи, без акцентной заливки. Рисуется под
- * содержимым и ставится до clip, иначе тень обрежется.
- */
-@Composable
-fun Modifier.raised(on: Boolean, strip: Color, radius: androidx.compose.ui.unit.Dp = 10.dp): Modifier {
-    if (!on) return this
-    val fill = lerp(strip, Color.White, 0.05f).toArgb()
-    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val shadowColor = Color.Black.copy(alpha = if (dark) 0.8f else 0.45f).toArgb()
-    return drawBehind {
-        val inset = RAISED_INSET.toPx()
-        val r = radius.toPx()
-        // Тень — у самой плашки (shadowLayer), а не у всей кнопки: так плашку можно сделать меньше
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            color = fill
-            setShadowLayer(5.dp.toPx(), 0f, 1.5.dp.toPx(), shadowColor)
-        }
-        drawIntoCanvas { it.nativeCanvas.drawRoundRect(inset, inset, size.width - inset, size.height - inset, r, r, paint) }
-    }
-}
-
-private val RAISED_INSET = 2.dp
