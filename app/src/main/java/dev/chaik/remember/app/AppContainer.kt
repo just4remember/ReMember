@@ -6,7 +6,8 @@ import dev.chaik.remember.core.alarm.AlarmScheduler
 import dev.chaik.remember.core.alarm.TimeNotifications
 import dev.chaik.remember.core.alarm.TimeStore
 import dev.chaik.remember.core.backup.BackupManager
-import dev.chaik.remember.core.wordgame.AssetWordDictionary
+import dev.chaik.remember.core.wordgame.LocalWordDictionary
+import dev.chaik.remember.core.wordgame.WordDictionaryUpdater
 import dev.chaik.remember.core.wordgame.GamesStore
 import dev.chaik.remember.core.data.DayRepository
 import dev.chaik.remember.core.data.EventRepository
@@ -152,7 +153,8 @@ class AppContainer(context: Context) {
     /** Раздел «Время»: будильники, звонок, таймер, секундомер. */
     val timeStore by lazy { TimeStore(appContext) }
     val timeNotifications by lazy { TimeNotifications(appContext, timeStore) }
-    val wordDictionary by lazy { AssetWordDictionary(appContext) }
+    internal val wordDictionary by lazy { LocalWordDictionary(appContext) }
+    internal val wordDictionaryUpdater by lazy { WordDictionaryUpdater(appContext, wordDictionary, appScope) }
 
     /** Раздел «Игры»: незаконченные игры. */
     val gamesStore by lazy { GamesStore(appContext) }

@@ -164,7 +164,7 @@ class AlarmController(
     fun dismiss() {
         val session = store.session.value ?: return
         if (session.hard) {
-            val game = session.game ?: WordGameState(answer = dictionary.randomAnswer())
+            val game = session.game ?: dictionary.newRound()
             store.setSession(session.copy(ringing = false, game = game))
             RingService.stop(context)
             armAgain()

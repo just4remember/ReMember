@@ -8,12 +8,15 @@ plugins {
     alias(libs.plugins.androidx.room)
 }
 
-// Адрес и ключ сервера отзывов — из secrets.properties в корне проекта (в git не попадает,
-// пример — secrets.properties.example). Нет файла или значений — отправка отзывов недоступна
+// Ключ сервера отзывов хранится локально в secrets.properties (пример — secrets.properties.example).
 val secrets = Properties().apply {
     rootProject.file("secrets.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
-fun secret(key: String): String = secrets.getProperty(key, "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
+fun Properties.configString(key: String): String = getProperty(key, "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
+
+val serverConfig = Properties().apply {
+    rootProject.file("server.properties").inputStream().use(::load)
+}
 
 val signingProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
@@ -40,12 +43,18 @@ android {
         // под каждый процессор, и без фильтра приложение весило бы в разы больше
         ndk { abiFilters += "arm64-v8a" }
 
-        buildConfigField("String", "FEEDBACK_ENDPOINT", "\"${secret("feedback.endpoint")}\"")
-        buildConfigField("String", "FEEDBACK_KEY", "\"${secret("feedback.key")}\"")
+        buildConfigField("String", "FEEDBACK_ENDPOINT", "\"${serverConfig.configString("feedback.endpoint")}\"")
+        buildConfigField("String", "FEEDBACK_KEY", "\"${secrets.configString("feedback.key")}\"")
+        buildConfigField("String", "DICTIONARY_BASE_URL", "\"${serverConfig.configString("dictionary.baseUrl")}\"")
+        buildConfigField("String", "DICTIONARY_VERSION_PATH", "\"${serverConfig.configString("dictionary.versionPath")}\"")
+        buildConfigField("String", "DICTIONARY_DOWNLOAD_PATH", "\"${serverConfig.configString("dictionary.downloadPath")}\"")
+        val dictionaryInterval = serverConfig.getProperty("dictionary.checkIntervalHours").trim().toInt()
+        require(dictionaryInterval > 0) { "dictionary.checkIntervalHours должен быть больше нуля" }
+        buildConfigField("int", "DICTIONARY_CHECK_INTERVAL_HOURS", dictionaryInterval.toString())
         // Ссылка на сбор средств «Поддержать автора»; пусто — раздела нет
-        buildConfigField("String", "SUPPORT_URL", "\"${secret("support.url")}\"")
+        buildConfigField("String", "SUPPORT_URL", "\"${secrets.configString("support.url")}\"")
         // Сколько отзывов в день можно отправить с телефона; нет значения или оно неверное — 5
-        val feedbackLimit = secret("feedback.dailyLimit").toIntOrNull()?.takeIf { it > 0 } ?: 5
+        val feedbackLimit = serverConfig.getProperty("feedback.dailyLimit")?.trim()?.toIntOrNull()?.takeIf { it > 0 } ?: 5
         buildConfigField("int", "FEEDBACK_DAILY_LIMIT", feedbackLimit.toString())
     }
 

@@ -64,7 +64,6 @@ import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.alarm.RingKind
 import dev.chaik.remember.core.alarm.RingSession
 import dev.chaik.remember.core.ui.theme.ReMemberTheme
-import dev.chaik.remember.core.wordgame.WordGameState
 import dev.chaik.remember.feature.games.fiveletters.WordGameMode
 import dev.chaik.remember.feature.games.fiveletters.WordGameScreen
 import kotlinx.coroutines.delay
@@ -220,7 +219,7 @@ private fun DreamNote(draft: String, againAt: Long?, onChange: (String) -> Unit,
 @Composable
 private fun PracticeGame(onClose: () -> Unit) {
     val dictionary = LocalContext.current.appContainer.wordDictionary
-    var game by remember { mutableStateOf(WordGameState(answer = dictionary.randomAnswer())) }
+    var game by remember { mutableStateOf(dictionary.newRound()) }
     BackHandler(onBack = onClose)
     WordGameScreen(
         state = game,

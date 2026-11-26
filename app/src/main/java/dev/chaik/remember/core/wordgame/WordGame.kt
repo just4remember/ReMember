@@ -24,6 +24,8 @@ data class WordGameState(
     val guesses: List<String> = emptyList(),
     /** Набранное в текущей строке — чтобы после повторного звонка продолжить с того же места. */
     val input: String = "",
+    /** У старых партий — null, то есть словарь из APK. */
+    val dictionaryHash: String? = null,
 ) {
     val won: Boolean get() = guesses.lastOrNull() == answer
     val lost: Boolean get() = !won && guesses.size >= MAX_ATTEMPTS
@@ -86,7 +88,7 @@ class WordGame(private val dictionary: WordDictionary) {
     fun submit(state: WordGameState): Pair<WordGameState, GuessError?> = when {
         state.finished -> state to null
         state.input.length < WordGameState.WORD_LENGTH -> state to GuessError.TOO_SHORT
-        !dictionary.isWord(state.input) -> state to GuessError.NOT_A_WORD
+        state.input != state.answer && !dictionary.isWord(state.input) -> state to GuessError.NOT_A_WORD
         else -> state.copy(guesses = state.guesses + state.input, input = "") to null
     }
 }

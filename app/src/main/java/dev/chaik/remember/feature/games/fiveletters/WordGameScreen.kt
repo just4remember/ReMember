@@ -107,8 +107,10 @@ fun WordGameScreen(
     mode: WordGameMode,
     modifier: Modifier = Modifier,
 ) {
-    val dictionary = LocalContext.current.appContainer.wordDictionary
-    val game = remember(dictionary) { WordGame(dictionary) }
+    val container = LocalContext.current.appContainer
+    val dictionary = container.wordDictionary
+    LaunchedEffect(container) { container.wordDictionaryUpdater.check() }
+    val game = remember(dictionary, state.dictionaryHash) { WordGame(dictionary.forRound(state.dictionaryHash)) }
     val haptics = LocalHapticFeedback.current
     val gameHaptics = LocalAppSettings.current.gameHaptics
     var error by remember { mutableStateOf<GuessError?>(null) }

@@ -14,7 +14,6 @@ import androidx.navigation3.runtime.NavKey
 import dev.chaik.remember.R
 import dev.chaik.remember.appContainer
 import dev.chaik.remember.core.ui.components.ScreenScaffold
-import dev.chaik.remember.core.wordgame.WordGameState
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -29,7 +28,7 @@ fun FiveLettersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val container = LocalContext.current.appContainer
     val store = container.gamesStore
     val dictionary = container.wordDictionary
-    var game by remember { mutableStateOf(store.fiveLetters ?: WordGameState(answer = dictionary.randomAnswer())) }
+    var game by remember { mutableStateOf(store.fiveLetters ?: dictionary.newRound()) }
 
     ScreenScaffold(title = stringResource(R.string.game_title), modifier = modifier, onBack = onBack) { padding ->
         WordGameScreen(
@@ -39,7 +38,7 @@ fun FiveLettersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 store.fiveLetters = it
             },
             onDone = {
-                game = WordGameState(answer = dictionary.randomAnswer())
+                game = dictionary.newRound()
                 store.fiveLetters = game
             },
             mode = WordGameMode.FREE,

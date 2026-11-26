@@ -57,6 +57,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        appContainer.wordDictionaryUpdater.check()
         appContainer.notifier.clearOnAppOpen()
         // Вернулись из фона: если прошло больше таймаута — снова замок
         lock.onForeground()
