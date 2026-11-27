@@ -4,24 +4,21 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
+import dev.chaik.remember.BuildConfig
 import dev.chaik.remember.appContainer
 
-/**
- * Политика конфиденциальности и пользовательское соглашение. Их публикует сервер отзывов
- * (страницы /privacy и /terms), поэтому адрес берётся из адреса отправки отзывов.
- */
-enum class LegalDoc(val path: String) {
-    PRIVACY("privacy"),
-    TERMS("terms"),
-    CONSENT("consent"),
+/** Ссылки на документы задаются в server.properties. */
+enum class LegalDoc(private val documentUrl: String) {
+    PRIVACY(BuildConfig.LEGAL_PRIVACY_URL),
+    TERMS(BuildConfig.LEGAL_TERMS_URL),
+    CONSENT(BuildConfig.LEGAL_CONSENT_URL),
     ;
 
-    /** Адрес документа на языке приложения; null — сервер отзывов не настроен. */
+    /** Адрес документа на языке приложения; null — ссылка не задана. */
     fun url(context: Context): String? {
-        val site = FeedbackSender.ENDPOINT.substringBefore("/api/").trimEnd('/')
-        if (site.isEmpty()) return null
+        if (documentUrl.isBlank()) return null
         val lang = if (context.resources.configuration.locales[0].language == "ru") "ru" else "en"
-        return "$site/$path?lang=$lang"
+        return documentUrl.toUri().buildUpon().appendQueryParameter("lang", lang).build().toString()
     }
 
     fun open(context: Context) {

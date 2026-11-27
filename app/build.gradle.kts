@@ -45,6 +45,9 @@ android {
 
         buildConfigField("String", "FEEDBACK_ENDPOINT", "\"${serverConfig.configString("feedback.endpoint")}\"")
         buildConfigField("String", "FEEDBACK_KEY", "\"${secrets.configString("feedback.key")}\"")
+        buildConfigField("String", "LEGAL_PRIVACY_URL", "\"${serverConfig.configString("legal.privacyUrl")}\"")
+        buildConfigField("String", "LEGAL_TERMS_URL", "\"${serverConfig.configString("legal.termsUrl")}\"")
+        buildConfigField("String", "LEGAL_CONSENT_URL", "\"${serverConfig.configString("legal.consentUrl")}\"")
         buildConfigField("String", "DICTIONARY_BASE_URL", "\"${serverConfig.configString("dictionary.baseUrl")}\"")
         buildConfigField("String", "DICTIONARY_VERSION_PATH", "\"${serverConfig.configString("dictionary.versionPath")}\"")
         buildConfigField("String", "DICTIONARY_DOWNLOAD_PATH", "\"${serverConfig.configString("dictionary.downloadPath")}\"")

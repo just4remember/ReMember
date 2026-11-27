@@ -331,24 +331,23 @@ private fun ConsentRow(checked: Boolean, onChange: (Boolean) -> Unit) {
     val policyLink = stringResource(R.string.feedback_policy_link)
     val full = stringResource(R.string.feedback_consent_check, consentLink, policyLink)
     val linkColor = MaterialTheme.colorScheme.primary
-    val withLinks = LegalDoc.CONSENT.url(context) != null
-    val text = remember(full, linkColor, withLinks) {
+    val links = listOf(consentLink to LegalDoc.CONSENT, policyLink to LegalDoc.PRIVACY)
+        .filter { (_, doc) -> doc.url(context) != null }
+    val text = remember(full, linkColor, links, context) {
         buildAnnotatedString {
             append(full)
-            if (withLinks) {
-                for ((link, doc) in listOf(consentLink to LegalDoc.CONSENT, policyLink to LegalDoc.PRIVACY)) {
-                    val start = full.indexOf(link)
-                    if (start < 0) continue
-                    addLink(
-                        LinkAnnotation.Clickable(
-                            tag = doc.path,
-                            styles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
-                            linkInteractionListener = { doc.open(context) },
-                        ),
-                        start,
-                        start + link.length,
-                    )
-                }
+            for ((link, doc) in links) {
+                val start = full.indexOf(link)
+                if (start < 0) continue
+                addLink(
+                    LinkAnnotation.Clickable(
+                        tag = doc.name,
+                        styles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
+                        linkInteractionListener = { doc.open(context) },
+                    ),
+                    start,
+                    start + link.length,
+                )
             }
         }
     }

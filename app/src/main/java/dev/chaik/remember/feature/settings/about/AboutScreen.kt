@@ -147,13 +147,17 @@ fun AboutScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 }
             }
 
-            // Документы — на сервере отзывов; пока он не настроен, ссылок нет
-            if (LegalDoc.PRIVACY.url(context) != null) {
+            val documents = listOf(
+                LegalDoc.PRIVACY to R.string.legal_privacy,
+                LegalDoc.CONSENT to R.string.legal_consent,
+                LegalDoc.TERMS to R.string.legal_terms,
+            ).filter { (document, _) -> document.url(context) != null }
+            if (documents.isNotEmpty()) {
                 SettingsGroupTitle(stringResource(R.string.about_documents))
                 SettingsCard {
-                    DocRow(stringResource(R.string.legal_privacy)) { LegalDoc.PRIVACY.open(context) }
-                    DocRow(stringResource(R.string.legal_consent)) { LegalDoc.CONSENT.open(context) }
-                    DocRow(stringResource(R.string.legal_terms)) { LegalDoc.TERMS.open(context) }
+                    documents.forEach { (document, label) ->
+                        DocRow(stringResource(label)) { document.open(context) }
+                    }
                 }
             }
 
